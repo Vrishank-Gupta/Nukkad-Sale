@@ -6,6 +6,7 @@ import json, re, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 TOKEN = 'test-meta-token'; IG = '17841400000000001'
 C = {}; PUBLISHED = []; N = [0]
+PAGE = '555'; PAGE_TOKEN = 'test-page-token'; FB = []; FBV = {}; PHOTOS = {}
 def nid():
     N[0] += 1; return f'1790000000{N[0]:04d}'
 class H(BaseHTTPRequestHandler):
@@ -17,6 +18,9 @@ class H(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urllib.parse.urlparse(self.path); q = dict(urllib.parse.parse_qsl(u.query)); p = u.path
         if p == '/_published': return self._json(200, PUBLISHED)
+        if p == '/_fb': return self._json(200, FB)
+        if p == '/v23.0/me/accounts' and q.get('access_token') == TOKEN:   # Facebook Page lookup (token as a parameter)
+            return self._json(200, {'data': [{'id': PAGE, 'name': 'NukkadSale', 'access_token': PAGE_TOKEN, 'instagram_business_account': {'id': IG}}]})
         if not self._auth(): return self._err('Invalid OAuth access token.', 190)
         if p == '/v23.0/me/accounts':
             return self._json(200, {'data': [{'id': '555', 'name': 'NukkadSale', 'instagram_business_account': {'id': IG, 'username': 'nukkadsale'}}]})
@@ -34,6 +38,39 @@ class H(BaseHTTPRequestHandler):
     def do_POST(self):
         body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
         p = urllib.parse.urlparse(self.path).path
+        fm = re.fullmatch(r'/fb-video-upload/(\d+)', p)
+        if fm:
+            v = FBV.get(fm.group(1))
+            if self.headers.get('Authorization') != f'OAuth {PAGE_TOKEN}' or not v: return self._json(401, {'success': False})
+            if int(self.headers.get('file_size', -1)) != len(body) or body[4:8] != b'ftyp': return self._json(400, {'success': False})
+            v['uploaded'] = True; return self._json(200, {'success': True})
+        if p.startswith(f'/v23.0/{PAGE}/'):
+            f = dict(urllib.parse.parse_qsl(body.decode()))
+            if f.get('access_token') != PAGE_TOKEN: return self._err('Page token required', 190)
+            edge = p.split('/')[-1]
+            if edge == 'photos':
+                try:
+                    with urllib.request.urlopen(f['url'], timeout=10) as r:
+                        if r.read()[:2] != b'\xff\xd8': return self._err('not a JPEG', 324)
+                except Exception as e: return self._err(f'Could not fetch url: {e}', 324)
+                i = nid(); PHOTOS[i] = f.get('published') != 'false'
+                if PHOTOS[i]: FB.append({'kind': 'photo', 'id': i, 'message': f.get('message')})
+                return self._json(200, {'id': i, 'post_id': f'{PAGE}_{i}'} if PHOTOS[i] else {'id': i})
+            if edge == 'feed':
+                kids = [json.loads(v)['media_fbid'] for k, v in f.items() if k.startswith('attached_media')]
+                if len(kids) < 2 or not all(k in PHOTOS and not PHOTOS[k] for k in kids): return self._err('bad attached_media', 100)
+                i = f'{PAGE}_{nid()}'; FB.append({'kind': 'album', 'id': i, 'photos': len(kids), 'message': f.get('message')}); return self._json(200, {'id': i})
+            if edge == 'photo_stories':
+                if f.get('photo_id') not in PHOTOS: return self._err('bad photo_id', 100)
+                i = nid(); FB.append({'kind': 'photo_story', 'id': i}); return self._json(200, {'success': True, 'post_id': i})
+            if edge in ('video_reels', 'video_stories'):
+                if f.get('upload_phase') == 'start':
+                    v = nid(); FBV[v] = {'edge': edge}; return self._json(200, {'video_id': v, 'upload_url': f'http://localhost:8793/fb-video-upload/{v}'})
+                v = FBV.get(f.get('video_id'))
+                if f.get('upload_phase') != 'finish' or not v or not v.get('uploaded') or v['edge'] != edge: return self._err('upload not finished', 100)
+                FB.append({'kind': 'reel' if edge == 'video_reels' else 'video_story', 'id': f['video_id'], 'message': f.get('description')})
+                return self._json(200, {'success': True, 'post_id': f['video_id']})
+            return self._err('Unsupported page edge', 100)
         m = re.fullmatch(r'/ig-api-upload/v23.0/(\d+)', p)
         if m:
             if not self._auth('OAuth'): return self._json(401, {'debug_info': {'message': 'bad auth'}})

@@ -105,6 +105,21 @@ const ITEMS = {
   'faq-5': { type: 'story', file: 'stories/series/faq-5.png' },
   'faq-6': { type: 'story', file: 'stories/series/faq-6.png' },
 }
+// Every reel and feed post can also go out as a story the same day: "<id>-story". A reel story is the reel itself;
+// a post story is a 9:16 version of the post (first slide for carousels) made by `make-stories`.
+for (const [k, it] of Object.entries({ ...ITEMS })) {
+  if (it.type === 'reel') ITEMS[`${k}-story`] = { type: 'story', file: it.file }
+  else if (it.type === 'image' || it.type === 'carousel') ITEMS[`${k}-story`] = { type: 'story', file: `stories/shared/${k}.jpg`, from: (it.files ?? [it.file])[0] }
+  // Each carousel slide as its own story frame too: "<id>-story-a", "-b", … (a story set that walks through the carousel).
+  if (it.type === 'carousel') it.files.forEach((f, i) => { const l = 'abcdefghij'[i]; ITEMS[`${k}-story-${l}`] = { type: 'story', file: `stories/shared/${k}-${l}.jpg`, from: f } })
+}
+
+// Daily plan for the GitHub Action (.github/workflows/social.yml): { "time": "19:00", "days": { "YYYY-MM-DD": [ids…] } }, IST.
+const SCHEDULE = path.join(SOCIAL, 'schedule.json')
+// Images uploaded ahead of time (`stage`), so the Action needs no Cloudflare access: { "docs/social path": { sha, url } }.
+const HOSTED = path.join(SOCIAL, 'hosted.json')
+const readJson = (f) => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {})
+const istToday = () => new Date(Date.now() + 19_800_000).toISOString().slice(0, 10)
 
 // ---------- config ----------
 function loadConfig() {
@@ -127,6 +142,11 @@ function loadConfig() {
     rupload: get('RUPLOAD_BASE', 'https://rupload.facebook.com') + '/ig-api-upload/' + VERSION,
     publicBase: get('PUBLIC_BASE', 'https://nukkadsale.in').replace(/\/$/, ''),
     r2Local: get('R2_LOCAL') === '1',
+    // Facebook Page: same Meta token (needs pages_manage_posts), or a Page token of its own. FACEBOOK=0 turns it off.
+    facebook: get('FACEBOOK', '1') !== '0',
+    fbGraph: get('FB_GRAPH_BASE', 'https://graph.facebook.com') + '/' + VERSION,
+    fbPageId: get('FB_PAGE_ID'),
+    fbPageToken: get('FB_PAGE_TOKEN'),
   }
 }
 
@@ -205,6 +225,17 @@ async function uploadVideo(cfg, container, file) {
 
 // Images must be public JPEG URLs: convert, put them in the app's R2 bucket, serve via /img/social/….
 function hostImage(cfg, file) {
+  const rel = path.relative(SOCIAL, file)
+  const sha = crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex')
+  const hosted = readJson(HOSTED)
+  if (!cfg.r2Local && hosted[rel]?.sha === sha) return hosted[rel].url
+  if (process.env.SOCIAL_NO_UPLOAD === '1') throw new Error(`${rel} was not uploaded ahead of time – run \`publish.mjs stage\` on a machine with Cloudflare access and push hosted.json`)
+  const url = uploadImage(cfg, file)
+  if (!cfg.r2Local) { hosted[rel] = { sha, url }; fs.writeFileSync(HOSTED, JSON.stringify(hosted, null, 1) + '\n') }
+  return url
+}
+
+function uploadImage(cfg, file) {
   const tmp = path.join(os.tmpdir(), `kk-social-${process.pid}-${path.basename(file).replace(/\.\w+$/, '')}.jpg`)
   execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', file, '-q:v', '2', tmp])
   const hash = crypto.createHash('sha1').update(fs.readFileSync(tmp)).digest('hex').slice(0, 10)
@@ -218,6 +249,70 @@ function hostImage(cfg, file) {
 async function checkPublic(url) {
   const r = await fetch(url, { method: 'HEAD' })
   if (!r.ok) throw new Error(`${url} is not reachable (${r.status}). Is PUBLIC_BASE right and the domain live?`)
+}
+
+// ---------- Facebook Page ----------
+async function fbApi(cfg, page, method, p, params = {}) {
+  const url = new URL(cfg.fbGraph + p)
+  const init = { method }
+  const all = { ...params, access_token: page.token }
+  if (method === 'GET') for (const [k, v] of Object.entries(all)) url.searchParams.set(k, v)
+  else init.body = new URLSearchParams(all)
+  const res = await fetch(url, init)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || data.error) {
+    const e = data.error ?? {}
+    throw new Error(`Facebook API ${method} ${p}: ${e.message ?? res.status} (code ${e.code ?? '?'}${e.error_subcode ? '/' + e.error_subcode : ''})`)
+  }
+  return data
+}
+
+let fbPageCache
+async function fbPage(cfg) {
+  if (fbPageCache) return fbPageCache
+  if (cfg.fbPageId && cfg.fbPageToken) return (fbPageCache = { id: cfg.fbPageId, token: cfg.fbPageToken })
+  if (!cfg.token || cfg.igLogin) throw new Error('Facebook needs a Facebook Login token (EAA…) with pages_manage_posts, or FB_PAGE_ID + FB_PAGE_TOKEN')
+  const r = await fetch(`${cfg.fbGraph}/me/accounts?fields=id,name,access_token,instagram_business_account&access_token=${encodeURIComponent(cfg.token)}`).then((x) => x.json())
+  if (r.error) throw new Error(`Facebook: ${r.error.message}`)
+  const page = (r.data ?? []).find((x) => (cfg.fbPageId ? x.id === cfg.fbPageId : x.instagram_business_account))
+  if (!page?.access_token) throw new Error('Facebook: this token sees no Page linked to the Instagram account')
+  return (fbPageCache = { id: page.id, token: page.access_token, name: page.name })
+}
+
+// Videos (reels and video stories) use Facebook's three-step upload: start → send the bytes → finish.
+async function fbVideo(cfg, page, edge, file, finish) {
+  const start = await fbApi(cfg, page, 'POST', `/${page.id}/${edge}`, { upload_phase: 'start' })
+  const bytes = fs.readFileSync(file)
+  const up = await fetch(start.upload_url, { method: 'POST', headers: { Authorization: `OAuth ${page.token}`, offset: '0', file_size: String(bytes.length) }, body: bytes })
+  const ud = await up.json().catch(() => ({}))
+  if (!up.ok || ud.success === false) throw new Error(`Facebook video upload failed: ${JSON.stringify(ud)}`)
+  return { ...(await fbApi(cfg, page, 'POST', `/${page.id}/${edge}`, { upload_phase: 'finish', video_id: start.video_id, ...finish })), video_id: start.video_id }
+}
+
+async function fbPublish(cfg, item, caption) {
+  const page = await fbPage(cfg)
+  const abs = (f) => path.join(SOCIAL, f)
+  const photo = async (f, extra) => { const u = hostImage(cfg, abs(f)); await checkPublic(u); return fbApi(cfg, page, 'POST', `/${page.id}/photos`, { url: u, ...extra }) }
+  if (item.type === 'reel') {
+    const r = await fbVideo(cfg, page, 'video_reels', abs(item.file), { video_state: 'PUBLISHED', description: caption })
+    return { fb_id: r.video_id, permalink: `https://www.facebook.com/reel/${r.video_id}` }
+  }
+  if (item.type === 'story') {
+    if (item.file.endsWith('.mp4')) { const r = await fbVideo(cfg, page, 'video_stories', abs(item.file), {}); return { fb_id: r.post_id ?? r.video_id } }
+    const ph = await photo(item.file, { published: 'false' })
+    const r = await fbApi(cfg, page, 'POST', `/${page.id}/photo_stories`, { photo_id: ph.id })
+    return { fb_id: r.post_id ?? ph.id }
+  }
+  if (item.type === 'carousel') {
+    const ids = []
+    for (const f of item.files) ids.push((await photo(f, { published: 'false' })).id)
+    const params = { message: caption }
+    ids.forEach((id, i) => { params[`attached_media[${i}]`] = JSON.stringify({ media_fbid: id }) })
+    const r = await fbApi(cfg, page, 'POST', `/${page.id}/feed`, params)
+    return { fb_id: r.id, permalink: `https://www.facebook.com/${r.id}` }
+  }
+  const r = await photo(item.file, { message: caption, published: 'true' })
+  return { fb_id: r.post_id ?? r.id, permalink: `https://www.facebook.com/${r.post_id ?? r.id}` }
 }
 
 async function publishItem(cfg, ig, item, caption) {
@@ -261,7 +356,7 @@ async function main() {
 
   if (cmd === 'list') {
     const log = readLog()
-    for (const [k, it] of Object.entries(ITEMS)) console.log(`${k.padEnd(8)} ${it.type.padEnd(8)} ${log[k] ? `posted ${log[k].at.slice(0, 10)} ${log[k].permalink ?? ''}` : '–'}${log['yt:' + k] ? `  · YouTube ${log['yt:' + k].url}` : ''}${it.note ? `   (${it.note})` : ''}`)
+    for (const [k, it] of Object.entries(ITEMS)) console.log(`${k.padEnd(8)} ${it.type.padEnd(8)} ${log[k] ? `posted ${log[k].at.slice(0, 10)} ${log[k].permalink ?? ''}` : '–'}${log['fb:' + k] ? '  · Facebook' : ''}${log['yt:' + k] ? `  · YouTube ${log['yt:' + k].url}` : ''}${it.note ? `   (${it.note})` : ''}`)
     return
   }
   if (cmd === 'whoami') {
@@ -276,7 +371,8 @@ async function main() {
     console.log(`Used ${d.quota_usage ?? '?'} of ${d.config?.quota_total ?? '?'} posts in the last 24 hours`)
     return
   }
-  if (cmd === 'post') {
+  // Post one item to Instagram (reels also go to YouTube Shorts). Returns false if anything failed.
+  async function postOne(id) {
     const item = ITEMS[id]
     if (!item) throw new Error(`Unknown item "${id}". Run \`list\` to see them.`)
     const caption = item.caption ? captionFor(item.caption) : ''
@@ -284,18 +380,32 @@ async function main() {
     for (const f of files) if (!fs.existsSync(path.join(SOCIAL, f))) throw new Error(`Missing file docs/social/${f}`)
     if (flags.has('--dry-run')) {
       console.log(`Would post ${id} (${item.type}): ${files.join(', ')}${item.note ? `\nNote: ${item.note}` : ''}\n--- caption (${caption.length} chars) ---\n${caption || '(none – stories have no caption)'}`)
-      return
+      return true
     }
+    let ok = true
     const log = readLog()
-    if (log[id] && !flags.has('--again')) throw new Error(`${id} was already posted on ${log[id].at} (${log[id].permalink ?? log[id].media_id}). Use --again to post it again.`)
-    if (item.note && !flags.has('--anyway')) throw new Error(`${id} ${item.note}. Use --anyway to post it without the sticker.`)
-    needToken()
-    const ig = await account(cfg)
-    console.log(`Posting ${id} (${item.type}) to ${ig.username ? '@' + ig.username : ig.id}…`)
-    const r = await publishItem(cfg, ig, item, caption)
-    log[id] = { ...r, at: new Date().toISOString() }
-    fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
-    console.log(`Posted ✓ ${r.permalink ?? 'media ' + r.media_id}`)
+    if (log[id] && !flags.has('--again')) {
+      if (cmd !== 'scheduled') throw new Error(`${id} was already posted on ${log[id].at} (${log[id].permalink ?? log[id].media_id}). Use --again to post it again.`)
+      console.log(`${id} already on Instagram (${log[id].at.slice(0, 10)})`)
+    } else {
+      if (item.note && !flags.has('--anyway')) throw new Error(`${id} ${item.note}. Use --anyway to post it without the sticker.`)
+      needToken()
+      const ig = await account(cfg)
+      console.log(`Posting ${id} (${item.type}) to ${ig.username ? '@' + ig.username : ig.id}…`)
+      const r = await publishItem(cfg, ig, item, caption)
+      log[id] = { ...r, at: new Date().toISOString() }
+      fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
+      console.log(`Posted ✓ ${r.permalink ?? 'media ' + r.media_id}`)
+    }
+    // Everything also goes to the Facebook Page (skip with --no-facebook or FACEBOOK=0).
+    if (cfg.facebook && !flags.has('--no-facebook') && !log['fb:' + id]) {
+      try {
+        const f = await fbPublish(cfg, item, caption)
+        log['fb:' + id] = { ...f, at: new Date().toISOString() }
+        fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
+        console.log(`Facebook ✓ ${f.permalink ?? f.fb_id}`)
+      } catch (e) { ok = false; console.log(`✗ Facebook failed (Instagram post is fine): ${e.message}`) }
+    }
     // Every reel that goes to Instagram also goes to YouTube Shorts (skip with --no-youtube).
     if (item.type === 'reel' && !flags.has('--no-youtube') && !log['yt:' + id]) {
       try {
@@ -303,8 +413,56 @@ async function main() {
         log['yt:' + id] = { ...y, at: new Date().toISOString() }
         fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
         console.log(`YouTube ✓ ${y.url} (${y.privacy})`)
-      } catch (e) { console.log(`✗ YouTube upload failed (Instagram post is fine): ${e.message} – retry with: publish.mjs youtube ${id}`) }
+      } catch (e) { ok = false; console.log(`✗ YouTube upload failed (Instagram post is fine): ${e.message} – retry with: publish.mjs youtube ${id}`) }
     }
+    return ok
+  }
+
+  if (cmd === 'post') { await postOne(id); return }
+
+  // 9:16 story versions of feed posts (blurred backdrop, post centred) → docs/social/stories/shared/<id>.jpg
+  if (cmd === 'make-stories') {
+    fs.mkdirSync(path.join(SOCIAL, 'stories/shared'), { recursive: true })
+    for (const [k, it] of Object.entries(ITEMS)) {
+      if (!it.from || (id && k !== id && !k.startsWith(`${id}-story`))) continue
+      const out = path.join(SOCIAL, it.file)
+      if (fs.existsSync(out) && !flags.has('--again')) continue
+      if (!fs.existsSync(path.join(SOCIAL, it.from))) continue   // post images already deleted after posting
+      execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', path.join(SOCIAL, it.from), '-filter_complex',
+        '[0]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,boxblur=40:4,eq=brightness=-0.12[bg];[0]scale=960:-1[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2',
+        '-frames:v', '1', '-q:v', '2', out])
+      console.log(`${k} ← ${it.from}`)
+    }
+    return
+  }
+
+  // Upload the images for every scheduled day from today on (or one day), so the Action can post without Cloudflare access.
+  if (cmd === 'stage') {
+    const days = Object.entries(readJson(SCHEDULE).days ?? {}).filter(([d]) => (id ? d === id : d >= istToday()))
+    for (const [d, ids] of days) for (const k of ids) {
+      const it = ITEMS[k]
+      if (!it) throw new Error(`${d}: unknown item ${k}`)
+      const imgs = [...(it.files ?? [it.file]).filter((f) => !f.endsWith('.mp4')), ...(it.cover ? [it.cover] : [])]
+      for (const f of imgs) { const u = hostImage(cfg, path.join(SOCIAL, f)); if (!cfg.r2Local) await checkPublic(u); console.log(`${d} ${k.padEnd(13)} ${f} → ${u}`) }
+    }
+    return
+  }
+
+  // Post today's (or a given day's) items from schedule.json. --wait: hold until the scheduled time (IST) first.
+  if (cmd === 'scheduled') {
+    const sch = readJson(SCHEDULE), day = id || istToday(), ids = sch.days?.[day]
+    if (!ids?.length) { console.log(`Nothing scheduled for ${day}.`); return }
+    if (flags.has('--wait') && !flags.has('--dry-run')) {
+      const [h, m] = (sch.time ?? '19:00').split(':').map(Number)
+      const at = Date.parse(`${day}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+05:30`), wait = at - Date.now()
+      if (wait > 0 && wait < 3 * 3600_000) { console.log(`Waiting ${Math.round(wait / 60000)} min until ${sch.time ?? '19:00'} IST…`); await sleep(wait) }
+    }
+    console.log(`${day}: ${ids.join(', ')}`)
+    let failed = 0
+    for (const k of ids) {
+      try { if (!(await postOne(k))) failed++ } catch (e) { failed++; console.log(`✗ ${k}: ${e.message}`) }
+    }
+    if (failed) { console.log(`${failed} item(s) failed`); process.exitCode = 1 }
     return
   }
   if (cmd === 'youtube-login') return youtubeLogin()
@@ -342,7 +500,7 @@ ${caption}`); return }
     console.log(`Uploaded ✓ ${r.url} (${r.privacy})${r.privacy === 'private' ? ' – YouTube keeps uploads private until the API audit; set it Public in YouTube Studio.' : ''}`)
     return
   }
-  console.log('Usage: publish.mjs whoami | list | limit | post <id> [--dry-run] [--again] [--anyway] | youtube-login | youtube-whoami | youtube <reel-id> [--dry-run] [--again]')
+  console.log('Usage: publish.mjs whoami | list | limit | post <id> [--dry-run] [--again] [--anyway] | stage [YYYY-MM-DD] | scheduled [YYYY-MM-DD] [--wait] [--dry-run] | youtube-login | youtube-whoami | youtube <reel-id> [--dry-run] [--again]')
 }
 
 main().catch((e) => { console.error('✗ ' + e.message); process.exit(1) })

@@ -1,0 +1,78 @@
+# Posts the day's social content at 7 pm IST from docs/social/schedule.json:
+# a reel (Instagram + Facebook + YouTube Shorts), the reel as a story, a feed post, the post as a story, and a story set.
+# Images are uploaded ahead of time (`node scripts/social/publish.mjs stage`, listed in docs/social/hosted.json),
+# so this job needs no Cloudflare access. What got posted is committed back to docs/social/published.json.
+#
+# Repository secrets: META_TOKEN (Facebook Login token with instagram_content_publish + pages_manage_posts),
+# YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN; optional FB_PAGE_ID + FB_PAGE_TOKEN.
+name: Social – daily 7 pm posts
+
+on:
+  schedule:
+    - cron: '5 13 * * *'   # 18:35 IST – GitHub can start scheduled jobs late, so start early and wait until 19:00
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Day to post (YYYY-MM-DD, from schedule.json). Empty = today (IST)'
+        required: false
+      dry_run:
+        description: 'Only show what would be posted'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: social-posting
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Credentials
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: |
+          umask 077
+          mkdir -p ~/.khatakhat
+          {
+            echo "META_TOKEN=$META_TOKEN"
+            echo "PUBLIC_BASE=https://nukkadsale.in"
+            if [ -n "$FB_PAGE_ID" ]; then echo "FB_PAGE_ID=$FB_PAGE_ID"; fi
+            if [ -n "$FB_PAGE_TOKEN" ]; then echo "FB_PAGE_TOKEN=$FB_PAGE_TOKEN"; fi
+          } > ~/.khatakhat/meta.env
+          printf 'YT_CLIENT_ID=%s\nYT_CLIENT_SECRET=%s\nYT_REFRESH_TOKEN=%s\n' "$YT_CLIENT_ID" "$YT_CLIENT_SECRET" "$YT_REFRESH_TOKEN" > ~/.khatakhat/youtube.env
+
+      - name: Post
+        env:
+          SOCIAL_NO_UPLOAD: '1'
+        run: >
+          node scripts/social/publish.mjs scheduled ${{ inputs.date }}
+          ${{ github.event_name == 'schedule' && '--wait' || '' }}
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      - name: Save what was posted
+        if: always()
+        run: |
+          git config user.name "nukkadsale-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/social/published.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Social: posted $(TZ=Asia/Kolkata date +%F)"
+            git pull --rebase
+            git push
+          fi
