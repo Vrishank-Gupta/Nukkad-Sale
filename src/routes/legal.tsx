@@ -57,6 +57,7 @@ legal.get('/privacy', (c) => {
       <h2>Data we handle</h2>
       <p><b>Sellers:</b> name, shop name, mobile number, UPI IDs, payment-gateway keys (stored encrypted), a login PIN (stored only as a one-way hash), sales, orders, khata entries and settings.</p>
       <p><b>Buyers:</b> name, WhatsApp number, delivery address and pincode, what you ordered and paid, any payment screenshot you send, and the messages you send to the NukkadSale WhatsApp ordering number.</p>
+      <p><b>Website visitors:</b> which of our pages you open, the buttons and links you tap, how long a page is open and how far you scroll, the site that sent you there, your device type (phone or computer) and approximate city from your network. This is anonymous – we use a random id kept in your browser, no cookies and no third-party analytics – it is only used to improve NukkadSale and is deleted after 180 days. If your browser sends “Do Not Track”, nothing is recorded.</p>
       <p><b>Technical:</b> a login cookie for sellers and admins, a language cookie, and details saved in your own browser to fill checkout faster next time (you can clear them anytime). We keep a one-way hash of the network address of website orders to stop one device from holding too much stock; we do not keep the address itself.</p>
 
       <h2>Why we use it</h2>

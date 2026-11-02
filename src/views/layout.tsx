@@ -2,6 +2,7 @@ import type { Child, FC } from 'hono/jsx'
 import { raw } from 'hono/html'
 import type { OrderStatus, ShipStatus } from '../env'
 import type { Dict } from '../i18n'
+import { TRACK_JS } from '../lib/analytics'
 
 // One small inline stylesheet: no CSS framework, no web fonts, nothing extra to download on 3G.
 const CSS = `
@@ -344,6 +345,7 @@ export const Layout: FC<LayoutProps> = (p) => (
       {p.nav && <BottomNav t={p.t} on={p.nav} badge={p.badge} />}
       <script>{raw(JS)}</script>
       {p.scripts && <script>{raw(p.scripts)}</script>}
+      {!p.nav && <script>{raw(TRACK_JS)}</script>}
     </body>
   </html>
 )

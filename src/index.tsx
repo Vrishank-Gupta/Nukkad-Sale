@@ -14,6 +14,7 @@ import { guide } from './routes/guide'
 import { app as sellerApp } from './routes/seller'
 import { hooks } from './routes/webhooks'
 import { ICONS, SCREENSHOTS } from './icons'
+import { cleanEvents, collect } from './lib/analytics'
 import { Layout } from './views/layout'
 
 const app = new Hono<AppEnv>()
@@ -37,6 +38,8 @@ app.use('*', async (c, next) => {
 })
 // Webhooks are server-to-server and authenticated by signature, so they skip the origin check.
 app.route('/webhooks', hooks)
+// Analytics beacons (sendBeacon can't send an Origin check-friendly request on every browser).
+app.post('/e', (c) => collect(c))
 app.use('*', sameOrigin)
 
 // Marketing site, the "Get started" form and its thank-you page.
@@ -172,6 +175,7 @@ export default {
         billingCron(env).catch((e) => console.error('billing', e)),
         env.DB.prepare(`DELETE FROM sessions WHERE expires_at < ?`).bind(Date.now()).run(),
         env.DB.prepare(`DELETE FROM webhook_events WHERE received_at < ?`).bind(Date.now() - 30 * 86_400_000).run(),
+        cleanEvents(env.DB).catch(() => {}),
       ]),
     )
   },

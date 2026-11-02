@@ -11,6 +11,7 @@ import { notifyOwner } from '../lib/mail'
 import { displayPhone, normalizePhone, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
 import { ICONS } from '../views/layout'
+import { TRACK_JS } from '../lib/analytics'
 
 // Line icons (same set as the app) – the site uses no emoji as icons.
 const svgIcon = (n: string, s = 24) => raw(`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${(ICONS as Record<string, string>)[n] ?? ''}</svg>`)
@@ -330,6 +331,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
             <nav>{p.k.policies.map(([href, l]) => <a href={href}>{l}</a>)}<a href="/login">{p.k.login}</a></nav>
           </div>
         </footer>
+        <script>{raw(TRACK_JS)}</script>
       </body>
     </html>
   )
@@ -445,7 +447,7 @@ site.get('/', async (c) => {
             <h2>{k.formH}</h2>
             <p class="lead">{k.formP}</p>
           </div>
-          <form class="card" method="post" action="/get-started">
+          <form class="card" id="getstarted" method="post" action="/get-started">
             {err && <div class="err">{err}</div>}
             <div class="fields">
               <div><label for="name">{k.f.name}</label><input id="name" name="name" autocomplete="name" required maxlength={60} /></div>

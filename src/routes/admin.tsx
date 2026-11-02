@@ -162,7 +162,7 @@ table.data a.rowlink{color:var(--ink);font-weight:600;text-decoration:none}
 `
 
 function page(c: Context<AppEnv>, on: string, title: string, body: Child) {
-  const tabs: [string, string, IconName][] = [['/admin', 'Dashboard', 'home'], ['/admin/leads', 'Requests', 'edit'], ['/admin/sellers', 'Sellers', 'users'], ['/admin/billing', 'Billing', 'receipt'], ['/admin/privacy', 'Privacy', 'lock'], ['/admin/settings', 'Settings', 'gear']]
+  const tabs: [string, string, IconName][] = [['/admin', 'Dashboard', 'home'], ['/admin/leads', 'Requests', 'edit'], ['/admin/sellers', 'Sellers', 'users'], ['/admin/analytics', 'Analytics', 'search'], ['/admin/billing', 'Billing', 'receipt'], ['/admin/privacy', 'Privacy', 'lock'], ['/admin/settings', 'Settings', 'gear']]
   const ok = c.req.query('ok')
   return c.html('<!doctype html>' + (
     <html lang="en">
@@ -905,6 +905,104 @@ admin.post('/privacy/:id/reject', async (c) => {
 })
 
 // ---------- Billing (all invoices) ----------
+
+// ---------- Traffic analytics (first-party, see lib/analytics.ts) ----------
+admin.get('/analytics', async (c) => {
+  const db = c.env.DB
+  const days = [7, 30, 90].includes(Number(c.req.query('d'))) ? Number(c.req.query('d')) : 30
+  const area = c.req.query('area') === 'shop' ? 'shop' : 'site'
+  const since = Date.now() - days * 86_400_000
+  const q = <T,>(sql: string, ...b: unknown[]) => db.prepare(sql).bind(...b).all<T>().then((r) => r.results)
+  const one = <T,>(sql: string, ...b: unknown[]) => db.prepare(sql).bind(...b).first<T>()
+  const W = `at >= ?1 AND area = ?2`
+  const [tot, live, perDay, pages, sources, clicks, devices, places, funnel, leads, form, sess] = await Promise.all([
+    one<{ visitors: number; sessions: number; views: number }>(`SELECT COUNT(DISTINCT vid) visitors, COUNT(DISTINCT sid) sessions, SUM(type = 'view') views FROM events WHERE ${W}`, since, area),
+    one<{ n: number }>(`SELECT COUNT(DISTINCT vid) n FROM events WHERE at >= ?1 AND area = ?2`, Date.now() - 5 * 60_000, area),
+    q<{ d: string; v: number }>(`SELECT strftime('%Y-%m-%d', at / 1000 + 19800, 'unixepoch') d, COUNT(DISTINCT vid) v FROM events WHERE ${W} AND type = 'view' GROUP BY d`, since, area),
+    q<{ path: string; views: number; visitors: number; ms: number; scroll: number }>(
+      `SELECT p.path, p.views, p.visitors, COALESCE(l.ms, 0) ms, COALESCE(l.scroll, 0) scroll FROM
+         (SELECT path, COUNT(*) views, COUNT(DISTINCT vid) visitors FROM events WHERE ${W} AND type = 'view' GROUP BY path) p LEFT JOIN
+         (SELECT path, AVG(ms) ms, AVG(scroll) scroll FROM (SELECT path, sid, MAX(ms) ms, MAX(scroll) scroll FROM events WHERE ${W} AND type = 'leave' GROUP BY path, sid) GROUP BY path) l
+       ON l.path = p.path ORDER BY p.views DESC LIMIT 15`, since, area),
+    // Where each session came from (its first page view), and how many of those sessions sent the form.
+    q<{ src: string; sessions: number; submits: number }>(
+      `SELECT src, COUNT(*) sessions, SUM(sub) submits FROM (
+         SELECT f.sid, CASE WHEN f.utm_source <> '' THEN f.utm_source WHEN f.ref <> '' THEN f.ref ELSE 'Direct / WhatsApp' END src,
+                EXISTS(SELECT 1 FROM events x WHERE x.sid = f.sid AND x.type = 'form_submit' AND x.label = 'getstarted') sub
+         FROM events f WHERE f.id IN (SELECT MIN(id) FROM events WHERE ${W} AND type = 'view' GROUP BY sid))
+       GROUP BY src ORDER BY sessions DESC LIMIT 12`, since, area),
+    q<{ label: string; href: string; n: number }>(`SELECT label, href, COUNT(*) n FROM events WHERE ${W} AND type = 'click' AND label <> '' GROUP BY label, href ORDER BY n DESC LIMIT 15`, since, area),
+    q<{ device: string; n: number }>(`SELECT device, COUNT(DISTINCT vid) n FROM events WHERE ${W} GROUP BY device ORDER BY n DESC`, since, area),
+    q<{ place: string; n: number }>(`SELECT CASE WHEN city <> '' THEN city || ', ' || country ELSE country END place, COUNT(DISTINCT vid) n FROM events WHERE ${W} AND country <> '' GROUP BY place ORDER BY n DESC LIMIT 10`, since, area),
+    one<{ home: number; deep: number; cta: number; start: number; sent: number }>(
+      `SELECT COUNT(DISTINCT CASE WHEN type = 'view' AND path = '/' THEN sid END) home,
+              COUNT(DISTINCT CASE WHEN type = 'leave' AND path = '/' AND scroll >= 50 THEN sid END) deep,
+              COUNT(DISTINCT CASE WHEN type = 'click' AND (href LIKE '%get-started%' OR label LIKE 'Get started%' OR label LIKE 'Start%') THEN sid END) cta,
+              COUNT(DISTINCT CASE WHEN type = 'form_start' AND label = 'getstarted' THEN sid END) start,
+              COUNT(DISTINCT CASE WHEN type = 'form_submit' AND label = 'getstarted' THEN sid END) sent
+       FROM events WHERE at >= ?1 AND area = 'site'`, since),
+    one<{ n: number }>(`SELECT COUNT(*) n FROM leads WHERE created_at >= ?`, since),
+    one<{ n: number }>(`SELECT COUNT(DISTINCT sid) n FROM events WHERE ${W} AND type = 'form_start'`, since, area),
+    one<{ bounced: number; total: number; avg: number }>(
+      `SELECT SUM(v = 1 AND c = 0) bounced, COUNT(*) total, AVG(ms) avg FROM (SELECT sid, SUM(type = 'view') v, SUM(type = 'click') c, SUM(CASE WHEN type = 'leave' THEN ms ELSE 0 END) ms FROM events WHERE ${W} GROUP BY sid)`, since, area),
+  ])
+  const dayKeys = Array.from({ length: days }, (_, i) => istDay(Date.now() - (days - 1 - i) * 86_400_000))
+  const byDay = new Map(perDay.map((r) => [r.d, r.v]))
+  const visitors = tot?.visitors ?? 0
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '–')
+  const dur = (ms: number) => { const s = Math.round(ms / 1000); return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s` }
+  // Sale pages in the shop view: show the product name instead of /d/<id>.
+  const ids = pages.map((p) => p.path.match(/^\/[dw]\/([a-z0-9]+)/)?.[1]).filter(Boolean) as string[]
+  const titles = ids.length ? new Map((await q<{ id: string; title: string }>(`SELECT id, title FROM drops WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids)).map((r) => [r.id, r.title])) : new Map()
+  const pageName = (p: string) => { const id = p.match(/^\/[dw]\/([a-z0-9]+)/)?.[1]; return id && titles.get(id) ? `${titles.get(id)} (${p})` : p }
+  const bar = (n: number, max: number) => <span style={`display:inline-block;height:8px;border-radius:4px;background:var(--brand);opacity:.75;width:${Math.max(2, Math.round((n / Math.max(1, max)) * 120))}px`} />
+  const steps: [string, number][] = funnel ? [['Visited the home page', funnel.home], ['Scrolled half way', funnel.deep], ['Tapped Get started', funnel.cta], ['Started the form', funnel.start], ['Sent the form', funnel.sent]] : []
+  const tab = (d: number, a: string, label: string) => <a class={`btn sm${d === days && a === area ? ' primary' : ''}`} href={`/admin/analytics?d=${d}&area=${a}`}>{label}</a>
+
+  return page(c, '/admin/analytics', 'Analytics', (
+    <>
+      <h1>Analytics</h1>
+      <p class="sub">{area === 'site' ? 'Website traffic – home page, forms, legal pages, login' : 'Shop traffic – sale pages, storefronts and order pages'} · last {days} days · no cookies, nothing sent to third parties</p>
+      <div class="toolbar">
+        {tab(days, 'site', 'Website')}{tab(days, 'shop', 'Shops')}<span style="width:16px" />
+        {[7, 30, 90].map((d) => tab(d, area, `${d} days`))}
+        <span class="muted" style="margin-left:auto"><span class="dotx" style="background:var(--ok)" />{live?.n ?? 0} on the {area === 'site' ? 'site' : 'shops'} now</span>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><small class="muted">Visitors</small><b>{visitors}</b></div>
+        <div class="kpi"><small class="muted">Visits (sessions)</small><b>{tot?.sessions ?? 0}</b></div>
+        <div class="kpi"><small class="muted">Page views</small><b>{tot?.views ?? 0}</b></div>
+        <div class="kpi"><small class="muted">Avg time per visit</small><b>{dur(sess?.avg ?? 0)}</b></div>
+        <div class="kpi"><small class="muted">Bounce rate</small><b>{pct(sess?.bounced ?? 0, sess?.total ?? 0)}</b></div>
+        <div class="kpi"><small class="muted">Started a form</small><b>{form?.n ?? 0}</b></div>
+        {area === 'site' && <a class="kpi ok" href="/admin/leads"><small class="muted">Get-started requests</small><b>{leads?.n ?? 0}</b></a>}
+        {area === 'site' && <div class="kpi"><small class="muted">Visitor → request</small><b>{pct(leads?.n ?? 0, visitors)}</b></div>}
+      </div>
+      <div class="panel"><h2>Visitors per day</h2><Bars values={dayKeys.map((d) => byDay.get(d) ?? 0)} days={dayKeys} fmt={(n) => `${n} visitors`} /></div>
+      <div class="cols">
+        <div>
+          <div class="panel"><h2>Pages</h2>
+            <table class="data"><thead><tr><th>Page</th><th class="r">Views</th><th class="r">Visitors</th><th class="r">Avg time</th><th class="r">Scrolled</th></tr></thead>
+              <tbody>{pages.length ? pages.map((p) => <tr><td style="white-space:normal">{pageName(p.path)}</td><td class="r">{p.views}</td><td class="r">{p.visitors}</td><td class="r">{dur(p.ms)}</td><td class="r">{Math.round(p.scroll)}%</td></tr>) : <tr><td colspan={5} class="muted">No visits yet.</td></tr>}</tbody></table></div>
+          <div class="panel"><h2>Buttons and links clicked</h2>
+            <table class="data"><thead><tr><th>Button / link</th><th>Goes to</th><th class="r">Clicks</th></tr></thead>
+              <tbody>{clicks.length ? clicks.map((k) => <tr><td style="white-space:normal">{k.label}</td><td class="muted" style="white-space:normal;max-width:260px;overflow:hidden;text-overflow:ellipsis">{k.href}</td><td class="r">{k.n}</td></tr>) : <tr><td colspan={3} class="muted">No clicks yet.</td></tr>}</tbody></table></div>
+        </div>
+        <div>
+          {area === 'site' && <div class="panel"><h2>Funnel</h2>
+            {steps.map(([label, n], i) => <div class="row between" style="padding:7px 0;border-top:1px solid var(--line)"><span>{i + 1}. {label}</span><span class="row" style="gap:10px">{bar(n, steps[0][1])}<b style="min-width:40px;text-align:right">{n}</b><small class="muted" style="min-width:38px;text-align:right">{i ? pct(n, steps[0][1]) : ''}</small></span></div>)}
+          </div>}
+          <div class="panel"><h2>Where visitors come from</h2>
+            <table class="data"><thead><tr><th>Source</th><th class="r">Visits</th>{area === 'site' && <th class="r">Requests</th>}</tr></thead>
+              <tbody>{sources.length ? sources.map((r) => <tr><td>{r.src}</td><td class="r">{r.sessions}</td>{area === 'site' && <td class="r">{r.submits}</td>}</tr>) : <tr><td colspan={3} class="muted">No visits yet.</td></tr>}</tbody></table>
+            <small class="muted">Add <code>?utm_source=instagram</code> (or youtube, ads…) to links you post to see them here. WhatsApp and apps usually show as Direct.</small></div>
+          <div class="panel"><h2>Devices</h2>{devices.map((d) => <div class="row between" style="padding:5px 0"><span>{d.device === 'mobile' ? 'Phone' : 'Computer'}</span><span class="row" style="gap:10px">{bar(d.n, visitors)}<b>{pct(d.n, visitors)}</b></span></div>)}</div>
+          <div class="panel"><h2>Places</h2>{places.length ? places.map((p) => <div class="row between" style="padding:5px 0"><span>{p.place}</span><b>{p.n}</b></div>) : <p class="muted">Shown once visits come in through Cloudflare.</p>}</div>
+        </div>
+      </div>
+    </>
+  ))
+})
 
 admin.get('/billing', async (c) => {
   const f = c.req.query('f') ?? 'open'
