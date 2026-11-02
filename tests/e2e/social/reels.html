@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NukkadSale reels</title>
+<!--
+  Vertical reels (9:16). reels.html#1 … #10 picks the reel (10 is the ~30 s promo). Every animation is a CSS animation on one
+  clock; render.mjs pauses them and seeks frame by frame. Phone screens are real app screenshots;
+  chat screens are re-created from the bot's real messages (labelled in the image itself).
+-->
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:720px;height:1280px;overflow:hidden;font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;background:#14120f;color:#fff}
+.scene{position:absolute;inset:0;opacity:0;overflow:hidden}
+@keyframes vis{from,to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:translateY(40px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(120px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes out{from{opacity:1}to{opacity:0}}
+@keyframes slam{0%{opacity:0;transform:scale(2.4)}60%{opacity:1;transform:scale(.94)}100%{opacity:1;transform:scale(1)}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-10px) rotate(-3deg)}40%{transform:translateX(10px) rotate(3deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes strike{from{width:0}to{width:104%}}
+@keyframes tap{0%{opacity:0;transform:scale(.4)}25%{opacity:1}100%{opacity:0;transform:scale(2.2)}}
+@keyframes zoom{from{transform:scale(1)}to{transform:scale(var(--zs,1.6))}}
+@keyframes pan{from{transform:translateY(0)}to{transform:translateY(var(--py,-200px))}}
+@keyframes flyL{from{opacity:0;transform:translateX(-500px) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes flyR{from{opacity:0;transform:translateX(500px) rotate(8deg)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes flash{0%{opacity:.9}100%{opacity:0}}
+@keyframes bar{from{transform:rotate(var(--r,0deg)) scaleX(0)}to{transform:rotate(var(--r,0deg)) scaleX(1)}}
+@keyframes count{from{--n:0}to{--n:1}}
+/* hit: on screen from frame 0, then settles – used for every hook so the first frame is never empty */
+@keyframes hit{0%{opacity:1;transform:scale(1.22)}55%{opacity:1;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+@keyframes stamp{0%{opacity:0;transform:rotate(-14deg) scale(3)}60%{opacity:1;transform:rotate(-14deg) scale(.92)}100%{opacity:1;transform:rotate(-14deg) scale(1)}}
+[data-a]{opacity:0}
+
+.c{position:absolute;left:0;right:0;text-align:center;padding:0 40px}
+.h{font-size:84px;font-weight:900;line-height:1.02;letter-spacing:-1.5px;text-shadow:0 6px 30px rgba(0,0,0,.45)}
+.m{font-size:50px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.s{font-size:34px;font-weight:600;line-height:1.25;opacity:.92}
+.y{color:#ffd43b}.o{color:#ff8a3d}.g{color:#69db7c}
+.pill{display:inline-block;padding:12px 26px;border-radius:99px;font-weight:800;font-size:30px}
+.dark{background:radial-gradient(circle at 50% 30%,#2a2620,#0e0d0b)}
+.orange{background:linear-gradient(160deg,#f76707,#d9480f 60%,#a83a0c)}
+.cream{background:radial-gradient(circle at 20% 15%,#fff1e8,#faf7f2 55%,#f3e7d8);color:#1d1a16}
+.green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e)}
+.phone{position:absolute;left:50%;width:400px;height:866px;margin-left:-200px;border-radius:52px;background:#1d1a16;padding:12px;box-shadow:0 40px 90px rgba(0,0,0,.45)}
+.phone .scr{width:100%;height:100%;border-radius:42px;overflow:hidden;position:relative;background:#fff}
+.phone .scr img{width:100%;display:block;transform-origin:var(--ox,50%) var(--oy,50%)}
+.ripple{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;background:rgba(217,72,15,.35);border:4px solid rgba(217,72,15,.9)}
+.cap{position:absolute;left:40px;right:40px;text-align:center}
+.tag{display:inline-block;background:#1d1a16;color:#fff;font-weight:800;font-size:34px;padding:14px 26px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.tag.o{background:#d9480f;color:#fff}
+.note{position:absolute;bottom:22px;left:0;right:0;text-align:center;font-size:18px;opacity:.55}
+/* UPI credit notification cards */
+.notif{position:absolute;left:60px;right:60px;height:96px;background:#fff;color:#1d1a16;border-radius:22px;display:flex;align-items:center;gap:18px;padding:0 22px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.notif i{font-style:normal;width:56px;height:56px;border-radius:16px;background:#e6f4ea;display:flex;align-items:center;justify-content:center;font-size:32px;flex:none}
+.notif b{font-size:30px}.notif small{display:block;font-size:22px;color:#6b6258}
+.notif .amt{margin-left:auto;font-size:34px;font-weight:900;color:#2b8a3e}
+.notif .who{margin-left:auto;font-size:26px;font-weight:800;color:#d9480f;text-align:right}
+.bub{position:absolute;background:#fff;color:#1d1a16;font-size:40px;font-weight:800;padding:18px 28px;border-radius:30px 30px 30px 8px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.bub small{display:block;font-size:22px;color:#2b8a3e;font-weight:800}
+.logo{font-size:76px;font-weight:900;letter-spacing:-1px}
+.book{position:absolute;left:90px;right:90px;top:300px;height:640px;background:#fffbe9;border-radius:18px;color:#3b3226;padding:46px 40px 0 90px;box-shadow:0 30px 70px rgba(0,0,0,.5);background-image:repeating-linear-gradient(#fffbe9 0 62px,#c9d8ef 62px 64px);transform:rotate(-3deg)}
+.book:before{content:"";position:absolute;left:62px;top:0;bottom:0;width:3px;background:#e8a0a0}
+.book p{font-family:"Comic Sans MS","Noto Sans Devanagari",cursive;font-size:36px;line-height:64px;white-space:nowrap}
+.x{position:absolute;height:8px;background:#e03131;border-radius:4px;transform-origin:left}
+.post{position:absolute;left:150px;right:150px;top:260px;background:#fff;color:#1d1a16;border-radius:24px;padding:16px;font-size:26px;line-height:1.35;box-shadow:0 30px 70px rgba(0,0,0,.4)}
+.post small{display:block;color:#d9480f;font-weight:800;font-size:20px;margin-bottom:8px}
+.post img{width:100%;border-radius:14px;display:block;margin-bottom:12px}
+.badge{position:absolute;right:30px;top:30px;background:#e03131;color:#fff;font-weight:900;font-size:36px;padding:10px 24px;border-radius:99px;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.veil{position:absolute;inset:0;background:rgba(10,9,8,.82);z-index:4}
+.scene .h{position:absolute;z-index:6}
+.pain{position:absolute;left:50px;right:50px;display:flex;gap:22px;align-items:center;font-size:40px;font-weight:800;line-height:1.15}
+.pain i{font-style:normal;flex:none;width:74px;height:74px;border-radius:50%;background:#e03131;display:flex;align-items:center;justify-content:center;font-size:40px}
+.step{display:flex;gap:20px;align-items:center;font-size:40px;font-weight:800;text-align:left}
+.shot{position:absolute;left:130px;right:130px;top:330px;background:#fff;color:#1d1a16;border-radius:30px;padding:46px 34px 40px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.shot .ok{width:120px;height:120px;border-radius:50%;background:#2b8a3e;color:#fff;font-size:76px;line-height:120px;margin:0 auto 22px;font-weight:900}
+.shot b{display:block;font-size:76px;font-weight:900;letter-spacing:-2px}
+.shot small{display:block;font-size:26px;color:#6b6258;margin-top:10px;line-height:1.4}
+.fake{position:absolute;left:150px;top:520px;border:12px solid #e03131;color:#e03131;font-size:120px;font-weight:900;padding:4px 30px;border-radius:22px;letter-spacing:4px;background:rgba(255,255,255,.88);z-index:5}
+.me{position:absolute;right:50px;background:#d9fdd3;color:#1d1a16;font-size:38px;font-weight:700;padding:18px 26px;border-radius:30px 30px 8px 30px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.me small{display:block;font-size:22px;color:#6b6258;font-weight:700}
+.me u{display:block;text-decoration:none;text-align:right;font-size:22px;color:#53bdeb}
+.q{font-size:220px;font-weight:900;letter-spacing:-6px;line-height:1}
+.white{background:#fbfaf8;color:#14120f}
+.split{position:absolute;top:300px;bottom:150px;width:50%;padding:0 18px}
+.split.l{left:0;border-right:3px dashed #e6dfd2}.split.r{right:0}
+.split .hd{font-size:26px;font-weight:900;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:18px}
+.mini{background:#fff;border:2px solid #ece5da;border-radius:16px;padding:10px 12px;margin-bottom:10px;font-size:22px;font-weight:800;display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 16px rgba(0,0,0,.06)}
+.mini .mq{color:#d9480f}.mini .mp{color:#2b8a3e}
+.ctr{font-size:200px;font-weight:900;letter-spacing:-8px;line-height:1;color:#2b8a3e}
+.ul{text-decoration:underline;text-decoration-color:#d9480f;text-decoration-thickness:10px;text-underline-offset:10px}
+.step i{font-style:normal;flex:none;width:70px;height:70px;border-radius:50%;background:#d9480f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const EASE = 'cubic-bezier(.2,.9,.3,1.2)'
+const phone = (img, top, extra = '', o = {}) => `<div class="phone" style="top:${top}px;${o.style || ''}" ${o.a ? `data-a="${o.a}" data-t="${o.t ?? 0}" data-d="${o.d ?? .6}"` : ''}><div class="scr">
+  <img src="img/${img}.png" style="${o.img || ''}" ${o.zoom ? `data-a="zoom" data-t="${o.zoom[0]}" data-d="${o.zoom[1]}" data-e="ease-in-out"` : ''}>${extra}</div></div>`
+const tapAt = (x, y, t) => `<div class="ripple" style="left:${x}%;top:${y}%" data-a="tap" data-t="${t}" data-d=".8" data-e="ease-out"></div>`
+const SHOP = (w, c = 'currentColor') => `<svg class="shop" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
+const end = (line, sub = 'Link in bio · nukkadsale.in') => ({ d: 2.6, cls: 'orange', html: `
+  <div class="c" style="top:420px" data-a="slam" data-d=".6"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
+  <div class="c m" style="top:560px" data-a="pop" data-t=".35">${line}</div>
+  <div class="c" style="top:760px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f">${sub}</span></div>` })
+
+const DMS = [['Priya', 'Price?', 40, 120], ['Sana', 'M size hai??', 330, 210], ['Ritu', 'Kitne ka hai', 70, 330], ['Neha', 'Mera hold karo pls', 300, 430],
+  ['Kavya', 'L available?', 30, 540], ['Anjali', 'Payment kaise karu?', 270, 650], ['Pooja', 'COD hai?', 60, 760], ['Simran', 'Still available??', 300, 860],
+  ['Divya', 'Photo bhejo', 40, 970], ['Meghna', 'Hello??', 380, 1060], ['Riya', 'Mine!!', 380, 140], ['Tanvi', 'Same in blue?', 40, 1110],
+  ['Isha', 'Bhej diye ₹799 ✓', 330, 330], ['Nisha', 'Kab tak milega?', 50, 440], ['Aarti', 'Reply karo!!', 360, 760], ['Komal', 'Size chart?', 330, 980]]
+const PAINS = ['Typing “₹799, S M L” 50 times', 'Who asked first? 🤷‍♀️', 'Last piece promised to 3 people', 'Scrolling for payment screenshots']
+const REELS = {
+// Every reel: the hook is on screen at frame 0 ("hit"), a second beat lands by ~1.2 s, the product shows by ~3 s.
+// Only features that are live today: website order link, exact-amount UPI, stock hold, khata, Hindi.
+
+// 1 ── The paise trick: why ₹798.79?
+1: { title: 'paise', scenes: [
+  { d: 2.6, cls: 'dark', html: `
+    <div class="c s" style="top:330px" data-a="vis" data-d="2.6">Your buyer pays</div>
+    <div class="c" style="top:410px;font-size:122px;font-weight:900;letter-spacing:-4px;white-space:nowrap" data-a="hit" data-d=".5">₹798<span class="y">.79</span></div>
+    <div class="c h" style="top:640px" data-a="slam" data-t=".7" data-d=".45">for a ₹799<br>kurta. Why? 🤔</div>` },
+  { d: 3.0, cls: 'dark', html: `
+    <div class="c m" style="top:120px" data-a="pop">6 buyers.<br>Same price.</div>
+    ${[0,1,2,3,4,5].map(i => `<div class="notif" style="top:${330 + i * 112}px" data-a="${i % 2 ? 'flyR' : 'flyL'}" data-t="${.2 + i * .18}" data-d=".4"><i>₹</i><div><b>Received</b><small>UPI · just now</small></div><div class="amt">₹799.00</div></div>`).join('')}
+    <div class="c h" style="top:1020px" data-a="slam" data-t="1.6" data-d=".45">Who paid? 😵</div>` },
+  { d: 3.4, cls: 'green', html: `
+    <div class="c m" style="top:110px" data-a="pop">NukkadSale gives every order<br><span class="y">its own paise</span></div>
+    ${[['798.12','Priya'],['798.47','Sana'],['798.80','Kavya'],['798.33','Anjali'],['798.65','Ritu']].map(([a, n], i) => `<div class="notif" style="top:${350 + i * 118}px" data-a="pop" data-t="${.3 + i * .25}" data-d=".4"><i>₹</i><div><b>₹${a}</b><small>UPI · just now</small></div><div class="who">= ${n}'s<br>order ✓</div></div>`).join('')}` },
+  { d: 3.6, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Did that amount arrive?</span></div>
+    ${phone('orders-check', 160, tapAt(41, 47, 2.4), { a: 'rise', d: .6, style: '--ox:30%;--oy:40%', zoom: [.9, 1.4], img: '--zs:1.35' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="2.5"><span class="tag o">Tap “Yes, I got it” ✓</span></div>` },
+  { ...end('No screenshots.<br>No guessing.') },
+], ding: [11.4] },
+
+// 2 ── Your WhatsApp group is your shop (website order link – live today)
+2: { title: 'group-shop', scenes: [
+  { d: 2.4, cls: 'green', html: `
+    <div class="c s" style="top:300px" data-a="vis" data-d="2.4">Selling in WhatsApp groups?</div>
+    <div class="c h" style="top:380px;font-size:72px" data-a="hit" data-d=".5">Stop replying<br>“DM for price”</div>
+    <div class="c" style="top:700px;font-size:120px" data-a="pop" data-t=".8">👇</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Post once – with an order link</span></div>
+    ${phone('sale-live', 160, '', { a: 'rise', style: '--ox:50%;--oy:15%', zoom: [.7, 2.2], img: '--zs:1.3' })}` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Buyer taps, picks a size</span></div>
+    ${phone('buyer-sale', 160, tapAt(50, 88, 1.9), { a: 'pop', style: '--ox:50%;--oy:85%', zoom: [.6, 2], img: '--zs:1.2' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">No app. No login.</span></div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Pays you on UPI – exact amount</span></div>
+    ${phone('buyer-pay', 160, '', { a: 'pop', style: '--ox:50%;--oy:50%', zoom: [.6, 2.2], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">Piece kept for them for 10 min</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">You just pack &amp; send 📦</span></div>
+    ${phone('home', 160, '', { a: 'rise', style: '--ox:0%;--oy:30%', zoom: [.8, 2], img: '--zs:1.3' })}` },
+  { ...end('Your group is<br>now your shop.') },
+], ding: [9.8] },
+
+// 3 ── 1 piece left, 3 buyers
+3: { title: 'last-piece', scenes: [
+  { d: 2.6, cls: 'dark', html: `
+    <div class="c" style="top:150px" data-a="hit" data-d=".45"><span class="pill" style="background:#e03131;color:#fff;font-size:48px">1 piece left</span></div>
+    <div class="bub" style="left:60px;top:380px" data-a="pop" data-t=".2" data-d=".3"><small>Priya</small>Mine!! 🙋‍♀️</div>
+    <div class="bub" style="right:60px;top:560px;border-radius:30px 30px 8px 30px" data-a="pop" data-t=".45" data-d=".3"><small>Sana</small>I want it!</div>
+    <div class="bub" style="left:110px;top:740px" data-a="pop" data-t=".7" data-d=".3"><small>Kavya</small>Keep it for me 🙏</div>
+    <div class="c h" style="top:980px" data-a="slam" data-t="1.1" data-d=".45">Who gets it? 😬</div>` },
+  { d: 3.4, cls: 'cream', html: `
+    <div class="c m" style="top:70px;color:#1d1a16" data-a="pop">The first one<br>to <span class="o">order</span>.</div>
+    ${phone('buyer-sale', 270, '', { a: 'rise', t: .2, style: '--ox:50%;--oy:92%', zoom: [1.1, 2], img: '--zs:1.25' })}` },
+  { d: 3.2, cls: 'orange', html: `
+    <div class="c" style="top:260px;font-size:150px" data-a="slam" data-d=".45">🔒</div>
+    <div class="c h" style="top:460px" data-a="pop" data-t=".25">Held for them<br>while they pay</div>
+    <div class="c s" style="top:820px" data-a="pop" data-t=".9">No double-selling the last piece.<br>Didn’t pay in time? It goes back on sale by itself.</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">See who’s paying now</span></div>
+    ${phone('home', 160, '', { a: 'rise', style: '--ox:0%;--oy:72%', zoom: [.8, 2], img: '--zs:1.45' })}` },
+  { ...end('Flash sales,<br>without the fights.') },
+], ding: [6.2] },
+
+// 4 ── One photo → a sale
+4: { title: 'photo-to-sale', scenes: [
+  { d: 2.4, cls: 'dark', html: `
+    <div class="c" style="top:250px;font-size:160px" data-a="hit" data-d=".45">📸</div>
+    <div class="c h" style="top:470px" data-a="vis" data-d="2.4">Got a photo?</div>
+    <div class="c h y" style="top:600px" data-a="slam" data-t=".8" data-d=".45">You’ve got<br>a sale.</div>` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">1</span> · Add photos &amp; a name</span></div>
+    ${phone('newsale', 160, '', { a: 'rise', style: '--ox:50%;--oy:20%', zoom: [.8, 2], img: '--zs:1.25' })}` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">2</span> · Price &amp; sizes</span></div>
+    ${phone('newsale-sizes', 160, tapAt(78, 49, 1.5), { a: 'pop', style: '--ox:50%;--oy:55%', zoom: [.6, 2], img: '--zs:1.2' })}` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">3</span> · Share in your groups</span></div>
+    ${phone('sale-live', 160, '', { a: 'pop', style: '--ox:50%;--oy:15%', zoom: [.6, 2.2], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">Buyers order from the link</span></div>` },
+  { ...end('No website.<br>No app for buyers.') },
+], ding: [9.4] },
+
+// 5 ── Hindi: khata writes itself
+5: { title: 'khata-hindi', scenes: [
+  { d: 2.8, cls: 'dark', html: `
+    <div class="c h" style="top:110px" data-a="hit" data-d=".45">अभी भी कॉपी<br>में हिसाब? 📒</div>
+    <div class="book" data-a="vis" data-d="2.8"><p>कुर्ता – प्रिया – 799 ?</p><p>दुपट्टा – सना – 499 ✓</p><p>कुर्ता – काव्या – ??</p><p>कूरियर – 120</p><p>पेमेंट आया? 🤷‍♀️</p>
+      <div class="x" style="left:80px;top:170px;width:440px;--r:-14deg" data-a="bar" data-t="1.0" data-d=".3"></div>
+      <div class="x" style="left:80px;top:300px;width:440px;--r:14deg" data-a="bar" data-t="1.25" data-d=".3"></div></div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">हर सेल अपने आप खाते में</span></div>
+    ${phone('khata-hi', 160, '', { a: 'rise', style: '--ox:50%;--oy:30%', zoom: [.8, 2.2], img: '--zs:1.25' })}` },
+  { d: 3.4, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">UPI में वही रकम आई?</span></div>
+    ${phone('orders-check-hi', 160, tapAt(41, 44.5, 2.2), { a: 'pop', style: '--ox:30%;--oy:45%', zoom: [.6, 1.4], img: '--zs:1.35' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="2.3"><span class="tag o">एक टैप – “हाँ, पैसे आ गए” ✓</span></div>` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">आज की कमाई, एक नज़र में</span></div>
+    ${phone('home-hi', 160, '', { a: 'rise', style: '--ox:0%;--oy:18%', zoom: [.6, 2], img: '--zs:1.4' })}` },
+  { ...end('WhatsApp पर बेचिए,<br>हिसाब हम रखेंगे।', 'लिंक बायो में · nukkadsale.in') },
+], ding: [8.3] },
+
+// 6 ── The DM flood after every deal (resolved with the website order link – live today)
+6: { title: 'dm-flood', scenes: [
+  { d: 3.0, cls: 'green', html: `
+    <div class="c m" style="top:60px;z-index:7" data-a="vis" data-d="1.8">You post one deal…</div>
+    <div class="post" data-a="hit" data-d=".45"><small>~ Meera Boutique · admin</small><img src="img/kurta.jpg">
+      <b>New drop 🔥 Chanderi silk kurta</b><br>₹799 · Sizes S M L · Limited pieces</div>
+    ${DMS.map(([who, msg, x, y], i) => `<div class="bub" style="left:${x}px;top:${y}px;font-size:34px;${i % 2 ? 'border-radius:30px 30px 8px 30px' : ''}" data-a="pop" data-t="${.35 + i * .085}" data-d=".22"><small>${who}</small>${msg}</div>`).join('')}
+    ${[['12', .35, .4], ['47', .75, .4], ['86', 1.15, .4], ['99+', 1.55, 1.45]].map(([n, t, d]) => `<div class="badge" data-a="vis" data-t="${t}" data-d="${d}" data-f="none">${n} unread</div>`).join('')}
+    <div class="veil" data-a="fade" data-t="1.8" data-d=".2"></div>
+    <div class="c h" style="top:520px;font-size:96px" data-a="slam" data-t="1.85" data-d=".4">…and your<br><span class="y">phone explodes.</span></div>` },
+  { d: 3.2, cls: 'dark', html: `
+    <div class="c m" style="top:140px" data-a="pop">Sound familiar?</div>
+    ${PAINS.map((p, i) => `<div class="pain" style="top:${330 + i * 170}px" data-a="flyL" data-t="${.25 + i * .5}" data-d=".35"><i>✗</i><span>${p}</span></div>`).join('')}` },
+  { d: 1.9, cls: 'orange', html: `
+    <div class="c s" style="top:400px" data-a="fade">Meet</div>
+    <div class="c" style="top:460px" data-a="slam" data-t=".1" data-d=".5"><div class="logo" style="font-size:72px;white-space:nowrap"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
+    <div class="c m" style="top:620px" data-a="pop" data-t=".5">Your orders, sorted.</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Buyers tap your link &amp; pick a size</span></div>
+    ${phone('buyer-sale', 190, tapAt(50, 88, 1.8), { a: 'rise', style: '--ox:50%;--oy:85%', zoom: [.8, 1.8], img: '--zs:1.2' })}
+    <div class="cap" style="top:1100px" data-a="pop" data-t="1.0"><span class="tag o">No “price?” DMs</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Each order gets its own exact amount</span></div>
+    ${phone('buyer-pay', 190, '', { a: 'pop', style: '--ox:50%;--oy:50%', zoom: [.5, 2.2], img: '--zs:1.3' })}
+    <div class="cap" style="top:1100px" data-a="pop" data-t="1.1"><span class="tag o">Paid straight to your UPI</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Everything on one screen</span></div>
+    ${phone('home', 190, '', { a: 'rise', style: '--ox:0%;--oy:30%', zoom: [.6, 2.2], img: '--zs:1.4' })}
+    <div class="cap" style="top:1100px" data-a="pop" data-t="1.1"><span class="tag o">Who paid · what to pack</span></div>` },
+  { ...end('Post once.<br>Skip the DM chaos.') },
+], ding: [14.4], impact: [0, 8.1], pops: [...Array(16)].map((_, i) => .35 + i * .085) },
+
+// 7 ── NEW · The fake screenshot  (₹798.38 = Priya's real amount in img/orders-check.png – update it after a re-capture)
+7: { title: 'fake-screenshot', scenes: [
+  { d: 2.8, cls: 'dark', html: `
+    <div class="c h" style="top:90px;font-size:62px" data-a="hit" data-d=".45">This payment<br>screenshot is…</div>
+    <div class="shot" data-a="vis" data-d="2.8"><div class="ok">✓</div>Payment successful<b>₹799.00</b><small>Paid to Meera Boutique<br>UPI Ref 4182 7790 0613 · 10:42 pm</small></div>
+    <div class="fake" style="top:690px" data-a="stamp" data-t=".75" data-d=".4">FAKE</div>
+    <div class="c m y" style="top:1060px" data-a="pop" data-t="1.4">Would you have caught it?</div>` },
+  { d: 2.8, cls: 'dark', html: `
+    <div class="c h" style="top:300px" data-a="slam" data-d=".45">Screenshots<br>are easy<br>to fake.</div>
+    <div class="c m" style="top:740px" data-a="pop" data-t=".8">Shipped it anyway?<br><span class="o">Money never came.</span></div>` },
+  { d: 3.2, cls: 'green', html: `
+    <div class="c m" style="top:120px" data-a="pop">Don’t check the screenshot.<br><span class="y">Check your UPI app.</span></div>
+    <div class="notif" style="top:470px" data-a="pop" data-t=".6" data-d=".4"><i>₹</i><div><b>₹798.38</b><small>UPI · just now</small></div><div class="who">= Priya's<br>order ✓</div></div>
+    <div class="c s" style="top:640px" data-a="pop" data-t="1.2">Every order has its own exact amount.<br>If ₹798.38 arrived, Priya paid. If not, she didn’t.</div>` },
+  { d: 3.4, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Did ₹798.38 arrive?</span></div>
+    ${phone('orders-check', 160, tapAt(41, 82.5, 2.3), { a: 'rise', style: '--ox:30%;--oy:80%', zoom: [.8, 1.4], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="2.4"><span class="tag o">Yes? Tap once. Then ship. ✓</span></div>` },
+  { ...end('Trust the amount,<br>not the screenshot.') },
+], ding: [6.2, 11.1], impact: [0, .75] },
+
+// 8 ── NEW · Chasing “payment kar dena”
+8: { title: 'chasing-payments', scenes: [
+  { d: 2.8, cls: 'dark', html: `
+    <div class="c h" style="top:80px" data-a="hit" data-d=".45">Still chasing<br><span class="y">payments?</span></div>
+    <div class="me" style="top:420px" data-a="vis" data-d="2.8"><small>Mon</small>Payment kar dena please 🙏<u>✓✓ Seen</u></div>
+    <div class="me" style="top:610px" data-a="pop" data-t=".45" data-d=".3"><small>Tue</small>Hello? Kurta rakha hai aapke liye<u>✓✓ Seen</u></div>
+    <div class="me" style="top:800px" data-a="pop" data-t=".9" data-d=".3"><small>Thu</small>Payment?? 😩<u>✓✓ Seen</u></div>
+    <div class="c m o" style="top:1050px" data-a="slam" data-t="1.4" data-d=".4">…and the piece is stuck.</div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Buyer gets 10 minutes to pay</span></div>
+    ${phone('buyer-pay', 160, '', { a: 'rise', style: '--ox:50%;--oy:32%', zoom: [.6, 2], img: '--zs:1.5' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">The piece is held for them</span></div>` },
+  { d: 3.0, cls: 'orange', html: `
+    <div class="c" style="top:250px;font-size:150px" data-a="slam" data-d=".45">⏱</div>
+    <div class="c h" style="top:450px" data-a="pop" data-t=".25">Didn’t pay?</div>
+    <div class="c m" style="top:600px" data-a="pop" data-t=".7">It goes back on sale<br><span class="y">by itself.</span></div>
+    <div class="c s" style="top:840px" data-a="pop" data-t="1.2">Next buyer gets it. You don’t send a single reminder.</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">See who’s paying right now</span></div>
+    ${phone('home', 160, '', { a: 'rise', style: '--ox:0%;--oy:72%', zoom: [.6, 2], img: '--zs:1.45' })}` },
+  { ...end('No more<br>“payment kar dena 🙏”') },
+], ding: [], impact: [0, 6.0] },
+
+// 9 ── NEW · Month-end: kitna kamaya?
+9: { title: 'month-end', scenes: [
+  { d: 2.8, cls: 'dark', html: `
+    <div class="c s" style="top:200px" data-a="vis" data-d="2.8">Month end. Quick question:</div>
+    <div class="c q" style="top:300px;font-size:160px;white-space:nowrap" data-a="hit" data-d=".45">₹ ? ? ?</div>
+    <div class="c h" style="top:620px" data-a="slam" data-t=".6" data-d=".45">How much did you<br><span class="y">actually earn?</span></div>
+    <div class="c m o" style="top:960px" data-a="pop" data-t="1.4">Not sold. <u style="text-decoration-thickness:5px">Earned.</u></div>` },
+  { d: 3.4, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Every paid order lands in your khata</span></div>
+    ${phone('khata', 160, '', { a: 'rise', style: '--ox:50%;--oy:12%', zoom: [.6, 2], img: '--zs:1.4' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.4"><span class="tag o">Today · this month · all time</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Courier &amp; costs too</span></div>
+    ${phone('khata', 160, '', { a: 'pop', style: '--ox:50%;--oy:58%', zoom: [.5, 2], img: '--zs:1.45' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">“+ You got ₹” · “− You gave ₹”</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">One tap for your CA</span></div>
+    ${phone('khata', 160, tapAt(50, 95.5, 1.8), { a: 'pop', style: '--ox:50%;--oy:100%', zoom: [.5, 2], img: '--zs:1.35' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.4"><span class="tag o">Download as Excel</span></div>` },
+  { ...end('Your khata<br>writes itself.') },
+], ding: [3.0] },
+
+// 11 ── Big sellers: "50 payments. 0 taps." – white editorial look (differs from Reel 7, Post 10, Post 11)
+11: { title: 'big-sellers', scenes: [
+  { d: 3.0, cls: 'white', html: `
+    <div class="c h" style="top:150px;font-size:66px;color:#14120f;white-space:nowrap" data-a="hit" data-d=".45">50 payments.<br><span class="ul">0 taps.</span></div>
+    ${[['3', 0, .35], ['12', .35, .35], ['27', .7, .35], ['41', 1.05, .35], ['50', 1.4, 1.6]].map(([n, t, d]) => `<div class="c ctr" style="top:520px" data-a="vis" data-t="${t}" data-d="${d}" data-f="none">${n}</div>`).join('')}
+    <div class="c m" style="top:740px;color:#2b8a3e" data-a="vis" data-d="3">payments confirmed</div>
+    <div class="c s" style="top:900px;color:#6f675d" data-a="pop" data-t="1.5">When a big drop goes live,<br>NukkadSale can confirm every payment for you.</div>` },
+  { d: 4.0, cls: 'white', html: `
+    <div class="c m" style="top:110px;color:#14120f" data-a="pop">50 buyers pay at once.<br><span style="color:#d9480f">Which one is you?</span></div>
+    <div class="split l"><div class="hd" style="color:#c92a2a" data-a="pop" data-t=".3">By hand</div>
+      ${['798.12', '798.47', '798.80', '798.33', '798.65', '798.21', '798.90'].map((a, i) => `<div class="mini" data-a="flyL" data-t="${.5 + i * .3}" data-d=".3"><span>₹${a}</span><span class="mq">Yes?</span></div>`).join('')}</div>
+    <div class="split r"><div class="hd" style="color:#2b8a3e" data-a="pop" data-t=".3">Automatic</div>
+      ${[...Array(9)].map((_, i) => `<div class="mini" data-a="flyR" data-t="${.5 + i * .2}" data-d=".25"><span>Order #${['SY8', 'K2R', 'B6Q', 'N7D', 'P25', 'X4W', 'M9T', 'Q1L', 'C3V'][i]}</span><span class="mp">Paid ✓</span></div>`).join('')}</div>` },
+  { d: 3.4, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Turn on automatic payments</span></div>
+    ${phone('big-orders', 160, '', { a: 'rise', style: '--ox:85%;--oy:20%', zoom: [.8, 2], img: '--zs:1.5' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">Paid – nobody tapped anything</span></div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Into your own Razorpay account</span></div>
+    ${phone('big-home', 160, '', { a: 'pop', style: '--ox:20%;--oy:12%', zoom: [.6, 2], img: '--zs:1.5' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">UPI · card · net banking</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">You just pack &amp; send</span></div>
+    ${phone('big-orders', 160, tapAt(50, 33.5, 1.6), { a: 'pop', style: '--ox:50%;--oy:30%', zoom: [.5, 1.8], img: '--zs:1.3' })}` },
+  { d: 3.0, cls: 'white', html: `
+    <div class="c" style="top:330px;color:#d9480f" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
+    <div class="c m" style="top:480px;color:#14120f" data-a="pop" data-t=".35">Start on UPI.<br><span class="ul">Go automatic</span> when you’re busy.</div>
+    <div class="c s" style="top:700px;color:#6f675d" data-a="pop" data-t=".7">Razorpay charges its own fee.<br>Your money, your account.</div>
+    <div class="c" style="top:850px" data-a="pop" data-t="1"><span class="pill" style="background:#d9480f;color:#fff">Link in bio · nukkadsale.in</span></div>` },
+], ding: [1.4, 7.6, 10.4], impact: [0, 3.0] },
+// 10 ── NEW · Promo (≈30 s): the whole story for sellers, every claim live today
+10: { title: 'promo', scenes: [
+  { d: 2.8, cls: 'green', html: `
+    <div class="post" style="filter:blur(2px) brightness(.75)" data-a="vis" data-d="2.8"><small>~ Meera Boutique · admin</small><img src="img/kurta.jpg"><b>New drop 🔥</b><br>₹799 · S M L</div>
+    ${DMS.slice(0, 12).map(([who, msg, x, y], i) => `<div class="bub" style="left:${x}px;top:${y}px;font-size:32px;${i % 2 ? 'border-radius:30px 30px 8px 30px' : ''}" data-a="${i < 4 ? 'vis' : 'pop'}" data-t="${i < 4 ? 0 : .1 + i * .07}" data-d="${i < 4 ? 2.8 : .22}"><small>${who}</small>${msg}</div>`).join('')}
+    <div class="veil" style="background:rgba(10,9,8,.6)" data-a="vis" data-d="2.8"></div>
+    <div class="c h" style="top:430px;font-size:84px" data-a="hit" data-d=".45">Selling on<br>WhatsApp?</div>
+    <div class="c h y" style="top:670px;font-size:88px" data-a="slam" data-t="1.0" data-d=".4">Drowning<br>in DMs? 😵</div>` },
+  { d: 3.6, cls: 'dark', html: `
+    ${[['Orders lost in chats', '“Mine was first!” 😡'], ['Fake payment screenshots', 'Is the money really in?'], ['Same piece sold twice', 'Sorry · refund · repeat'], ['Hisaab in a notebook', 'Where did the money go?']].map(([a, b], i) => `<div class="pain" style="top:${180 + i * 230}px" data-a="flyL" data-t="${.1 + i * .7}" data-d=".35"><i>✗</i><span>${a}<br><small style="font-size:30px;font-weight:600;opacity:.75">${b}</small></span></div>`).join('')}` },
+  { d: 2.0, cls: 'orange', html: `
+    <div class="c" style="top:380px" data-a="slam" data-d=".45"><div class="logo" style="font-size:84px;white-space:nowrap"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
+    <div class="c m" style="top:560px" data-a="pop" data-t=".4">Sell on WhatsApp.<br>Get paid on UPI.<br>Never oversell.</div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">SELLER</span> · Post a sale in 1 minute</span></div>
+    ${phone('newsale', 160, '', { a: 'rise', style: '--ox:50%;--oy:20%', zoom: [.6, 1.8], img: '--zs:1.2' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">Photo · price · sizes · stock</span></div>` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Share it in your groups</span></div>
+    ${phone('sale-live', 160, '', { a: 'pop', style: '--ox:50%;--oy:15%', zoom: [.5, 2], img: '--zs:1.3' })}` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">BUYER</span> · Taps, picks a size</span></div>
+    ${phone('buyer-sale', 160, tapAt(50, 88, 1.7), { a: 'pop', style: '--ox:50%;--oy:85%', zoom: [.5, 1.8], img: '--zs:1.2' })}` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Pays the exact amount on UPI</span></div>
+    ${phone('buyer-pay', 160, '', { a: 'pop', style: '--ox:50%;--oy:50%', zoom: [.5, 2.2], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">Piece held for them · no oversell</span></div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag"><span class="o">SELLER</span> · Amount arrived? One tap.</span></div>
+    ${phone('orders-check', 160, tapAt(41, 47, 2.0), { a: 'pop', style: '--ox:30%;--oy:40%', zoom: [.5, 1.6], img: '--zs:1.3' })}` },
+  { d: 2.8, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Khata writes itself</span></div>
+    ${phone('khata', 160, '', { a: 'pop', style: '--ox:50%;--oy:20%', zoom: [.5, 2], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.1"><span class="tag o">हिंदी + English</span></div>` },
+  { d: 3.4, cls: 'orange', html: `
+    <div class="c" style="top:300px" data-a="slam" data-d=".45"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
+    <div class="c m" style="top:450px" data-a="pop" data-t=".3">For sellers in<br>WhatsApp groups</div>
+    <div class="c" style="top:700px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f;font-size:40px;padding:22px 40px">Get started · nukkadsale.in</span></div>
+    <div class="c s" style="top:860px" data-a="pop" data-t="1.1">Works in your phone’s browser. No app to install.</div>` },
+], ding: [22.2], impact: [0, 6.4] },
+}
+
+const id = Number(location.hash.slice(1) || 1), R = REELS[id]
+let t = 0, html = ''
+for (const sc of R.scenes) {
+  html += `<section class="scene ${sc.cls}" style="animation:vis ${sc.d}s linear ${t}s none" data-s="${t}">${sc.html}</section>`
+  sc.t = t; t += sc.d
+}
+document.getElementById('root').innerHTML = html
+for (const sec of document.querySelectorAll('.scene')) {
+  const s = Number(sec.dataset.s)
+  for (const el of sec.querySelectorAll('[data-a]')) {
+    const a = el.dataset.a, d = Number(el.dataset.d || .6), at = s + Number(el.dataset.t || 0)
+    el.style.animation = `${a} ${d}s ${el.dataset.e || EASE} ${at}s ${el.dataset.f || 'both'}`
+    el.style.opacity = a === 'zoom' || a === 'bar' ? 1 : ''
+  }
+}
+window.DURATION = t
+// cut times (for sound effects)
+window.CUTS = R.scenes.map((s) => s.t)
+window.CUES = { ding: R.ding, impact: R.impact, pops: R.pops }
+window.seek = (sec) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = sec * 1000 } }
+window.seek(0)
+</script>
+</body>
+</html>

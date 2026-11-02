@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NukkadSale story series</title>
+<!--
+  Story series for Instagram/Facebook highlights. 720×1280 → rendered at 1080×1920 by shoot-stories.mjs.
+  stories.html#<series>-<n>. Phone screens are real app screenshots (img/, from capture.mjs).
+  Safe zones: Instagram covers the top ~150 px (progress bars, profile) and the bottom ~190 px (reply bar),
+  so all text and phones sit between them.
+-->
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflow:hidden}
+.f{position:relative;width:720px;height:1280px;overflow:hidden}
+.orange{background:linear-gradient(160deg,#f76707,#d9480f 60%,#a83a0c);color:#fff}
+.cream{background:radial-gradient(circle at 20% 15%,#fff1e8,#faf7f2 55%,#f3e7d8);color:#1d1a16}
+.dark{background:radial-gradient(circle at 50% 30%,#2a2620,#0e0d0b);color:#fff}
+.green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e);color:#fff}
+.top{position:absolute;left:44px;right:44px;top:150px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:900;font-size:28px;letter-spacing:-.5px}
+.count{font-size:22px;font-weight:800;opacity:.6}
+.series{display:inline-block;font-size:20px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.18)}
+.cream .series{background:#fde3d3;color:#b83f0d}
+.h{font-weight:900;letter-spacing:-1.5px;line-height:1.04}
+.s{font-size:28px;font-weight:600;line-height:1.35;opacity:.9}
+.o{color:#d9480f}.y{color:#ffd43b}
+.txt{position:absolute;left:50px;right:50px}
+.phone{position:absolute;left:50%;width:360px;height:780px;margin-left:-180px;border-radius:48px;background:#1d1a16;padding:11px;box-shadow:0 40px 90px rgba(60,25,0,.35)}
+.phone .scr{width:100%;height:100%;border-radius:38px;overflow:hidden;background:#fff}
+.phone img{width:100%;display:block}
+.num{display:inline-flex;width:56px;height:56px;border-radius:50%;background:#d9480f;color:#fff;align-items:center;justify-content:center;font-size:30px;font-weight:900;margin-bottom:14px}
+.orange .num{background:#fff;color:#d9480f}
+.ic{width:120px;height:120px;border-radius:32px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;margin:0 auto 34px}
+.cream .ic{background:#fde3d3;color:#d9480f}
+.notif{height:84px;background:#fff;color:#1d1a16;border-radius:20px;display:flex;align-items:center;gap:16px;padding:0 22px;box-shadow:0 10px 26px rgba(0,0,0,.25);margin-bottom:14px}
+.notif i{font-style:normal;width:50px;height:50px;border-radius:14px;background:#e6f4ea;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#2b8a3e;flex:none}
+.notif b{font-size:28px}.notif .who{margin-left:auto;font-size:23px;font-weight:800;color:#d9480f}
+.qa{background:#fff;color:#1d1a16;border-radius:26px;padding:28px 30px;box-shadow:0 16px 40px rgba(80,40,10,.14)}
+.qa b{display:block;font-size:34px;line-height:1.15;margin-bottom:10px}
+.qa p{font-size:26px;line-height:1.4;color:#5c5248}
+.cta{display:inline-block;background:#fff;color:#d9480f;font-weight:900;font-size:34px;padding:22px 36px;border-radius:22px;box-shadow:0 18px 40px rgba(0,0,0,.2)}
+.sticker{position:absolute;left:120px;right:120px;top:930px;height:96px;border:4px dashed rgba(255,255,255,.55);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;opacity:.75;text-align:center}
+.shot{background:#fff;color:#1d1a16;border-radius:26px;padding:30px 24px 26px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.45);position:relative}
+.shot .ok{width:84px;height:84px;border-radius:50%;background:#2b8a3e;color:#fff;font-size:52px;line-height:84px;margin:0 auto 14px;font-weight:900}
+.shot b{display:block;font-size:56px;font-weight:900;letter-spacing:-2px}.shot small{display:block;font-size:20px;color:#6b6258;margin-top:6px}
+.fake{position:absolute;left:50%;top:150px;margin-left:-150px;width:300px;text-align:center;border:10px solid #e03131;color:#e03131;font-size:80px;font-weight:900;border-radius:18px;letter-spacing:4px;background:rgba(255,255,255,.92);transform:rotate(-14deg)}
+.list{display:grid;gap:18px}
+.list div{display:flex;gap:16px;align-items:center;font-size:30px;font-weight:700}
+.list svg{flex:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// Line icons – same drawings as the app (src/views/layout.tsx).
+const PATHS = {
+  shop: '<path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="currentColor" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/>',
+  chat: '<path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5A8.5 8.5 0 1 1 21 11.5z"/>',
+  wallet: '<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><circle cx="16" cy="14.5" r="1"/>',
+  book: '<path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h10"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  download: '<path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 19h14"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+}
+const I = (n, s = 60, c = 'currentColor') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${PATHS[n]}</svg>`
+const P = (img, top, w = 360, extra = '') => `<div class="phone" style="top:${top}px;width:${w}px;height:${w * 2.167}px;margin-left:-${w / 2}px;${extra}"><div class="scr"><img src="img/${img}.png"></div></div>`
+
+// A frame: theme, series label, counter, body. Counters tell people there's more – they tap through.
+const frame = (cls, label, i, n, body) => `<div class="f ${cls}"><div class="top"><span class="brand">${I('shop', 30)}NukkadSale</span><span class="count">${i}/${n}</span></div>${body}</div>`
+const cover = (cls, label, icon, title, sub, n) => frame(cls, label, 1, n, `
+  <div class="txt" style="top:330px;text-align:center"><div class="ic">${I(icon, 64)}</div><span class="series">${label}</span>
+    <div class="h" style="font-size:78px;margin-top:26px">${title}</div><div class="s" style="margin-top:22px">${sub}</div>
+    <div class="s" style="margin-top:60px;font-size:24px;opacity:.7">Tap to see how →</div></div>`)
+const step = (cls, label, i, n, k, title, sub, img) => frame(cls, label, i, n, `
+  <div class="txt" style="top:225px">${k ? `<span class="num">${k}</span>` : ''}<div class="h" style="font-size:52px">${title}</div><div class="s" style="margin-top:12px;font-size:25px">${sub}</div></div>
+  ${P(img, k ? 520 : 470, 300)}`)
+const end = (cls, label, i, n, title, sub) => frame(cls, label, i, n, `
+  <div class="txt" style="top:360px;text-align:center"><div class="h" style="font-size:68px">${title}</div><div class="s" style="margin-top:22px">${sub}</div>
+    <div style="margin-top:56px"><span class="cta">nukkadsale.in</span></div></div>
+  <div class="txt" style="top:1010px;text-align:center"><div class="s" style="font-size:24px;opacity:.8">Link in bio</div></div>`)
+
+const S = {}
+// ── Series 1 · How it works (highlight "How it works") – live features only
+const H = 'How it works', hn = 8
+S['how-1'] = cover('orange', H, 'shop', 'Your WhatsApp group,<br>now a shop.', 'How NukkadSale works –<br>start to paid in 4 steps.', hn)
+S['how-2'] = step('cream', H, 2, hn, 1, 'Post a sale<br>in a minute', 'Photos, price, sizes and how many pieces you have.', 'newsale')
+S['how-3'] = step('cream', H, 3, hn, 2, 'Share it in<br>your groups', 'One tap sends the photo and an order link to WhatsApp.', 'sale-live')
+S['how-4'] = step('cream', H, 4, hn, 3, 'Buyers tap the link<br>and pick a size', 'No app, no login – and no “price?” DMs for you.', 'buyer-sale')
+S['how-5'] = step('cream', H, 5, hn, 4, 'They pay you<br>the exact amount', 'Straight to your UPI. The piece is held for them while they pay.', 'buyer-pay')
+S['how-6'] = step('cream', H, 6, hn, '', 'Saw the amount?<br>Tap “Yes, I got it”', 'Every order has its own paise – so you know exactly who paid.', 'orders-check')
+S['how-7'] = step('cream', H, 7, hn, '', 'Pack, send –<br>khata writes itself', 'Who to pack for, what you earned today – on one screen.', 'home')
+S['how-8'] = end('orange', H, 8, hn, 'Want this for<br>your shop?', 'Fill the form – we set it up with you on WhatsApp.')
+
+// ── Series 2 · Payments (highlight "Payments")
+const Y = 'Payments', yn = 6
+S['pay-1'] = cover('dark', Y, 'wallet', 'Your money,<br>straight to you.', 'How buyers pay – and how you know<br>who paid. No screenshots.', yn)
+S['pay-2'] = frame('dark', Y, 2, yn, `<div class="txt" style="top:230px"><div class="h" style="font-size:54px">6 buyers.<br>Same price.<br><span class="y">Who paid?</span></div>
+  <div class="s" style="margin:18px 0 30px;font-size:26px">NukkadSale gives every order its own paise:</div>
+  ${[['798.12', 'Priya'], ['798.47', 'Sana'], ['798.80', 'Kavya'], ['798.33', 'Anjali']].map(([a, w]) => `<div class="notif"><i>₹</i><b>₹${a}</b><div class="who">= ${w}’s order</div></div>`).join('')}
+  <div class="s" style="margin-top:14px;font-size:24px;opacity:.8">Always a few paise below the price – never more.</div></div>`)
+S['pay-3'] = frame('dark', Y, 3, yn, `<div class="txt" style="top:230px;text-align:center"><div class="h" style="font-size:54px">Screenshots<br>can be faked.</div></div>
+  <div class="txt" style="top:470px;padding:0 120px"><div class="shot"><div class="ok">✓</div>Payment successful<b>₹799.00</b><small>Paid to Meera Boutique</small></div><div class="fake">FAKE</div></div>
+  <div class="txt" style="top:900px;text-align:center"><div class="s" style="font-size:28px">Don’t check the screenshot.<br><b class="y">Check your UPI app for the exact amount.</b></div></div>`)
+S['pay-4'] = step('cream', Y, 4, yn, '', 'Amount arrived?<br>One tap to confirm', 'The buyer’s page updates by itself – no back-and-forth.', 'orders-check')
+S['pay-5'] = frame('cream', Y, 5, yn, `<div class="txt" style="top:230px"><div class="h" style="font-size:54px">Two ways to<br>get paid. <span class="o">You choose.</span></div>
+  <div class="qa" style="margin-top:36px"><b>UPI, straight to you</b><p>Buyers pay your UPI ID. No gateway fee. You confirm with one tap. Best for small sellers.</p></div>
+  <div class="qa" style="margin-top:20px"><b>Automatic with Razorpay</b><p>Payments confirm themselves, into your own Razorpay account. Razorpay charges its own fee.</p></div></div>`)
+S['pay-6'] = end('orange', Y, 6, yn, 'No more<br>“screenshot bhejo”.', 'Trust the amount, not the screenshot.')
+
+// ── Series 3 · Khata (highlight "Khata")
+const K = 'Khata', kn = 5
+S['khata-1'] = cover('green', K, 'book', 'Hisaab that<br>writes itself.', 'No notebook. No “payment aaya?”<br>Every sale, already counted.', kn)
+S['khata-2'] = step('cream', K, 2, kn, '', 'Every paid order<br>lands here by itself', 'Today, this month and all time – at a glance.', 'khata')
+S['khata-3'] = frame('cream', K, 3, kn, `<div class="txt" style="top:240px"><div class="h" style="font-size:54px">Courier? Cash?<br><span class="o">One tap.</span></div>
+  <div class="s" style="margin-top:20px;font-size:26px">“+ You got ₹” and “− You gave ₹” for everything outside the app – so the total is the real total.</div></div>
+  ${P('khata', 560, 300)}`)
+S['khata-4'] = frame('cream', K, 4, kn, `<div class="txt" style="top:300px;text-align:center"><div class="ic">${I('download', 64)}</div><div class="h" style="font-size:56px">Month end?<br>Send it to your CA.</div>
+  <div class="s" style="margin-top:22px">Download your whole khata as Excel – one tap.</div></div>`)
+S['khata-5'] = end('green', K, 5, kn, 'Sell more.<br>Count less.', 'Your khata, in English and हिंदी.')
+
+// ── Series 4 · FAQ (highlight "FAQ")
+const Q = 'FAQ', qn = 6
+S['faq-1'] = cover('orange', Q, 'help', 'Questions<br>sellers ask us', 'Quick answers – tap through.', qn)
+const qa = (i, q, a, img) => frame('cream', Q, i, qn, `<div class="txt" style="top:230px"><div class="qa"><b>${q}</b><p>${a}</p></div></div>${img ? P(img, 560, 300) : ''}`)
+S['faq-2'] = qa(2, 'Do my buyers need an app?', 'No. They tap the link in your group and pay with any UPI app – GPay, PhonePe, Paytm.', 'buyer-sale')
+S['faq-3'] = qa(3, 'Where does the money go?', 'Straight to your own UPI ID. NukkadSale never holds your money.', 'buyer-pay')
+S['faq-4'] = qa(4, 'Can I sell in sizes?', 'Yes – S, M, L or any sizes you like, each with its own stock. Sold out? It stops by itself.', 'newsale-sizes')
+S['faq-5'] = qa(5, 'Does it work in Hindi?', 'Yes. One tap switches every screen between English and हिंदी – for you and your buyers.', 'home-hi')
+S['faq-6'] = end('orange', Q, 6, qn, 'More questions?', 'Message us – link in bio.')
+
+document.getElementById('root').innerHTML = S[location.hash.slice(1)] || ''
+window.IDS = Object.keys(S)
+</script>
+</body>
+</html>

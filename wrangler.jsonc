@@ -1,0 +1,80 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "khatakhat",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-10-01",
+  // Error and request logs in the Cloudflare dashboard (Workers → khatakhat → Logs).
+  "observability": { "enabled": true },
+  // Release unpaid stock holds every 2 minutes (cron triggers are free).
+  "triggers": { "crons": ["*/2 * * * *"] },
+  // Production domain nukkadsale.in (zone on Cloudflare). khatakhat.co.in, the old name's domain, stays
+  // attached and redirects page loads to nukkadsale.in (src/index.tsx). The workers.dev address keeps working too.
+  "routes": [
+    { "pattern": "nukkadsale.in", "zone_name": "nukkadsale.in", "custom_domain": true },
+    { "pattern": "www.nukkadsale.in", "zone_name": "nukkadsale.in", "custom_domain": true },
+    { "pattern": "khatakhat.co.in", "zone_name": "khatakhat.co.in", "custom_domain": true },
+    { "pattern": "www.khatakhat.co.in", "zone_name": "khatakhat.co.in", "custom_domain": true }
+  ],
+  "workers_dev": true,
+  // Marketing-site images (public/site). Files are served directly; everything else goes to the Worker.
+  "assets": { "directory": "./public" },
+  // Emails the owner when someone fills "Get started" (Cloudflare Email Routing; destination must be verified).
+  "send_email": [{ "name": "LEAD_MAIL", "destination_address": "hello@vrishankgupta.in" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "khatakhat",
+      // Production database (created with `wrangler d1 create khatakhat`).
+      "database_id": "7b1c6207-e4d0-40b9-982d-be92a06e756a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "khatakhat-images" }],
+  "vars": {
+    "APP_NAME": "NukkadSale",
+    // Owner-only notification emails (Cloudflare Email Routing). The sender's domain must have Email
+    // Routing on: it is on for khatakhat.co.in. Switch to noreply@nukkadsale.in after enabling it there.
+    "MAIL_FROM": "noreply@khatakhat.co.in",
+    "HOLD_MINUTES": "10",
+    "WA_API_VERSION": "v23.0",
+    "WA_TEMPLATE_LANG": "en"
+  },
+  "env": {
+    // Staging: same code, its own database, photos and secrets.
+    // Deploy with `npx wrangler deploy --env staging` → khatakhat-staging.<subdomain>.workers.dev
+    "staging": {
+      "name": "khatakhat-staging",
+      // Routes are inherited from the top level – staging must never take the production domain.
+      "routes": [],
+      "workers_dev": true,
+      "observability": { "enabled": true },
+      "triggers": { "crons": ["*/2 * * * *"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "khatakhat-staging",
+          "database_id": "d1c68104-1f36-4aa7-8031-304928a8f4e5",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "khatakhat-images-staging" }],
+      "assets": { "directory": "./public" },
+      "vars": {
+        "APP_NAME": "NukkadSale",
+        "HOLD_MINUTES": "10",
+        "WA_API_VERSION": "v23.0",
+        "WA_TEMPLATE_LANG": "en",
+        // Staging keeps self-signup on for the end-to-end tests; production creates shops from requests.
+        "OPEN_SIGNUP": "1",
+        // Staging only: Razorpay test keys are accepted (production refuses them).
+        "ALLOW_TEST_KEYS": "1"
+      }
+    }
+  }
+  // Secrets (set with `wrangler secret put NAME`, or in .dev.vars locally):
+  //   SECRET_KEY        – 32+ random chars; encrypts gateway keys & peppers PINs
+  //   WA_TOKEN, WA_PHONE_ID, WA_ORDER_TEMPLATE, WA_OTP_TEMPLATE  – optional
+  //   SUPPORT_PHONE     – optional, 91XXXXXXXXXX; shows "Chat with us" on Help and login
+  //   ADMIN_PHONES      – your number(s); their login also opens /admin
+  //   WA_APP_SECRET, WA_VERIFY_TOKEN, WA_BOT_NUMBER – with WA_TOKEN/WA_PHONE_ID, turns on WhatsApp ordering
+}

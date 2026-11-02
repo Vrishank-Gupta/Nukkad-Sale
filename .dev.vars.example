@@ -1,0 +1,14 @@
+SECRET_KEY=change-me-to-a-long-random-string-at-least-32-chars
+# Your phone number(s) for the admin portal (91XXXXXXXXXX, comma-separated).
+ADMIN_PHONES=
+# Optional – WhatsApp Cloud API. Leave empty to use the website checkout + free wa.me links.
+# The ordering bot needs WA_TOKEN, WA_PHONE_ID, WA_APP_SECRET, WA_VERIFY_TOKEN and WA_BOT_NUMBER.
+WA_TOKEN=
+WA_PHONE_ID=
+WA_APP_SECRET=
+WA_VERIFY_TOKEN=
+WA_BOT_NUMBER=
+WA_ORDER_TEMPLATE=
+WA_OTP_TEMPLATE=
+# Optional – your support WhatsApp number (91XXXXXXXXXX) for the Help page.
+SUPPORT_PHONE=

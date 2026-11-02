@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NukkadSale posts</title>
+<!-- Feed posts (720×900 → 1080×1350) and stories (720×1280 → 1080×1920). posts.html#<id> shows one. Screens are real app screenshots. -->
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflow:hidden}
+.f{position:relative;width:720px;height:900px;overflow:hidden;color:#1d1a16}
+.f.story{height:1280px}
+.cream{background:radial-gradient(circle at 20% 15%,#fff1e8,#faf7f2 55%,#f3e7d8)}
+.orange{background:linear-gradient(160deg,#f76707,#d9480f 60%,#a83a0c);color:#fff}
+.dark{background:radial-gradient(circle at 50% 30%,#2a2620,#0e0d0b);color:#fff}
+.green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e);color:#fff}
+.brand{position:absolute;left:44px;top:38px;font-weight:900;font-size:30px;letter-spacing:-.5px}
+.handle{position:absolute;right:44px;top:44px;font-weight:700;font-size:22px;opacity:.6}
+.h{font-size:64px;font-weight:900;line-height:1.03;letter-spacing:-1.5px}
+.m{font-size:40px;font-weight:800;line-height:1.12;letter-spacing:-.5px}
+.s{font-size:26px;font-weight:600;line-height:1.35}
+.o{color:#d9480f}.y{color:#ffd43b}.g{color:#2b8a3e}
+.phone{position:absolute;width:300px;height:650px;border-radius:40px;background:#1d1a16;padding:9px;box-shadow:0 30px 70px rgba(80,40,10,.3)}
+.phone .scr{width:100%;height:100%;border-radius:32px;overflow:hidden;background:#fff}
+.phone img{width:100%;display:block}
+.chip{display:inline-block;background:#fff;border:2px solid #ecdccc;border-radius:99px;padding:10px 18px;font-size:22px;font-weight:700;margin:0 8px 10px 0}
+.num{display:inline-flex;width:64px;height:64px;border-radius:50%;background:#d9480f;color:#fff;align-items:center;justify-content:center;font-size:34px;font-weight:900}
+.swipe{position:absolute;right:44px;bottom:40px;font-size:24px;font-weight:800;opacity:.75}
+.card{background:#fff;border-radius:28px;padding:30px;box-shadow:0 16px 40px rgba(80,40,10,.12)}
+.notif{height:84px;background:#fff;color:#1d1a16;border-radius:20px;display:flex;align-items:center;gap:16px;padding:0 20px;box-shadow:0 10px 26px rgba(0,0,0,.25);margin-bottom:14px}
+.notif i{font-style:normal;width:50px;height:50px;border-radius:14px;background:#e6f4ea;display:flex;align-items:center;justify-content:center;font-size:28px;flex:none}
+.notif b{font-size:28px}.notif .who{margin-left:auto;font-size:24px;font-weight:800;color:#d9480f}
+.strike{position:relative;display:inline-block}
+.strike:after{content:"";position:absolute;left:-4%;top:52%;width:108%;height:8px;background:#e03131;border-radius:4px;transform:rotate(-4deg)}
+.shot{background:#fff;color:#1d1a16;border-radius:26px;padding:34px 26px 30px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.shot .ok{width:90px;height:90px;border-radius:50%;background:#2b8a3e;color:#fff;font-size:56px;line-height:90px;margin:0 auto 16px;font-weight:900}
+.shot b{display:block;font-size:60px;font-weight:900;letter-spacing:-2px}.shot small{display:block;font-size:20px;color:#6b6258;margin-top:8px;line-height:1.4}
+.fake{position:absolute;border:10px solid #e03131;color:#e03131;font-size:96px;font-weight:900;padding:2px 24px;border-radius:18px;letter-spacing:4px;background:rgba(255,255,255,.9);transform:rotate(-14deg)}
+.me{background:#d9fdd3;color:#1d1a16;font-size:28px;font-weight:700;padding:14px 20px;border-radius:24px 24px 6px 24px;box-shadow:0 10px 24px rgba(0,0,0,.3);margin:0 0 16px auto;width:fit-content;max-width:90%}
+.me small{display:block;font-size:17px;color:#6b6258}.me u{display:block;text-decoration:none;text-align:right;font-size:17px;color:#53bdeb}
+.night{background:radial-gradient(circle at 80% 0%,#1d3326,#0d0c0b 60%);color:#f3eee7}
+.lbl{display:inline-block;font-size:19px;font-weight:900;letter-spacing:2px;color:#69db7c;border:2px solid rgba(105,219,124,.45);border-radius:99px;padding:8px 16px}
+.paidcard{position:absolute;left:60px;right:60px;height:104px;background:#fff;color:#1d1a16;border-radius:24px;display:flex;align-items:center;gap:18px;padding:0 24px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.paidcard .pc-ic{width:58px;height:58px;border-radius:50%;background:#2b8a3e;color:#fff;font-size:32px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none}
+.paidcard b{font-size:27px;display:block}.paidcard small{font-size:19px;color:#6b6258}.paidcard .pc-amt{margin-left:auto;font-size:30px;font-weight:900;color:#2b8a3e}
+.slot{position:absolute;left:60px;right:60px;border:4px dashed rgba(255,255,255,.55);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;opacity:.8;text-align:center;padding:20px}
+.cream .slot{border-color:rgba(29,26,22,.3)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const P = (img, l, t, w = 300, extra = '') => `<div class="phone" style="left:${l}px;top:${t}px;width:${w}px;height:${w * 2.167}px;${extra}"><div class="scr"><img src="img/${img}.png"></div></div>`
+const SHOP = (w, c = 'currentColor') => `<svg class="shop" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
+const B = (dark) => `<div class="brand"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('1em')}NukkadSale</span></div>`
+const F = {
+// ── Post 1: launch
+p1: `<div class="f cream">${B()}
+  <div style="position:absolute;left:44px;top:130px;width:330px">
+    <div class="h" style="font-size:52px">Your WhatsApp group is now a <span class="o">shop.</span></div>
+    <div class="s" style="margin-top:18px;color:#5c5248;font-size:23px">Post a photo with an order link. Buyers pick a size, pay you on UPI, and every sale lands in your khata.</div>
+    <div style="margin-top:26px"><span class="chip">🔗 Order link for groups</span><span class="chip">₹ Exact-amount UPI</span><span class="chip">📒 Auto khata</span><span class="chip">हिंदी + English</span></div>
+  </div>
+  ${P('sale-live', 400, 150, 290)}</div>`,
+// ── Post 2: carousel "How one sale works"
+p2a: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:230px">
+    <div class="s" style="opacity:.85">How one sale works</div>
+    <div class="h" style="font-size:96px;margin-top:10px">Post → Paid<br>in 4 steps</div>
+    <div class="s" style="margin-top:30px;font-size:30px">No website. No app for your buyers.<br>Just WhatsApp.</div></div>
+  <div class="swipe" style="color:#fff">Swipe →</div></div>`,
+p2b: step(1, 'Post your sale in your groups', 'Photos, price, sizes. NukkadSale writes the WhatsApp message for you.', 'sale-live'),
+p2c: step(2, 'Buyers tap the link &amp; pick a size', 'Right from your group post. No app, no login, no “price?” DMs.', 'buyer-sale'),
+p2d: step(3, 'They pay you the exact amount', 'Every order gets its own paise – like ₹798.22 – and the piece is held for them while they pay.', 'buyer-pay'),
+p2e: step(4, 'You tap “Yes, I got it”', 'See the same amount in your UPI app? One tap – their order page shows it’s paid.', 'orders-check'),
+p2f: `<div class="f dark">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:250px;text-align:center">
+    <div class="h" style="font-size:80px">Sell more.<br><span class="y">Chase less.</span></div>
+    <div class="s" style="margin-top:30px;font-size:30px;opacity:.85">Pack &amp; send, khata, buyers list –<br>all in one app on your phone.</div>
+    <div style="margin-top:44px"><span class="chip" style="background:#d9480f;color:#fff;border:0;font-size:28px;padding:16px 30px">Link in bio · nukkadsale.in</span></div></div></div>`,
+// ── Post 3: the paise trick
+p3: `<div class="f dark">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:120px">
+    <div class="s" style="opacity:.8">Why did your buyer pay</div>
+    <div style="font-size:130px;font-weight:900;letter-spacing:-4px;line-height:1.1">₹798<span class="y">.79</span>?</div>
+    <div class="s" style="font-size:30px;margin:6px 0 30px">Because every order gets its <b class="y">own paise.</b></div>
+    <div class="notif"><i>₹</i><b>₹798.12</b><div class="who">= Priya’s order ✓</div></div>
+    <div class="notif"><i>₹</i><b>₹798.47</b><div class="who">= Sana’s order ✓</div></div>
+    <div class="notif"><i>₹</i><b>₹798.79</b><div class="who">= Kavya’s order ✓</div></div>
+    <div class="s" style="margin-top:20px;opacity:.85">See it in your UPI app → tap “Yes, I got it”. No screenshots needed.</div></div></div>`,
+// ── Post 4: Hindi khata
+p4: `<div class="f cream">${B()}
+  <div style="position:absolute;left:44px;top:140px;width:340px">
+    <div class="h" style="font-size:60px;line-height:1.15">हिसाब अब <span class="strike">कॉपी</span> में नहीं।</div>
+    <div class="m" style="margin-top:24px;font-size:36px">हर सेल <span class="o">अपने आप</span> खाते में।</div>
+    <div class="s" style="margin-top:20px;color:#5c5248">कूरियर, कैश – कुछ भी एक टैप में जोड़ें। आज की कमाई एक नज़र में।</div>
+    <div style="margin-top:24px"><span class="chip">📒 खाता</span><span class="chip">हिंदी + English</span></div></div>
+  ${P('khata-hi', 400, 150, 290)}</div>`,
+// ── Post 5: two ways to get paid
+p5: `<div class="f cream">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:120px">
+    <div class="h" style="font-size:58px">Two ways to get paid.<br><span class="o">You choose.</span></div>
+    <div style="display:flex;gap:20px;margin-top:40px">
+      <div class="card" style="flex:1"><div style="font-size:50px">📱</div><div class="m" style="font-size:32px;margin:10px 0">UPI, straight to you</div>
+        <div class="s" style="font-size:22px;color:#5c5248">✓ Buyers pay your UPI ID<br>✓ Exact amount tells you who paid<br>✓ One tap to confirm<br>✓ No gateway fee</div>
+        <div style="margin-top:18px"><span class="chip" style="font-size:18px">Best for small sellers</span></div></div>
+      <div class="card" style="flex:1"><div style="font-size:50px">⚡</div><div class="m" style="font-size:32px;margin:10px 0">Automatic with Razorpay</div>
+        <div class="s" style="font-size:22px;color:#5c5248">✓ Payments confirm themselves<br>✓ Into your own Razorpay account<br>✓ Nothing to check<br>✓ Razorpay charges its own fee</div>
+        <div style="margin-top:18px"><span class="chip" style="font-size:18px">Best for busy sellers</span></div></div></div></div></div>`,
+// ── Post 6: screenshot meme
+p6: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:170px">
+    <div class="h" style="font-size:58px;text-decoration:line-through;text-decoration-color:#ffd43b;text-decoration-thickness:7px">“Payment ka screenshot bhejo”</div>
+    <div class="h" style="font-size:78px;margin-top:60px;color:#fff">Bas amount<br>match karo. <span class="y">✓</span></div>
+    <div class="s" style="margin-top:30px;font-size:30px;opacity:.92">Har order ke apne paise – ₹798.79 aaya matlab Kavya ka order. Ek tap mein pakka.</div></div></div>`,
+
+// ── Post 7: the fake screenshot (scroll-stopper: red FAKE stamp)
+p7: `<div class="f dark">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:110px;text-align:center"><div class="h" style="font-size:56px">This payment screenshot is…</div></div>
+  <div class="shot" style="position:absolute;left:150px;right:150px;top:250px"><div class="ok">✓</div>Payment successful<b>₹799.00</b><small>Paid to Meera Boutique<br>UPI Ref 4182 7790 0613</small></div>
+  <div class="fake" style="left:190px;top:470px;font-size:84px">FAKE</div>
+  <div style="position:absolute;left:44px;right:44px;top:640px;text-align:center">
+    <div class="m" style="font-size:38px">Don’t check screenshots.<br><span class="y">Check your UPI app.</span></div>
+    <div class="s" style="margin-top:12px;font-size:23px;opacity:.85">Every order gets its own exact amount – if ₹798.53 arrived, Priya paid.</div></div></div>`,
+// ── Post 8: chasing payments
+p8: `<div class="f cream">${B()}
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <div class="h" style="font-size:54px">Still chasing <span class="o">payments?</span></div>
+    <div style="margin-top:26px">
+      <div class="me"><small>Mon</small>Payment kar dena please 🙏<u>✓✓ Seen</u></div>
+      <div class="me"><small>Thu</small>Payment?? 😩<u>✓✓ Seen</u></div></div>
+    <div class="s" style="margin-top:14px;color:#5c5248;font-size:23px">With NukkadSale the piece is held for 10 minutes while they pay. Didn’t pay? It goes back on sale by itself.</div></div>
+  ${P('buyer-pay', 420, 140, 270)}</div>`,
+// ── Post 9: month-end
+p9: `<div class="f dark">${B()}
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <div class="s" style="opacity:.8">Month end.</div>
+    <div class="h" style="font-size:56px;margin-top:6px">How much did you <span class="y">actually earn?</span></div>
+    <div class="s" style="margin-top:20px;font-size:24px;opacity:.88">Every paid order lands in your khata by itself – courier and costs too. Download it for your CA in one tap.</div>
+    <div style="margin-top:24px"><span class="chip" style="color:#1d1a16">📒 Today · month · all time</span></div></div>
+  ${P('khata', 420, 140, 270)}</div>`,
+
+// ── Post 10: carousel "5 signs you've outgrown DMs" – pain → fix on a real screen, ends on the offer
+p10a: `<div class="f dark">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:200px">
+    <div class="s" style="opacity:.8;font-size:28px">Selling in WhatsApp groups?</div>
+    <div class="h" style="font-size:84px;margin-top:14px">5 signs you’ve<br><span class="y">outgrown</span><br>taking orders<br>in DMs.</div>
+    <div class="s" style="margin-top:30px;font-size:28px;opacity:.85">Count how many sound like you.</div></div>
+  <div class="swipe" style="color:#fff">Swipe →</div></div>`,
+p10b: sign(1, 'You type the price 50 times a day.', '“Price?” “Size M hai?” “Kaise order karein?”', 'One post with an order link. Buyers see the price and sizes and order themselves.', 'buyer-sale'),
+p10c: sign(2, '6 people paid ₹799. Who paid?', 'Six credits, same amount, no names.', 'Every order gets its own paise – ₹798.38 is Priya. You see who paid.', 'orders-check'),
+p10d: sign(3, 'You ship against a screenshot.', 'Screenshots are easy to fake.', 'Check the exact amount in your UPI app. Arrived? One tap – then ship.', 'orders-check'),
+p10e: sign(4, 'The last piece is promised to 3 people.', '“Mine!!” “I want it!” “Keep it for me.”', 'The first to order gets it, held for them while they pay. Didn’t pay? It goes back on sale by itself.', 'buyer-pay'),
+p10f: sign(5, 'Your hisaab lives in a notebook.', '“Payment aaya?” “Courier kitna tha?”', 'Every paid order lands in your khata by itself. Courier and cash in one tap. Excel for your CA.', 'khata'),
+p10g: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:120px">
+    <div class="h" style="font-size:58px">Your WhatsApp<br>group, now a shop.</div>
+    <div class="s" style="margin-top:18px;font-size:27px;opacity:.95">NukkadSale fixes all 5 – on your phone, in English and हिंदी.</div>
+    <div style="margin-top:34px;display:grid;gap:14px">
+      ${['One order link per sale', 'Exact-amount UPI – no screenshots', 'Never oversell', 'Khata writes itself'].map((x) => `<div style="display:flex;gap:14px;align-items:center;font-size:30px;font-weight:800"><span style="width:44px;height:44px;border-radius:50%;background:#fff;color:#d9480f;display:inline-flex;align-items:center;justify-content:center;font-size:26px;flex:none">✓</span>${x}</div>`).join('')}
+    </div>
+    <div style="margin-top:46px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div>
+    <div class="s" style="margin-top:16px;font-size:23px;opacity:.85">We set it up with you on WhatsApp.</div></div></div>`,
+
+// ── Post 11: carousel for big sellers – its own look (dark + money-green, big centred phone, section labels)
+// so it never reads as a repeat of Post 10 (cream, numbered pain → fix). Only big-seller benefits.
+p11a: `<div class="f night">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:150px">
+    <span class="lbl">FOR BIG SELLERS</span>
+    <div class="h" style="font-size:70px;margin-top:20px;color:#fff">Selling big?<br>Let payments<br><span style="color:#69db7c">confirm themselves.</span></div></div>
+  <div class="paidcard" style="top:560px"><div class="pc-ic">✓</div><div><b>Payment received</b><small>Order #SYBCVW · Oud Intense EDP</small></div><div class="pc-amt">₹3,100</div></div>
+  <div class="paidcard" style="top:690px;opacity:.75;transform:scale(.94)"><div class="pc-ic">✓</div><div><b>Payment received</b><small>Paid automatically – nothing to check</small></div><div class="pc-amt">Paid</div></div>
+  <div style="position:absolute;left:50px;bottom:44px;font-size:22px;font-weight:700;color:#a69d91">Automatic payments with Razorpay · swipe →</div></div>`,
+p11b: big('AUTOMATIC PAYMENTS', 'No amount to match.<br>No “Yes, I got it”.', 'Buyers pay by UPI, card or net banking. The order turns <b style="color:#69db7c">Paid</b> on its own – usually within a minute.', 'big-orders'),
+p11c: big('YOUR ACCOUNT', 'Your money goes<br>to your account.', 'Payments land in your own Razorpay account and on to your bank. NukkadSale never holds them. Razorpay charges its own fee.', 'big-home'),
+p11d: big('PACK & SEND', 'Paid → Packed →<br>Sent → Delivered.', 'Every paid order queues up in “To send”. Copy the address, tap packed, tap sent – the buyer’s page updates.', 'big-orders', 'top'),
+p11e: big('REPEAT BUYERS', 'Know who keeps<br>coming back.', 'Repeat buyers, total spent, one-tap WhatsApp – and their numbers ready for your broadcast list.', 'buyers'),
+p11f: `<div class="f night">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:150px">
+    <span class="lbl">SWITCH ANY TIME</span>
+    <div class="h" style="font-size:62px;margin-top:20px;color:#fff">Start on UPI.<br><span style="color:#69db7c">Go automatic</span><br>when you’re busy.</div>
+    <div class="s" style="margin-top:22px;font-size:26px;color:#d8d0c6">Same shop, same links, same buyers. We help you get your Razorpay keys.</div>
+    <div style="margin-top:50px"><span class="chip" style="background:#69db7c;color:#0e2a16;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div>
+    <div class="s" style="margin-top:18px;font-size:23px;color:#a69d91">Already selling with us? Message us to turn on automatic payments.</div></div></div>`,
+
+// ── Stories
+s1: `<div class="f story dark">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:260px;text-align:center"><div class="h" style="font-size:84px">Orders kaise<br>lete ho? 🤔</div></div></div>`,
+s2: `<div class="f story cream">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:220px;text-align:center"><div class="s">Quiz time 🧠</div>
+    <div class="h" style="font-size:72px;margin-top:10px">Buyer ne <span class="o">₹798.79</span> kyun pay kiya?</div></div></div>`,
+s3: `<div class="f story orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:130px;text-align:center"><div class="h" style="font-size:72px">Sneak peek 👀</div><div class="s" style="margin-top:12px;font-size:30px">Your whole shop, on one screen</div></div>
+  ${P('home', 190, 330, 340)}</div>`,
+s4: `<div class="f story cream">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:130px;text-align:center"><div class="h" style="font-size:76px">हिंदी में भी ✓</div><div class="s" style="margin-top:12px;font-size:30px">One tap: English ⇄ हिंदी – for you and your buyers</div></div>
+  ${P('home', 40, 360, 310, 'transform:rotate(-4deg)')}${P('home-hi', 370, 380, 310, 'transform:rotate(4deg)')}</div>`,
+}
+function sign(n, pain, sub, fix, img) {
+  return `<div class="f cream">${B()}<div class="handle">${n}/5</div>
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <span class="num" style="background:#1d1a16">${n}</span>
+    <div class="m" style="margin-top:20px;font-size:40px;line-height:1.1">${pain}</div>
+    <div class="s" style="margin-top:12px;color:#8a7f73;font-size:22px">${sub}</div>
+    <div style="margin-top:30px;padding-top:24px;border-top:3px solid #ecdccc">
+      <div style="font-size:20px;font-weight:900;letter-spacing:1.5px;color:#d9480f">THE FIX</div>
+      <div class="s" style="margin-top:8px;font-size:24px">${fix}</div></div></div>
+  ${P(img, 420, 130, 270)}<div class="swipe">Swipe →</div></div>`
+}
+function big(label, title, body, img, focus = 'center') {
+  return `<div class="f night">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:110px;text-align:center">
+    <span class="lbl">${label}</span>
+    <div class="h" style="font-size:46px;margin-top:16px;color:#fff;line-height:1.08">${title}</div>
+    <div class="s" style="margin:14px auto 0;font-size:23px;color:#d8d0c6;max-width:560px">${body}</div></div>
+  ${P(img, 210, focus === 'top' ? 470 : 480, 300, 'box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 2px rgba(105,219,124,.25)')}</div>`
+}
+function step(n, title, body, img) {
+  return `<div class="f cream">${B()}
+  <div style="position:absolute;left:44px;top:150px;width:350px"><span class="num">${n}</span>
+    <div class="m" style="margin-top:22px;font-size:46px">${title}</div>
+    <div class="s" style="margin-top:18px;color:#5c5248">${body}</div></div>
+  ${P(img, 410, 140, 280)}<div class="swipe">${n < 4 ? 'Swipe →' : ''}</div></div>`
+}
+document.getElementById('root').innerHTML = F[location.hash.slice(1)] || ''
+window.IDS = Object.keys(F)
+</script>
+</body>
+</html>

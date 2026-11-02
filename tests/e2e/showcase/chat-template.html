@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat</title>
+<!--
+  Plays back a REAL conversation with the NukkadSale WhatsApp bot for the showcase video.
+  showcase.mjs chats with the bot through the real webhook, captures exactly what the bot
+  sent (via the Meta API mock), and injects it below as EVENTS. Only the chat window
+  styling is drawn here – every bot message, button, photo and amount is the bot's own.
+-->
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;font-family:system-ui,"Noto Sans",sans-serif;background:#efe7dc;overflow:hidden}
+header{position:fixed;top:0;left:0;right:0;z-index:2;background:#1f7a52;color:#fff;padding:12px 14px;display:flex;gap:12px;align-items:center;font-weight:700;font-size:17px}
+header i{width:40px;height:40px;border-radius:50%;background:#d9480f;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:20px}
+header small{display:block;font-size:12.5px;font-weight:500;opacity:.85}
+.note{position:fixed;top:64px;left:0;right:0;z-index:2;text-align:center;font-size:11.5px;font-weight:700;color:#5a4a2a;background:#fff3c4;padding:4px}
+#msgs{position:absolute;top:88px;bottom:58px;left:0;right:0;overflow:hidden;padding:10px 10px;display:flex;flex-direction:column;gap:8px}
+#msgs::before{content:'';flex:1 0 auto}
+.b{flex-shrink:0;max-width:86%;padding:8px 11px;border-radius:12px;font-size:14.5px;line-height:1.38;box-shadow:0 1px 1px rgba(0,0,0,.12);color:#1d1a16;white-space:pre-line;animation:pop .28s ease-out both;overflow-wrap:anywhere}
+.me{align-self:flex-end;background:#d9fdd3;border-top-right-radius:3px}
+.bot{align-self:flex-start;background:#fff;border-top-left-radius:3px}
+.b img{display:block;width:100%;height:150px;object-fit:cover;border-radius:9px;margin-bottom:6px}
+.b.photo{padding:4px}.b.photo img{margin:0;height:130px}
+.btns{display:flex;flex-wrap:wrap;margin:8px -11px -8px;border-top:1px solid #eee}
+.btns span{flex:1 1 30%;text-align:center;color:#0b8a5f;font-weight:700;padding:9px 4px;border-left:1px solid #f0f0f0;white-space:nowrap}
+.btns span:first-child{border-left:0}.btns.one span{flex-basis:100%}
+.btns span.hit{background:#dff5ea}
+a{color:#0b6fbf}
+footer{position:fixed;bottom:0;left:0;right:0;background:#f0f0f0;padding:8px 10px;display:flex;gap:8px;align-items:center}
+footer div{flex:1;background:#fff;border-radius:22px;padding:10px 14px;color:#999;font-size:15px}
+footer span{width:40px;height:40px;border-radius:50%;background:#1f7a52;color:#fff;display:flex;align-items:center;justify-content:center}
+@keyframes pop{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* The seller's group (announcements), shown first: where the buyer finds the post and taps the link. */
+#group{position:fixed;inset:0;z-index:5;background:#efe7dc;transition:opacity .35s}
+#group header{background:#075e54}
+#group header i{background:#fff;color:#075e54}
+#gposts{position:absolute;top:88px;bottom:46px;left:0;right:0;overflow:hidden;padding:10px;display:flex;flex-direction:column;justify-content:flex-end}
+.post{background:#fff;border-radius:3px 12px 12px 12px;padding:6px 8px 8px;max-width:92%;box-shadow:0 1px 1px rgba(0,0,0,.12);font-size:14px;line-height:1.38;white-space:pre-line;color:#1d1a16}
+.post .who{color:#d9480f;font-weight:700;font-size:13px;margin:0 0 4px 2px}
+.post img{display:block;width:100%;height:190px;object-fit:cover;border-radius:8px;margin-bottom:6px}
+.post a{color:#0b6fbf;text-decoration:underline}
+.post a.tapped{background:#cfe3ff;border-radius:4px}
+.admins{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:13px;color:#667;background:#f0f0f0;padding:13px}
+.ripple{position:fixed;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(217,72,15,.35);border:2px solid rgba(217,72,15,.85);z-index:9;animation:rip .7s ease-out forwards;pointer-events:none}
+@keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.9);opacity:0}}
+.handoff{position:fixed;left:16px;right:16px;top:44%;z-index:8;background:#1d1a16;color:#fff;font-weight:700;font-size:15px;text-align:center;padding:12px 14px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3);animation:pop .3s ease-out both}
+</style>
+</head>
+<body>
+<header><i><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="#fff" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg></i><div>NukkadSale Orders<small>🔒 Private chat · WhatsApp ordering</small></div></header>
+<div class="note">Private 1-to-1 chat · re-created from the bot’s real messages</div>
+<div id="msgs"></div>
+<footer><div id="typed">Message</div><span>➤</span></footer>
+<div id="group" hidden>
+  <header><i>👥</i><div><span id="gname"></span><small>Announcements · community</small></div></header>
+  <div class="note">Seller’s group – re-created · the post is the app’s real share message</div>
+  <div id="gposts"></div>
+  <div class="admins">Only community admins can send messages</div>
+</div>
+<script>
+const EVENTS = /*EVENTS*/[]
+// Optional first part: the seller's post in their group, the buyer taps its order link,
+// and a private chat with the ordering number opens with the order message typed in.
+const GROUP = /*GROUP*/null
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+// WhatsApp formatting: *bold*, links.
+const fmt = (s) => esc(s).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/(wa\.me\/\d+|https?:\/\/\S+)/g, '<a>$1</a>')
+function render(m) {
+  if (m.type === 'text') return { html: fmt(m.text.body) }
+  if (m.type === 'image') return { html: `<img src="${m.image.link}">`, cls: 'photo' }
+  const it = m.interactive, head = it.header?.image ? `<img src="${it.header.image.link}">` : ''
+  const body = fmt(it.body.text.replace(/^​$/, ''))
+  if (it.type === 'button') { const bs = it.action.buttons.map((b) => `<span data-t="${esc(b.reply.title)}">${esc(b.reply.title)}</span>`).join(''); return { html: `${head}${body}<div class="btns${it.action.buttons.length === 1 ? ' one' : ''}">${bs}</div>` } }
+  if (it.type === 'list') return { html: `${body}<div class="btns one"><span>☰ ${esc(it.action.button)}</span></div>` }
+  if (it.type === 'cta_url') return { html: `${body}<div class="btns one"><span>🔗 ${esc(it.action.parameters.display_text)}</span></div>` }
+  return { html: body }
+}
+const msgs = document.getElementById('msgs')
+function add(ev) {
+  const d = document.createElement('div')
+  if (ev.who === 'me') {
+    d.className = 'b me'; d.innerHTML = fmt(ev.text)
+    // Light up the button the buyer tapped in the latest bot message that had it.
+    const hit = [...msgs.querySelectorAll('.btns span')].reverse().find((s) => s.dataset.t === ev.text)
+    if (hit) hit.classList.add('hit')
+  } else { const r = render(ev.msg); d.className = 'b bot ' + (r.cls || ''); d.innerHTML = r.html }
+  msgs.appendChild(d)
+  // Stay pinned to the newest message, like a real chat (also once photos finish loading).
+  const bottom = () => { msgs.scrollTop = msgs.scrollHeight }
+  bottom(); d.querySelectorAll('img').forEach((i) => i.addEventListener('load', bottom))
+}
+if (GROUP) {
+  const g = document.getElementById('group'); g.hidden = false
+  document.getElementById('gname').textContent = GROUP.shop + ' – customers'
+  const link = (s) => esc(s).replace(/\*([^*\n]+)\*/g, '<b>$1</b>').replace(/(https?:\/\/\S+)/g, '<a id="olink">$1</a>')
+  document.getElementById('gposts').innerHTML = `<div class="post"><div class="who">~ ${esc(GROUP.shop)} · admin</div><img src="${GROUP.image}">${link(GROUP.caption)}</div>`
+  const T = GROUP.dur
+  setTimeout(() => { const a = document.getElementById('olink'); if (!a) return; a.classList.add('tapped'); const r = a.getBoundingClientRect(); const d = document.createElement('div'); d.className = 'ripple'; d.style.left = (r.left + Math.min(r.width, 160) / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px'; document.body.appendChild(d) }, (T - 2.2) * 1000)
+  setTimeout(() => { const h = document.createElement('div'); h.className = 'handoff'; h.id = 'handoff'; h.textContent = '↪ Opens a private chat with the ordering number – the order message is typed for you'; document.body.appendChild(h) }, (T - 1.6) * 1000)
+  setTimeout(() => { g.style.opacity = 0; document.getElementById('typed').textContent = GROUP.prefill; document.getElementById('typed').style.color = '#1d1a16' }, T * 1000)
+  setTimeout(() => { g.hidden = true; const h = document.getElementById('handoff'); if (h) h.remove() }, (T + 0.4) * 1000)
+  // The buyer taps Send on the pre-typed order message.
+  setTimeout(() => { const b = document.querySelector('footer span').getBoundingClientRect(); const d = document.createElement('div'); d.className = 'ripple'; d.style.left = (b.left + b.width / 2) + 'px'; d.style.top = (b.top + b.height / 2) + 'px'; document.body.appendChild(d) }, (T + 2.3) * 1000)
+}
+// Events before START appear instantly (context); the rest play in time.
+for (const ev of EVENTS) ev.at < 0 ? add(ev) : setTimeout(() => { if (ev.clearTyped) { const ty = document.getElementById('typed'); ty.textContent = 'Message'; ty.style.color = '' } add(ev) }, ev.at * 1000)
+</script>
+</body>
+</html>

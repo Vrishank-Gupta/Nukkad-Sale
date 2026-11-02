@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NukkadSale brand</title>
+<!-- Profile picture, Facebook cover and Instagram highlight covers, at real pixel size. brand.html#<id>. -->
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflow:hidden}
+.f{position:relative;overflow:hidden;color:#fff;background:linear-gradient(145deg,#f76707,#d9480f 65%,#b83f0d)}
+.shop{display:block}
+.phone{position:absolute;border-radius:46px;background:#1d1a16;padding:11px;box-shadow:0 40px 80px rgba(60,20,0,.45)}
+.phone .scr{width:100%;height:100%;border-radius:36px;overflow:hidden;background:#fff}
+.phone img{width:100%;display:block}
+.chip{display:inline-block;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);border-radius:99px;padding:10px 22px;font-size:26px;font-weight:700;margin:0 10px 12px 0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const SHOP = (w, c = '#fff') => `<svg class="shop" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
+const P = (img, l, t, w, rot = 0) => `<div class="phone" style="left:${l}px;top:${t}px;width:${w}px;height:${w * 2.167}px;transform:rotate(${rot}deg)"><div class="scr"><img src="img/${img}.png"></div></div>`
+const HL = (glyph, label, size = 460) => `<div class="f" style="width:1080px;height:1920px;display:flex;align-items:center;justify-content:center">
+  <div style="width:820px;height:820px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:${size}px;font-weight:900;line-height:1">${glyph}</div></div>`
+const ICON = {
+  chat: `<svg viewBox="0 0 24 24" width="440" height="440"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" fill="#fff"/><circle cx="8" cy="11" r="1.4" fill="#e2560c"/><circle cx="12" cy="11" r="1.4" fill="#e2560c"/><circle cx="16" cy="11" r="1.4" fill="#e2560c"/></svg>`,
+  book: `<svg viewBox="0 0 24 24" width="420" height="420"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2z" fill="#fff"/><path d="M8 8h8M8 11.5h8M8 15h5" stroke="#e2560c" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+}
+const F = {
+  // Profile picture: the app icon's storefront, centred so Instagram/Facebook's round crop never cuts it.
+  profile: `<div class="f" style="width:1080px;height:1080px;display:flex;align-items:center;justify-content:center">
+    <div style="filter:drop-shadow(0 24px 40px rgba(90,25,0,.35))">${SHOP(600)}</div></div>`,
+  // Facebook cover 1640×624. Phones only show on desktop; text sits in the centre safe area that mobile keeps.
+  cover: `<div class="f" style="width:1640px;height:624px">
+    ${P('buyer-pay', 70, 70, 300, -6)}${P('home', 1270, 60, 300, 6)}
+    <div style="position:absolute;left:420px;right:420px;top:120px;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:18px">${SHOP(96)}<span style="font-size:96px;font-weight:900;letter-spacing:-2px">NukkadSale</span></div>
+      <div style="font-size:44px;font-weight:800;margin-top:14px;line-height:1.15">Sell on WhatsApp, the easy way</div>
+      <div style="margin-top:30px"><span class="chip">🔗 Order links for groups</span><span class="chip">₹ Exact-amount UPI</span><span class="chip">📒 Auto khata</span><span class="chip">हिंदी + English</span></div>
+    </div></div>`,
+  // Link preview (og:image) 1200×630 for the website – same design as the cover.
+  og: `<div class="f" style="width:1200px;height:630px">
+    ${P('buyer-pay', 40, 90, 260, -6)}${P('home', 900, 80, 260, 6)}
+    <div style="position:absolute;left:300px;right:300px;top:170px;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px">${SHOP(80)}<span style="font-size:80px;font-weight:900;letter-spacing:-2px">NukkadSale</span></div>
+      <div style="font-size:31px;font-weight:800;margin-top:12px;line-height:1.15;white-space:nowrap">Sell on WhatsApp, the easy way</div>
+      <div style="margin-top:26px"><span class="chip" style="font-size:22px">🔗 Order links for groups</span><span class="chip" style="font-size:22px">₹ Exact-amount UPI</span><span class="chip" style="font-size:22px">📒 Auto khata</span><span class="chip" style="font-size:22px">हिंदी + English</span></div>
+    </div></div>`,
+  'hl-how': HL(ICON.chat, 'How it works'),
+  'hl-pay': HL('₹', 'Payments'),
+  'hl-khata': HL(ICON.book, 'Khata'),
+  'hl-hindi': HL('अ', 'हिंदी'),
+  'hl-start': HL(SHOP(480), 'Start'),
+}
+document.getElementById('root').innerHTML = F[location.hash.slice(1)] || ''
+window.IDS = Object.keys(F)
+</script>
+</body>
+</html>
