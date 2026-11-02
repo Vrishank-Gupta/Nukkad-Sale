@@ -22,6 +22,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { youtubeChannel, youtubeLogin, youtubeUpload } from './youtube.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..')
 const SOCIAL = path.join(ROOT, 'docs/social')
@@ -260,7 +261,7 @@ async function main() {
 
   if (cmd === 'list') {
     const log = readLog()
-    for (const [k, it] of Object.entries(ITEMS)) console.log(`${k.padEnd(8)} ${it.type.padEnd(8)} ${log[k] ? `posted ${log[k].at.slice(0, 10)} ${log[k].permalink ?? ''}` : '–'}${it.note ? `   (${it.note})` : ''}`)
+    for (const [k, it] of Object.entries(ITEMS)) console.log(`${k.padEnd(8)} ${it.type.padEnd(8)} ${log[k] ? `posted ${log[k].at.slice(0, 10)} ${log[k].permalink ?? ''}` : '–'}${log['yt:' + k] ? `  · YouTube ${log['yt:' + k].url}` : ''}${it.note ? `   (${it.note})` : ''}`)
     return
   }
   if (cmd === 'whoami') {
@@ -297,7 +298,29 @@ async function main() {
     console.log(`Posted ✓ ${r.permalink ?? 'media ' + r.media_id}`)
     return
   }
-  console.log('Usage: publish.mjs whoami | list | limit | post <id> [--dry-run] [--again] [--anyway]')
+  if (cmd === 'youtube-login') return youtubeLogin()
+  if (cmd === 'youtube-whoami') { const ch = await youtubeChannel(); console.log(`YouTube channel: ${ch.title} ${ch.handle ?? ''} · id ${ch.id}`); return }
+  if (cmd === 'youtube') {
+    // Reels go up as YouTube Shorts (vertical, under 3 minutes). Logged as "yt:<id>".
+    const item = ITEMS[id]
+    if (!item || item.type !== 'reel') throw new Error(`"${id}" is not a reel. Only reels go to YouTube.`)
+    const file = path.join(SOCIAL, item.file)
+    if (!fs.existsSync(file)) throw new Error(`Missing file docs/social/${item.file} – re-render it first.`)
+    const caption = captionFor(item.caption)
+    const log = readLog(), key = 'yt:' + id
+    if (log[key] && !flags.has('--again')) throw new Error(`${id} is already on YouTube (${log[key].url}). Use --again to upload it again.`)
+    if (flags.has('--dry-run')) { console.log(`Would upload ${item.file} to YouTube as a Short.
+--- caption ---
+${caption}`); return }
+    const ch = await youtubeChannel()
+    console.log(`Uploading ${id} to YouTube "${ch.title}"…`)
+    const r = await youtubeUpload(file, caption)
+    log[key] = { ...r, at: new Date().toISOString() }
+    fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
+    console.log(`Uploaded ✓ ${r.url} (${r.privacy})${r.privacy === 'private' ? ' – YouTube keeps uploads private until the API audit; set it Public in YouTube Studio.' : ''}`)
+    return
+  }
+  console.log('Usage: publish.mjs whoami | list | limit | post <id> [--dry-run] [--again] [--anyway] | youtube-login | youtube-whoami | youtube <reel-id> [--dry-run] [--again]')
 }
 
 main().catch((e) => { console.error('✗ ' + e.message); process.exit(1) })
