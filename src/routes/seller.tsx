@@ -4,6 +4,7 @@ import type { Context } from 'hono'
 import type { Child, FC } from 'hono/jsx'
 import type { AppEnv, Drop, Offer, Order, PayMode, Seller, ShipStatus, Variant } from '../env'
 import { pctOff } from '../lib/offers'
+import { TOOLS, toolOn, type Tool } from '../lib/tools'
 import { dictFor, tr, type Dict } from '../i18n'
 import { allowedEndpoint, pushEnabled, pushToSeller } from '../lib/push'
 import { requireSeller } from '../lib/auth'
@@ -180,7 +181,7 @@ app.get('/', async (c) => {
   const weekTotal = perDay.reduce((a, b) => a + b, 0)
   const peak = Math.max(1, ...perDay)
   const dayLabel = (ms: number) => new Date(ms + 6 * 3600_000).toLocaleDateString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'narrow', timeZone: 'Asia/Kolkata' })
-  const backInN = backIn.reduce((a, b) => a + b.n, 0)
+  const backInN = toolOn(s, 'waitlist') ? backIn.reduce((a, b) => a + b.n, 0) : 0
   const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN > 0
   // Getting started: shown until the first confirmed payment, then the money card takes over.
   const setup: { done: boolean; label: string; href?: string }[] = [
@@ -350,12 +351,12 @@ app.get('/drops/new', async (c) => {
 
         <div class="sec"><span class="num">3</span>{t.stepPrice}</div>
         <div class="money"><span>₹</span><input id="price" name="price" inputmode="decimal" pattern="[0-9,]+(\.[0-9]{1,2})?" required placeholder="799" value={pre ? String((pre.drop.compare_paise > pre.drop.price_paise ? pre.drop.compare_paise : pre.drop.price_paise) / 100) : undefined} aria-label={t.stepPrice} /></div>
-        <details class="quiet" style="margin-top:8px" open={Boolean(pre?.drop.cost_paise)}>
+        {toolOn(c.get('seller'), 'profit') && <details class="quiet" style="margin-top:8px" open={Boolean(pre?.drop.cost_paise)}>
           <summary><u>{t.addCostLink}</u></summary>
           <label for="cost">{t.costLabel}</label>
           <div class="money"><span>₹</span><input id="cost" name="cost" inputmode="decimal" pattern="[0-9,]+(\.[0-9]{1,2})?" placeholder="0" value={pre?.drop.cost_paise ? String(pre.drop.cost_paise / 100) : undefined} /></div>
           <small>{t.costHint}</small>
-        </details>
+        </details>}
 
         <div class="sec"><span class="num">4</span>{t.stepStock}</div>
         <div class="pills two" style="margin-bottom:12px">
@@ -562,16 +563,16 @@ app.get('/drops/:id', async (c) => {
       {data.images.length > 1 && <div class="photos">{data.images.map((k) => <img src={`/img/${k}`} alt="" />)}</div>}
       <p><small>{t.paymentsTo(drop.upi_vpa ?? s.upi_vpa ?? '')}</small></p>
       {/* Profit per piece – one quiet line; tap to add or change the cost. */}
-      <details class="quiet" id="cost">
+      {toolOn(s, 'profit') && <details class="quiet" id="cost">
         <summary>{drop.cost_paise > 0 ? <span>{t.profitPerPiece(rupees(drop.price_paise - drop.cost_paise))} · <u>{t.edit}</u></span> : <u>{t.addCostLink}</u>}</summary>
         <form method="post" action={`/app/drops/${drop.id}/cost`} class="row" style="margin-top:8px;align-items:flex-end">
           <div class="grow"><label for="costin">{t.costLabel}</label><div class="money"><span>₹</span><input id="costin" name="cost" inputmode="decimal" placeholder="0" value={drop.cost_paise ? String(drop.cost_paise / 100) : ''} /></div></div>
           <button class="btn" type="submit">{t.costSave}</button>
         </form>
         <small>{t.costHint}</small>
-      </details>
+      </details>}
 
-      {toTell.length > 0 && (
+      {toolOn(s, 'waitlist') && toTell.length > 0 && (
         <div class="card" style="border:1.5px solid var(--brand)" id="waiting">
           <b>{t.waitlistTitle(toTell.length)}</b>
           <small style="display:block;margin:2px 0 8px">{t.waitlistHint}</small>
@@ -609,9 +610,9 @@ app.get('/drops/:id', async (c) => {
         </>
       )}
 
-      {drop.status === 'live' && (
+      {drop.status === 'live' && (toolOn(s, 'discount') || drop.compare_paise > drop.price_paise || toolOn(s, 'offers')) && (
         <div class="saletools">
-          <details class="card tool" open={Boolean(c.req.query('discount'))}>
+          {(toolOn(s, 'discount') || drop.compare_paise > drop.price_paise) && <details class="card tool" open={Boolean(c.req.query('discount'))}>
             <summary><span class="ic"><Icon n="receipt" s={18} /></span><span class="grow"><b>{t.discountTitle}</b><small>{drop.compare_paise > drop.price_paise ? t.discountOn(pctOff(drop.compare_paise, drop.price_paise), rupees(drop.compare_paise)) : t.discountHint}</small></span></summary>
             <form method="post" action={`/app/drops/${drop.id}/discount`} class="stack" style="margin-top:10px">
               <div><label for="dprice">{t.discountNew}</label><div class="money"><span>₹</span><input id="dprice" name="price" inputmode="decimal" required placeholder={String(Math.round((regular * 0.8) / 100))} value={drop.compare_paise > drop.price_paise ? String(drop.price_paise / 100) : ''} /></div>
@@ -619,9 +620,9 @@ app.get('/drops/:id', async (c) => {
               <button class="btn primary block" type="submit">{drop.compare_paise > drop.price_paise ? t.discountUpdate : t.discountStart}</button>
             </form>
             {drop.compare_paise > drop.price_paise && <form method="post" action={`/app/drops/${drop.id}/discount/end`} style="margin-top:8px"><button class="btn block ghost" type="submit">{t.discountEnd(rupees(drop.compare_paise))}</button></form>}
-          </details>
+          </details>}
 
-          <details class="card tool" id="offers" open={Boolean(fresh || c.req.query('offers'))}>
+          {toolOn(s, 'offers') && <details class="card tool" id="offers" open={Boolean(fresh || c.req.query('offers'))}>
             <summary><span class="ic"><Icon n="key" s={18} /></span><span class="grow"><b>{t.offerTitle}</b><small>{t.offerHint}</small></span></summary>
             {fresh && (
               <div class="alert ok stack" style="margin-top:10px">
@@ -663,7 +664,7 @@ app.get('/drops/:id', async (c) => {
                 })}
               </div>
             )}
-          </details>
+          </details>}
         </div>
       )}
 
@@ -787,6 +788,14 @@ app.post('/drops/:id/waitlist/:wid/done', async (c) => {
   if (!drop) return c.notFound()
   await c.env.DB.prepare(`UPDATE waitlist SET notified_at = ? WHERE id = ? AND drop_id = ?`).bind(Date.now(), Number(c.req.param('wid')), drop.id).run()
   return c.redirect(`/app/drops/${drop.id}#waiting`, 303)
+})
+
+app.post('/tools', async (c) => {
+  const t = tr(c)
+  const on = new Set(([] as unknown[]).concat((await c.req.parseBody({ all: true })).on ?? []).map(String))
+  const off = TOOLS.filter((x) => !on.has(x)).join(',')
+  await c.env.DB.prepare(`UPDATE sellers SET tools_off = ? WHERE id = ?`).bind(off, c.get('seller').id).run()
+  return c.redirect(`/app/settings?ok=${encodeURIComponent(t.toolsSaved)}#tools`, 303)
 })
 
 app.post('/drops/:id/status', async (c) => {
@@ -1027,7 +1036,7 @@ app.get('/orders', async (c) => {
         ))}
       </div>
       <Flash msg={c.req.query('err')} />
-      {tab.key === 'send' && results.length > 0 && (
+      {tab.key === 'send' && results.length > 0 && toolOn(s, 'labels') && (
         <a class="btn block sm" href="/app/orders/labels" style="margin:4px 0 8px"><Icon n="receipt" s={18} />{t.labelsBtn(new Set(results.map((o) => cartKeyOf(o))).size)}</a>
       )}
       {results.length === 0 && (tab.key === 'check' ? <Empty icon="search" title={t.emptyCheckT} sub={t.emptyCheckS} /> : tab.key === 'send' ? <Empty icon="box" title={t.emptySendT} sub={t.emptySendS} /> : <Empty icon="receipt" title={t.emptyDoneT} sub={t.emptyDoneS} />)}
@@ -1134,7 +1143,7 @@ app.get('/khata', async (c) => {
         <div class="card"><small>{t.thisMonth}</small><div class="stat">{rupees(net(month))}</div></div>
       </div>
       <p><small>{t.allTime(rupees(all?.cr ?? 0), rupees(all?.dr ?? 0))}</small></p>
-      {(costs?.priced ?? 0) > 0 ? (
+      {!toolOn(s, 'profit') ? null : (costs?.priced ?? 0) > 0 ? (
         <div class="card" style="border-color:var(--ok)">
           <div class="row between"><b>{t.profitTitle}</b><b style="font-size:1.25rem;color:var(--ok)">{rupees((month?.cr ?? 0) - (month?.dr ?? 0) - (costs?.month ?? 0))}</b></div>
           <small>{t.profitLine(rupees(month?.cr ?? 0), rupees(costs?.month ?? 0), rupees(month?.dr ?? 0))}</small>
@@ -1346,6 +1355,17 @@ app.get('/settings', async (c) => {
         <button class="btn block" type="submit">{t.changePinBtn}</button>
       </form>
 
+      <h2 id="tools">{t.toolsTitle}</h2>
+      <p class="hint" style="margin-top:-4px">{t.toolsHint}</p>
+      <form method="post" action="/app/tools" class="card" style="padding:4px 16px">
+        {t.toolsList.map(([key, name, sub], i) => (
+          <label class="row" style={`padding:12px 0;gap:12px;align-items:center;cursor:pointer;${i ? 'border-top:1px solid var(--line)' : ''}`}>
+            <span class="grow"><b style="display:block">{name}</b><small>{sub}</small></span>
+            <input type="checkbox" class="switch" name="on" value={key} checked={toolOn(s, key as Tool)} aria-label={name} />
+          </label>
+        ))}
+        <button class="btn block" type="submit" style="margin:4px 0 12px">{t.save}</button>
+      </form>
       <div style="margin-top:20px"><InstallCard t={t} always /></div>
       <a class="btn block" href="/app/billing" style="margin-top:24px">{t.billingLink}</a>
       <a class="btn block" href="/app/help" style="margin-top:10px"><Icon n="help" s={18} />{t.help}</a>

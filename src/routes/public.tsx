@@ -13,11 +13,12 @@ import { isValidUtr, qrSvg, upiAppLinks, upiLink } from '../lib/upi'
 import { clip, normalizePhone, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
 import { checkOffer, pctOff } from '../lib/offers'
+import { toolOn } from '../lib/tools'
 import { Flash, Icon, Layout, PhoneInput, ShipSteps, StatusChip, Stepper } from '../views/layout'
 
 export const pub = new Hono<AppEnv>()
 
-const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request`
+const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off`
 const getSeller = (db: D1Database, id: string) => db.prepare(`SELECT ${SELLER_COLS} FROM sellers WHERE id = ?`).bind(id).first<Seller>()
 
 export const imageUrl = (origin: string, key: string | null) => (key ? `${origin}/img/${key}` : undefined)
@@ -172,7 +173,7 @@ pub.get('/d/:id', async (c) => {
   // Not capped by stock – that would reveal the count. The server refuses if not enough is left.
   // Personal price link (?o=…): a special rate the seller gave this buyer. Checked again on order.
   const token = c.req.query('o') ?? ''
-  const offerCheck = token ? await checkOffer(c.env.DB, token, drop.id) : null
+  const offerCheck = token && toolOn(seller, 'offers') ? await checkOffer(c.env.DB, token, drop.id) : null
   const offer = offerCheck?.state === 'ok' ? offerCheck.offer : null
   const price = offer ? offer.price_paise : drop.price_paise
   // Struck-through "was" price: the regular price for a personal price, or the pre-discount price.
@@ -221,12 +222,12 @@ pub.get('/d/:id', async (c) => {
       ) : drop.status !== 'live' || counts.available < 1 ? (
         <>
           <div class="alert info">{drop.status !== 'live' ? t.saleClosed : counts.held > 0 ? t.allHeld : t.allSold}</div>
-          <form method="post" action={`/d/${drop.id}/waitlist`} class="card stack" id="notify">
+          {toolOn(seller, 'waitlist') && <form method="post" action={`/d/${drop.id}/waitlist`} class="card stack" id="notify">
             <div><b style="display:block">{t.waitTitle}</b><small>{t.waitSub(seller.shop_name)}</small></div>
             <div><label for="wname">{t.yourName}</label><input id="wname" name="name" autocomplete="name" required maxlength={60} /></div>
             <div><label for="wphone">{t.phone}</label><PhoneInput id="wphone" name="phone" /></div>
             <button class="btn primary block" type="submit"><Icon n="clock" s={18} />{t.waitBtn}</button>
-          </form>
+          </form>}
         </>
       ) : (
         <form id="buy" method="post" action={`/d/${drop.id}`} class="stack" data-drop={drop.id} data-price={price} data-ship={drop.ship_fee_paise || 0} data-freeabove={drop.free_ship_above_paise || 0}
@@ -351,7 +352,7 @@ pub.post('/d/:id', async (c) => {
   const cod = f.pay === 'cod' && Boolean(data.drop.cod_enabled)
   // A personal price applies only through a valid link, for the right number, within its piece limit.
   let unitPaise: number | undefined, offerId: string | undefined
-  if (f.offer) {
+  if (f.offer && toolOn(seller, 'offers')) {
     const { state, offer } = await checkOffer(c.env.DB, String(f.offer), id, phone)
     if (state === 'wrong_phone') return back(t.offerWrongPhone)
     if (state !== 'ok' || !offer) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.offerGone)}`, 303)
@@ -390,6 +391,7 @@ pub.post('/d/:id/waitlist', async (c) => {
   const f = await c.req.parseBody()
   const phone = normalizePhone(String(f.phone ?? ''))
   const name = String(f.name ?? '').trim().slice(0, 60)
+  if (!toolOn(seller, 'waitlist')) return c.redirect(`/d/${id}`, 303)
   if (!phone) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.bErrPhone)}#notify`, 303)
   if (!name) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.bErrDetails)}#notify`, 303)
   // Joining again just refreshes the request (and asks to be told again).

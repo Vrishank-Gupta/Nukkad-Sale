@@ -495,6 +495,16 @@ const en = {
   buyersEmptyT: 'No buyers yet',
   khataEmptyT: 'Nothing in your khata yet',
   photoN: (n: number) => `Photo ${n}`,
+  toolsTitle: 'Selling tools',
+  toolsHint: 'Switch off anything you don’t use – it disappears for you and your buyers.',
+  toolsSaved: 'Selling tools saved.',
+  toolsList: [
+    ['discount', 'Discounts', 'Put a sale on an item; buyers see the old price struck through.'],
+    ['offers', 'Special price for one buyer', 'A price link only one buyer can use.'],
+    ['waitlist', 'Restock waitlist', '“Notify me” on sold-out items, and a list of who’s waiting.'],
+    ['profit', 'Profit', 'Add your cost per piece; see profit in the khata.'],
+    ['labels', 'Shipping labels', 'Print address labels for orders to send.'],
+  ] as [string, string, string][],
   // Discounts, personal prices, profit, waitlist, labels
   pctOff: (n: number) => `${n}% off`,
   profitPerPiece: (p: string) => `Profit ${p} per piece`,
@@ -1123,6 +1133,16 @@ const hi: Dict = {
   buyersEmptyT: 'अभी कोई ग्राहक नहीं',
   khataEmptyT: 'खाते में अभी कुछ नहीं',
   photoN: (n: number) => `फ़ोटो ${n}`,
+  toolsTitle: 'बेचने के टूल',
+  toolsHint: 'जो इस्तेमाल नहीं करते उसे बंद करें – वह आपके और ग्राहकों के लिए दिखना बंद हो जाएगा।',
+  toolsSaved: 'बेचने के टूल सेव हो गए।',
+  toolsList: [
+    ['discount', 'छूट', 'किसी आइटम पर सेल लगाएं; ग्राहकों को पुराना दाम कटा हुआ दिखेगा।'],
+    ['offers', 'एक ग्राहक के लिए ख़ास दाम', 'ऐसा दाम-लिंक जो सिर्फ़ एक ग्राहक इस्तेमाल कर सके।'],
+    ['waitlist', 'वापस आने की सूची', 'बिक चुके आइटम पर “मुझे बताएं”, और कौन इंतज़ार कर रहा है उसकी सूची।'],
+    ['profit', 'मुनाफ़ा', 'एक पीस की लागत डालें; खाते में मुनाफ़ा देखें।'],
+    ['labels', 'शिपिंग लेबल', 'भेजने वाले ऑर्डर के पते के लेबल प्रिंट करें।'],
+  ] as [string, string, string][],
   // छूट, ख़ास दाम, मुनाफ़ा, इंतज़ार सूची, लेबल
   pctOff: (n: number) => `${n}% छूट`,
   profitPerPiece: (p: string) => `एक पीस पर मुनाफ़ा ${p}`,

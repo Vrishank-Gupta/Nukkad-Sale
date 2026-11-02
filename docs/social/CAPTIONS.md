@@ -203,6 +203,51 @@ Caption:
 >
 > #WhatsAppSeller #ResellersOfIndia #SmallBusinessIndia #Razorpay #FlashSale #SellOnWhatsApp #ScaleYourBusiness
 
+### Reel 12 – Discounts: "Item not moving?" (18 s) · `reel-12-discount.mp4` · yellow price-tag look
+> Item not moving? Run a sale in 10 seconds. 🏷️
+>
+> Open the sale → Discount → tap 20% off. Buyers see ₹639 with ₹799 struck through – on the sale page and in your WhatsApp group post. Orders already placed keep their price, and you can end the sale any time.
+>
+> Sale lagao, sale badhao. Link in bio.
+>
+> #WhatsAppSeller #FlashSale #SmallBusinessIndia #ResellersOfIndia #BoutiqueOwner #SaleAlert
+
+### Reel 13 – Special price: "Bhaiya, ₹650 mein de do na?" (19 s) · `reel-13-special-price.mp4` · grey chat look
+> "Bhaiya, ₹650 mein de do na? 🙏" – every seller knows this DM.
+>
+> Said yes? Don't change the price for everyone. Make a special price link for her: her price, her WhatsApp number, one order, ends on time. Everyone else still sees your regular price.
+>
+> Bargain in the chat – not on your price list. Link in bio.
+>
+> #WhatsAppSeller #SellerLife #ResellersOfIndia #SmallBusinessIndia #Relatable
+
+### Reel 14 – Waitlist: "SOLD OUT" (15 s) · `reel-14-waitlist.mp4` · navy look
+> SOLD OUT… and 6 buyers just left your page. 😶
+>
+> Now they tap "Notify me". Add stock and NukkadSale tells you who's waiting – one tap sends each of them a WhatsApp.
+>
+> Sold out today. Sold again tomorrow. Link in bio.
+>
+> #WhatsAppSeller #Restock #SmallBusinessIndia #BoutiqueOwner #SellOnWhatsApp
+
+### Reel 15 – Profit: "This month, you sold ₹50,000…" (15 s) · `reel-15-profit.mp4` · receipt look (example numbers)
+> This month you sold ₹50,000. But what did you EARN? 🧾
+>
+> Add your cost per piece once (only you see it). NukkadSale shows profit per piece on every sale and your profit this month in the khata – money in, minus product cost, minus expenses.
+>
+> Stop guessing. Know your profit. Link in bio.
+>
+> #Khata #SmallBusinessIndia #WhatsAppSeller #HomeBusiness #Profit
+
+### Reel 16 – Labels: "Still writing addresses by hand?" (12 s) · `reel-16-labels.mp4` · kraft-paper look
+> Still writing addresses by hand? ✍️ 30 parcels tonight?
+>
+> On NukkadSale, "To send" → Print shipping labels: name, address, items and COD amount for every parcel, 8 on an A4 page. Print, cut, stick, ship.
+>
+> Pack in minutes, not hours. Link in bio.
+>
+> #WhatsAppSeller #Shipping #SmallBusinessIndia #ResellersOfIndia #PackingOrders
+
 ---
 
 ## Feed posts
@@ -332,6 +377,36 @@ Own look on purpose (dark + money green, big centred phones, section labels) –
 > Get started → nukkadsale.in · Already with us? Message us to turn on automatic payments.
 >
 > #WhatsAppSeller #ResellersOfIndia #SmallBusinessIndia #Razorpay #OnlineBoutique #SellOnWhatsApp #ScaleYourBusiness
+
+### Post 12 – Discount · `post-12-discount.png`
+> Item not moving? Run a sale in 10 seconds. 🏷️ Tap Discount → 20% off – buyers see the old price struck through. Orders already placed keep their price.
+> Link in bio → nukkadsale.in
+> #WhatsAppSeller #SaleAlert #SmallBusinessIndia
+
+### Post 13 – Carousel "Don't change the price for everyone" · `post-13-special-price-a…e.png`
+> Gave one buyer a better price? Don't change it for everyone. 👇 A special price link: her price, her number, one order, ends on time.
+> Bargain in the chat – not on your price list. Get started → nukkadsale.in
+> #WhatsAppSeller #ResellersOfIndia #SellerTips
+
+### Post 14 – Waitlist · `post-14-waitlist.png`
+> 6 buyers are waiting for your restock. 🔔 Sold out? Buyers tap "Notify me" – add stock and message them in one tap.
+> Link in bio → nukkadsale.in
+> #WhatsAppSeller #Restock #SmallBusinessIndia
+
+### Post 15 – Carousel "3 numbers every seller should know" · `post-15-profit-a…e.png`
+> Sales aren't profit. 3 numbers every seller should know 👉 money in, product cost, expenses. NukkadSale does the maths – profit per piece and profit this month. Save this 🔖
+> Get started → nukkadsale.in
+> #Khata #SmallBusinessIndia #SellerTips #Profit
+
+### Post 16 – Labels · `post-16-labels.png`
+> Stop copying addresses by hand. One tap on "To send" prints a label for every parcel – name, address, items, COD. 8 on an A4 page. 📦
+> Link in bio → nukkadsale.in
+> #WhatsAppSeller #Shipping #SmallBusinessIndia
+
+### Post 17 – Carousel "5 new things in NukkadSale" (pin it) · `post-17-new-things-a…g.png`
+> 5 new things in NukkadSale 👉 discounts · special price for one buyer · restock waitlist · profit · shipping labels. All live now, all in one app – in English and हिंदी.
+> Get started → nukkadsale.in
+> #NukkadSale #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia
 
 ## Stories (add the sticker in the Instagram app – the empty space is left for it)
 

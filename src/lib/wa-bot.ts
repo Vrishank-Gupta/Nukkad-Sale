@@ -31,7 +31,7 @@ export type Inbound = {
 type Buyer = { phone: string; name: string; address: string; pincode: string; lang: Lang }
 type Session = { phone: string; state: string; drop_id: string | null; variant_id: number | null; qty: number; order_id: string | null }
 
-const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request`
+const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off`
 // Sale codes use the same look-alike-free alphabet as randomId().
 const CODE = /#([23456789a-hjkmnp-z]{7})\b/i
 const PINCODE = /\b[1-9]\d{5}\b/

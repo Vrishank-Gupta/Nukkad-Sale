@@ -201,7 +201,7 @@ p12: `<div class="f yellowp">${B()}
     <div class="h" style="font-size:58px">Item not moving?</div>
     <div class="m" style="font-size:34px;margin-top:10px">Run a sale in 10 seconds.</div>
     <div style="margin-top:44px;position:relative"><span class="ptag" style="font-size:54px;text-decoration:line-through;text-decoration-color:#e03131;text-decoration-thickness:7px">₹799</span></div>
-    <div style="margin-top:20px;display:flex;align-items:center;gap:18px"><span style="font-size:88px;font-weight:900">₹639</span><span class="pburst">20%<br>OFF</span></div>
+    <div style="margin-top:20px;display:flex;align-items:center;gap:18px"><span style="font-size:80px;font-weight:900">₹639</span><span class="pburst" style="width:104px;height:104px;font-size:24px">20%<br>OFF</span></div>
     <div class="s" style="margin-top:18px;font-size:22px">Tap Discount → 20% off. Buyers see the old price struck through. Orders already placed keep their price.</div></div>
   ${P('feat-buyer-discount', 420, 130, 270)}</div>`,
 // Post 13 · Special price – carousel, grey + chat bubble cover (no phone on the cover)
@@ -244,12 +244,12 @@ p16: `<div class="f kraftp">${B()}
   <div style="position:absolute;left:50px;right:50px;top:110px">
     <div class="h" style="font-size:56px">Stop copying<br>addresses by hand.</div>
     <div class="s" style="margin-top:12px;font-size:24px">One tap on “To send” prints a label for every parcel – name, address, items, COD. 8 on an A4 page.</div></div>
-  <div class="lblsheet" style="position:absolute;left:90px;right:90px;top:400px;height:470px;transform:rotate(-2deg)"><img src="img/feat-labels-sheet.png"></div></div>`,
+  <div class="lblsheet" style="position:absolute;left:70px;right:70px;top:430px;height:330px;transform:rotate(-2deg)"><img src="img/feat-labels-sheet.png"></div></div>`,
 // Post 17 · "5 new things in NukkadSale" – one slide per feature in that feature's own colour
 p17a: `<div class="f blackp">${B()}
   <div style="position:absolute;left:50px;right:50px;top:220px">
     <div style="margin-bottom:30px">${['#ffd43b', '#e9e6e1', '#ffd43b;box-shadow:0 0 0 4px #1d2f55', '#fffdf6', '#c9a26b'].map((c) => `<span class="dot5" style="background:${c}"></span>`).join('')}</div>
-    <div class="h" style="font-size:84px">5 new things<br>in NukkadSale</div>
+    <div class="h" style="font-size:74px">5 new things in<br><span style="white-space:nowrap">NukkadSale</span></div>
     <div class="s" style="margin-top:20px;font-size:28px;opacity:.85">Built for how you actually sell. Swipe →</div></div></div>`,
 p17b: nw('yellowp', 1, 'Discounts', 'Put any item on sale in seconds. Old price struck through.', 'feat-buyer-discount'),
 p17c: nw('greyp', 2, 'Special price for one buyer', 'Agreed a rate in the chat? A link only she can use.', 'feat-buyer-offer'),
@@ -298,7 +298,7 @@ function sp(n, title, body, img) {
   return `<div class="f greyp">${B()}<div class="handle">${n}/3</div>
   <div style="position:absolute;left:50px;right:50px;top:120px;text-align:center"><span class="num">${n}</span>
     <div class="m" style="font-size:44px;margin-top:16px">${title}</div><div class="s" style="margin:12px auto 0;font-size:23px;color:#5c5248;max-width:560px">${body}</div></div>
-  ${P(img, 225, 400, 270)}<div class="swipe">Swipe →</div></div>`
+  ${P(img, 225, 470, 250)}<div class="swipe">Swipe →</div></div>`
 }
 function rc(n, title, body, img) {
   return `<div class="f receiptp">${B()}<div class="handle">${n}/3</div>

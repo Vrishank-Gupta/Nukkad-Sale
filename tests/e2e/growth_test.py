@@ -16,7 +16,7 @@ def client(ip):
     op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), NoRedirect)
     def go(path, data=None, multipart=None):
         h = {'User-Agent': 'Mozilla/5.0 khatakhat-e2e', 'Origin': B, 'cf-connecting-ip': ip}
-        body = urllib.parse.urlencode(data).encode() if data is not None else None
+        body = urllib.parse.urlencode(data, doseq=True).encode() if data is not None else None
         if multipart: body, h['Content-Type'] = multipart
         try: r = op.open(urllib.request.Request(B + path, data=body, headers=h)); return r.status, r.headers, r.read().decode(errors='replace')
         except urllib.error.HTTPError as e: return e.code, e.headers, e.read().decode(errors='replace')
@@ -164,4 +164,31 @@ hi = client('10.4.0.20')
 hi('/lang?to=hi&back=/')
 s, h, hp = hi(f'/d/{drop}?o={tok4}')
 check('आपका ख़ास दाम' in hp and 'सिर्फ़ इस लिंक से' in hp, 'Hindi buyer sees the special price in Hindi')
+
+# ---------- seller switches tools off / on ----------
+s, h, st = sel('/app/settings')
+check('Selling tools' in st and st.count('class="switch"') == 5 and st.count('checked') >= 5, 'Settings lists 5 selling tools, all on')
+# form posts repeated "on" keys
+def post_tools(on):
+    import http.cookiejar
+    return sel('/app/tools', [('on', x) for x in on])
+post_tools(['discount', 'profit'])          # waitlist, offers, labels off
+check(sql(f"SELECT tools_off FROM sellers WHERE phone = '91{phone}'")[0]['tools_off'] == 'offers,waitlist,labels', 'saved: offers, waitlist, labels switched off')
+s, h, sp = sel(f'/app/drops/{drop}')
+check('Special price for one buyer' not in sp and 'Discount' in sp and 'per piece' in sp, 'sale page: special-price tool hidden, discount and profit still there')
+sold = sale(sel, [('title', 'Gone bangle'), ('price', '400'), ('stock', '1'), ('max', '1'), ('description', 'x')])
+vs = sql(f"SELECT id FROM variants WHERE drop_id = '{sold}'")[0]['id']
+client('10.4.0.30')(f'/d/{sold}', form(vs, '9811000030'))
+s, h, bp = client('10.4.0.31')(f'/d/{sold}')
+check('Notify me' not in bp, 'waitlist off: no “Notify me” for buyers')
+s, h, _ = client('10.4.0.31')(f'/d/{sold}/waitlist', {'name': 'X', 'phone': '9811000031'})
+check(sql(f"SELECT COUNT(*) n FROM waitlist WHERE drop_id = '{sold}'")[0]['n'] == 0, 'waitlist off: joining is refused')
+s, h, bp = client('10.4.0.32')(f'/d/{drop}?o={tok4}')
+check('ख़ास' not in bp and 'Special price' not in bp and 'ended or was already used' not in bp, 'special prices off: a link shows the normal page')
+s, h, _ = client('10.4.0.33')(f'/d/{drop}', form(v, '9811000033', offer=tok4))
+check(sql(f"SELECT unit_paise FROM orders WHERE buyer_phone = '919811000033'")[0]['unit_paise'] == 100000, 'special prices off: order at the regular price')
+check('Print shipping labels' not in sel('/app/orders?tab=send')[2], 'labels off: no labels button')
+post_tools(['discount', 'offers', 'waitlist', 'profit', 'labels'])
+check(sql(f"SELECT tools_off FROM sellers WHERE phone = '91{phone}'")[0]['tools_off'] == '', 'all tools switched back on')
+check('Notify me' in client('10.4.0.34')(f'/d/{sold}')[2] and 'Special price for one buyer' in sel(f'/app/drops/{drop}')[2], 'back on: waitlist and special price return')
 print(f'\n{ok} checks passed')

@@ -46,6 +46,8 @@ export type PayMode = 'direct' | 'razorpay'
 
 export type Seller = {
   id: string
+  /** Selling tools switched off by the seller, comma list (see lib/tools.ts). */
+  tools_off?: string
   phone: string
   name: string
   shop_name: string
