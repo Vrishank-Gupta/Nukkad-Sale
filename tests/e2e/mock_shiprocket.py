@@ -47,7 +47,7 @@ class H(BaseHTTPRequestHandler):
         u = urlparse(self.path); p = u.path.replace('/v1/external', ''); b = self._body(); calls.append(('POST', p, b))
         if p == '/_track':
             t = tracks.setdefault(b['awb'], {'status': '', 'acts': []}); t['status'] = b['status']
-            t['acts'].insert(0, {'date': '2026-11-05 10:00:00', 'activity': b.get('activity', b['status']), 'location': b.get('location', 'Pune')})
+            t['acts'].insert(0, {'date': b.get('date', '2026-11-05 10:00:00'), 'activity': b.get('activity', b['status']), 'location': b.get('location', 'Pune')})
             return self._json(200, {'ok': True})
         if p == '/auth/login':
             if b.get('email') == 'seller@test.in' and b.get('password') == 'secret123': return self._json(200, {'token': TOKEN})

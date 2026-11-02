@@ -27,8 +27,8 @@ export const site = new Hono<AppEnv>()
 const C = {
   en: {
     title: 'NukkadSale – Sell on WhatsApp, without the DM chaos',
-    desc: 'Take orders from your WhatsApp groups, get paid on UPI and know exactly who paid. Stock held while buyers pay, khata that writes itself. हिंदी + English.',
-    nav: ['How it works', 'Features', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get started', other: 'हिंदी', otherLang: 'hi',
+    desc: 'Take orders from your WhatsApp groups and your own shop link, get paid on UPI and know exactly who paid. Cart, offers, courier booking and a khata that writes itself. हिंदी + English.',
+    nav: ['How it works', 'Shop link', 'Tools', 'Shipping', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get started', other: 'हिंदी', otherLang: 'hi',
     eyebrow: 'For sellers on WhatsApp',
     h1a: 'Sell on WhatsApp.', h1b: 'Without the DM chaos.',
     sub: (bot: boolean): string => bot
@@ -51,13 +51,42 @@ const C = {
     paiseEyebrow: 'The paise trick', paiseH: 'Why did your buyer pay ₹798.57 for a ₹799 kurta?',
     paiseP: 'Because every order gets its own paise, taken off the price – buyers never pay more than listed. Six buyers paying ₹799 look the same in your UPI app; six different amounts don’t. No screenshots, no guessing.',
     paiseAlt: 'NukkadSale Orders screen: Did you get ₹798.57 in your UPI app? Yes, I got it', paiseCap: 'The real Orders screen: each buyer’s exact amount, one tap to confirm.',
+    shopEyebrow: 'Your own shop link', shopH: 'One link for your whole shop.',
+    shopP: 'Put it in your Instagram bio and WhatsApp status. Buyers browse everything you sell, fill a cart and pay you once.',
+    shopPts: [
+      ['shop', 'nukkadsale.in/your-shop', 'Every live sale in one place, with categories and search.'],
+      ['bag', 'A cart, one UPI payment', 'Kurta + dupatta + earrings – one checkout, one amount to check.'],
+      ['receipt', '“Spend ₹1,500, get ₹150 off”', 'Set a spend-more offer once. It shows on every product and applies itself.'],
+    ],
+    shopAlt: ['A NukkadSale shop page with categories, search and a spend-more offer', 'The cart: two items, the offer taken off, one amount to pay'],
+    toolsEyebrow: 'Sell more', toolsH: 'Tools that bring buyers back',
+    toolsP: 'All built in, all optional – switch off whatever you don’t use in Settings.',
+    tools: [
+      ['tag', 'Discounts', 'Drop the price on any sale. Buyers see the old price struck through.', 'discount', '50%', 'A sale page showing ₹799 with ₹999 struck through and 20% off'],
+      ['key', 'A special price for one buyer', 'Send a private link with their own price. Nobody else gets it.', 'special-price', '28%', 'A sale page opened from a special-price link'],
+      ['clock', 'Scheduled drops', 'Announce a launch. Buyers see a countdown and the sale opens on time.', 'drop-soon', '88%', 'A countdown to a sale that goes live at 7 pm'],
+      ['bell', 'Back-in-stock list', 'Sold out? Buyers ask to be told. Restock and message them in one tap.', 'waitlist', '0%', 'The list of buyers waiting for a restock'],
+    ],
+    shipEyebrow: 'Shipping', shipH: 'Pack it, book it, let them track it.',
+    shipP: 'Print address labels for every order at once. Use Shiprocket? Connect your own account and book couriers right from your orders.',
+    shipPts: [
+      ['wallet', 'See courier prices first', 'Rates and delivery dates for the buyer’s pincode, before you book.'],
+      ['receipt', 'Label and pickup in one go', 'Book, print the courier label and schedule the pickup without leaving the order.'],
+      ['pin', 'Buyers track it themselves', 'Their order page shows every scan – fewer “where is my parcel?” messages.'],
+      ['refresh', 'Failed delivery? Sorted.', 'Ask for another attempt, get it back, send again or restock.'],
+    ],
+    shipNote: 'Shiprocket is optional and uses your own Shiprocket account and wallet. Don’t use it? Nothing changes for you or your buyers.',
+    shipAlt: ['Booking a courier: prices and delivery dates for the buyer’s pincode', 'The buyer’s order page with live courier tracking'],
+    profitEyebrow: 'Profit', profitH: 'Know what you actually made.',
+    profitP: 'Add what a piece cost you, once. Every sale shows its profit, and the khata shows this month’s – after product cost and expenses.',
+    profitAlt: 'The khata showing profit this month after product cost and expenses',
     featEyebrow: 'Features', featH: 'Everything a WhatsApp seller needs. Nothing extra.',
     feats: (bot: boolean) => [
       ['chat', bot ? 'Orders in WhatsApp' : 'One link per sale', bot ? 'Buyers order in the chat they already use. No app for them.' : 'Buyers order from your link in seconds. No app, no sign-up.'],
       ['₹', 'Exact-amount UPI', 'Every order has its own paise, so you know who paid. GPay, PhonePe, Paytm – any UPI app.'],
       ['lock', 'Never oversell', 'Stock is held for a buyer while they pay. Didn’t pay in time? It goes back on sale by itself.'],
       ['book', 'Khata that writes itself', 'Every sale is added automatically. Add courier or cash entries in one tap.'],
-      ['box', 'Pack & send', 'Paid → Packed → Sent → Delivered. Copy the address in one tap.'],
+      ['box', 'Pack & send', 'Paid → Packed → Sent → Delivered. Print every address label at once.'],
       ['users', 'Know your buyers', 'Repeat buyers, total spent, one-tap WhatsApp.'],
       ['refresh', 'Sell again in one tap', 'Photos, price and sizes come back pre-filled.'],
       ['download', 'Opens like an app', 'Add it to your home screen from Chrome or Safari. No app store.'],
@@ -78,6 +107,8 @@ const C = {
       ['Do I need a WhatsApp Business API account?', 'No. Keep selling from your own WhatsApp number and groups.'],
       ['Can I use it in Hindi?', 'Yes. The whole app – and what your buyers see – works in Hindi and English.'],
       ['How do I get my account?', 'Fill the form below. We’ll call you, set up your shop and send your login on WhatsApp. You can change your PIN anytime in Settings.'],
+      ['Can buyers order many things at once?', 'Yes. From your shop link they add items to a cart and pay you once. Your spend-more offer comes off automatically.'],
+      ['Do I need Shiprocket?', 'No. Send parcels however you like and print address labels from NukkadSale. If you already use Shiprocket, connect it to book couriers and share tracking.'],
       ['What does it cost?', 'We’ll walk you through the plans on the call – no commitment.'],
     ],
     formEyebrow: 'Get started', formH: 'Tell us about your business', formP: 'We’ll reach out on WhatsApp, set up your shop with you and send your login.',
@@ -88,8 +119,8 @@ const C = {
   },
   hi: {
     title: 'NukkadSale – WhatsApp पर बेचिए, DM के झंझट के बिना',
-    desc: 'WhatsApp ग्रुप से ऑर्डर लें, UPI पर पैसे पाएं और जानें किसने पेमेंट किया। पेमेंट होने तक स्टॉक होल्ड, खाता अपने आप। हिंदी + English।',
-    nav: ['कैसे काम करता है', 'फ़ीचर', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'शुरू करें', other: 'English', otherLang: 'en',
+    desc: 'WhatsApp ग्रुप और अपनी दुकान के लिंक से ऑर्डर लें, UPI पर पैसे पाएं और जानें किसने पेमेंट किया। कार्ट, छूट, कूरियर बुकिंग और खाता अपने आप। हिंदी + English।',
+    nav: ['कैसे काम करता है', 'दुकान लिंक', 'टूल', 'शिपिंग', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'शुरू करें', other: 'English', otherLang: 'en',
     eyebrow: 'WhatsApp पर बेचने वालों के लिए',
     h1a: 'WhatsApp पर बेचिए।', h1b: 'DM के झंझट के बिना।',
     sub: (bot: boolean): string => bot
@@ -112,13 +143,42 @@ const C = {
     paiseEyebrow: 'पैसों वाली तरकीब', paiseH: '₹799 की कुर्ती के लिए ग्राहक ने ₹798.57 क्यों दिए?',
     paiseP: 'क्योंकि हर ऑर्डर के अपने पैसे होते हैं, दाम में से घटाकर – ग्राहक कभी ज़्यादा नहीं देते। छह लोग ₹799 भेजें तो UPI ऐप में सब एक जैसे दिखते हैं – छह अलग रकम नहीं। न स्क्रीनशॉट, न अंदाज़ा।',
     paiseAlt: 'NukkadSale ऑर्डर स्क्रीन: क्या आपके UPI में ₹798.57 आए?', paiseCap: 'असली ऑर्डर स्क्रीन: हर ग्राहक की सही रकम, एक टैप में पक्का।',
+    shopEyebrow: 'आपकी अपनी दुकान का लिंक', shopH: 'पूरी दुकान, एक लिंक में।',
+    shopP: 'Instagram बायो और WhatsApp स्टेटस में लगाएं। ग्राहक आपका सारा माल देखें, कार्ट भरें और एक बार में पेमेंट करें।',
+    shopPts: [
+      ['shop', 'nukkadsale.in/your-shop', 'हर चालू सेल एक जगह – कैटेगरी और सर्च के साथ।'],
+      ['bag', 'कार्ट, एक UPI पेमेंट', 'कुर्ती + दुपट्टा + झुमके – एक चेकआउट, चेक करने को एक रकम।'],
+      ['receipt', '“₹1,500 की ख़रीद पर ₹150 छूट”', 'ज़्यादा ख़रीद पर छूट एक बार सेट करें। हर प्रोडक्ट पर दिखेगी और अपने आप लगेगी।'],
+    ],
+    shopAlt: ['NukkadSale दुकान का पेज – कैटेगरी, सर्च और छूट के साथ', 'कार्ट: दो चीज़ें, छूट घटकर, एक रकम'],
+    toolsEyebrow: 'ज़्यादा बेचें', toolsH: 'ग्राहक बार-बार लौटें, इसके टूल',
+    toolsP: 'सब पहले से मौजूद, सब ज़रूरत के हिसाब से – जो न चाहिए, सेटिंग में बंद करें।',
+    tools: [
+      ['tag', 'छूट', 'किसी भी सेल का दाम घटाएं। ग्राहक को पुराना दाम कटा हुआ दिखे।', 'discount', '50%', 'सेल पेज: ₹999 कटा हुआ, ₹799 और 20% छूट'],
+      ['key', 'एक ग्राहक के लिए ख़ास दाम', 'उनके अपने दाम वाला प्राइवेट लिंक भेजें। किसी और को नहीं मिलेगा।', 'special-price', '28%', 'ख़ास दाम वाले लिंक से खुला सेल पेज'],
+      ['clock', 'तय समय पर लॉन्च', 'लॉन्च पहले से बताएं। ग्राहक काउंटडाउन देखें, सेल समय पर खुले।', 'drop-soon', '88%', 'शाम 7 बजे खुलने वाली सेल का काउंटडाउन'],
+      ['bell', 'स्टॉक वापसी की लिस्ट', 'माल ख़त्म? ग्राहक बताने को कहें। स्टॉक डालें और एक टैप में मैसेज करें।', 'waitlist', '0%', 'स्टॉक का इंतज़ार कर रहे ग्राहकों की लिस्ट'],
+    ],
+    shipEyebrow: 'शिपिंग', shipH: 'पैक करें, बुक करें, ग्राहक ख़ुद ट्रैक करें।',
+    shipP: 'सारे ऑर्डर के पते के लेबल एक साथ प्रिंट करें। Shiprocket चलाते हैं? अपना खाता जोड़ें और ऑर्डर से ही कूरियर बुक करें।',
+    shipPts: [
+      ['wallet', 'पहले कूरियर के दाम देखें', 'ग्राहक के पिनकोड के लिए रेट और पहुँचने की तारीख़ – बुक करने से पहले।'],
+      ['receipt', 'लेबल और पिकअप एक साथ', 'बुक करें, कूरियर लेबल प्रिंट करें, पिकअप तय करें – ऑर्डर से ही।'],
+      ['pin', 'ग्राहक ख़ुद ट्रैक करें', 'उनके ऑर्डर पेज पर हर स्कैन – “पार्सल कहाँ है?” वाले मैसेज कम।'],
+      ['refresh', 'डिलीवरी नहीं हुई? संभल जाएगा।', 'फिर से कोशिश करवाएं, वापस मंगवाएं, दोबारा भेजें या स्टॉक में डालें।'],
+    ],
+    shipNote: 'Shiprocket ज़रूरी नहीं – यह आपके अपने Shiprocket खाते और वॉलेट से चलता है। नहीं चलाते? आपके और ग्राहकों के लिए कुछ नहीं बदलता।',
+    shipAlt: ['कूरियर बुकिंग: ग्राहक के पिनकोड के लिए दाम और तारीख़', 'ग्राहक का ऑर्डर पेज, कूरियर ट्रैकिंग के साथ'],
+    profitEyebrow: 'मुनाफ़ा', profitH: 'जानें असल में कितना कमाया।',
+    profitP: 'एक पीस की लागत एक बार डालें। हर सेल पर मुनाफ़ा दिखेगा, और खाते में इस महीने का – माल की लागत और ख़र्च घटाकर।',
+    profitAlt: 'खाता: इस महीने का मुनाफ़ा, लागत और ख़र्च घटाकर',
     featEyebrow: 'फ़ीचर', featH: 'WhatsApp सेलर को जो चाहिए, बस वही।',
     feats: (bot: boolean) => [
       ['chat', bot ? 'WhatsApp में ऑर्डर' : 'हर सेल का एक लिंक', bot ? 'ग्राहक उसी चैट में ऑर्डर करें जो वो रोज़ चलाते हैं। उनके लिए कोई ऐप नहीं।' : 'ग्राहक आपके लिंक से सेकंडों में ऑर्डर करें। कोई ऐप नहीं, कोई साइन-अप नहीं।'],
       ['₹', 'सही रकम वाला UPI', 'हर ऑर्डर के अपने पैसे, तो पता रहे किसने पेमेंट किया। GPay, PhonePe, Paytm – कोई भी UPI ऐप।'],
       ['lock', 'कभी ज़्यादा न बिके', 'पेमेंट होने तक स्टॉक ग्राहक के लिए होल्ड। समय पर पेमेंट नहीं? अपने आप फिर से बिक्री में।'],
       ['book', 'खाता अपने आप', 'हर बिक्री अपने आप जुड़ती है। कूरियर या कैश एक टैप में जोड़ें।'],
-      ['box', 'पैक करके भेजें', 'पेमेंट → पैक → भेजा → पहुँचा। पता एक टैप में कॉपी।'],
+      ['box', 'पैक करके भेजें', 'पेमेंट → पैक → भेजा → पहुँचा। सारे पते के लेबल एक साथ प्रिंट।'],
       ['users', 'अपने ग्राहक पहचानें', 'बार-बार आने वाले ग्राहक, कुल ख़रीद, एक टैप में WhatsApp।'],
       ['refresh', 'एक टैप में फिर से बेचें', 'फ़ोटो, दाम और साइज़ पहले से भरे मिलते हैं।'],
       ['download', 'ऐप की तरह खुलता है', 'Chrome या Safari से होम स्क्रीन पर जोड़ें। ऐप स्टोर की ज़रूरत नहीं।'],
@@ -139,6 +199,8 @@ const C = {
       ['क्या WhatsApp Business API खाता चाहिए?', 'नहीं। अपने ही WhatsApp नंबर और ग्रुप से बेचते रहें।'],
       ['क्या हिंदी में चलेगा?', 'हाँ। पूरा ऐप – और जो आपके ग्राहक देखते हैं – हिंदी और English दोनों में।'],
       ['मेरा खाता कैसे बनेगा?', 'नीचे फ़ॉर्म भरें। हम कॉल करके आपकी दुकान सेट करेंगे और लॉग इन WhatsApp पर भेजेंगे। PIN आप कभी भी सेटिंग में बदल सकते हैं।'],
+      ['क्या ग्राहक एक साथ कई चीज़ें ले सकते हैं?', 'हाँ। आपकी दुकान के लिंक से कार्ट में डालें और एक बार में पेमेंट करें। ज़्यादा ख़रीद वाली छूट अपने आप लगती है।'],
+      ['क्या Shiprocket ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। Shiprocket पहले से चलाते हैं तो जोड़ें – कूरियर बुक करें और ट्रैकिंग भेजें।'],
       ['इसका ख़र्च कितना है?', 'कॉल पर हम प्लान समझा देंगे – कोई बाध्यता नहीं।'],
     ],
     formEyebrow: 'शुरू करें', formH: 'अपने काम के बारे में बताएं', formP: 'हम WhatsApp पर संपर्क करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
@@ -168,7 +230,8 @@ header .wrap{display:flex;align-items:center;gap:16px;height:64px}
 .logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:1.25rem;text-decoration:none;letter-spacing:-.3px}
 .logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center}
 nav.links{display:flex;gap:22px;margin-left:24px}
-nav.links a{text-decoration:none;font-weight:600;color:var(--muted)}
+nav.links a{text-decoration:none;font-weight:600;color:var(--muted);white-space:nowrap}
+@media (max-width:1100px){nav.links{gap:16px;margin-left:8px}}@media (max-width:980px){nav.links{display:none}}
 nav.links a:hover{color:var(--ink)}
 .hgap{flex:1}
 .lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem}
@@ -264,7 +327,34 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 .thanks{min-height:70vh;display:flex;align-items:center}
 .thanks .box{max-width:560px;margin:0 auto;text-align:center;background:#fff;border:1px solid var(--line);border-radius:28px;padding:40px 28px}
 .thanks p{color:var(--muted);margin:14px 0 24px;font-size:1.1rem}
+.split .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.split.rev .wrap{grid-template-columns:.95fr 1.05fr}
+.ticks{list-style:none;padding:0;margin:26px 0 0;display:grid;gap:18px}
+.ticks.two{grid-template-columns:1fr 1fr;gap:20px 24px}
+.ticks li{display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start}
+.ticks .ic{width:44px;height:44px;border-radius:12px;background:var(--soft);color:var(--brand);display:flex;align-items:center;justify-content:center}
+.ticks b{display:block;font-size:1.02rem;margin-bottom:2px}.ticks span:not(.ic){color:var(--muted);font-size:.95rem}
+.pair{display:flex;gap:5%;justify-content:center;align-items:flex-start;padding-bottom:20px}
+.pair .phone{position:relative;width:47%;max-width:250px}.pair .b{margin-top:60px}
+.note.small{font-size:.9rem;font-weight:500;margin-top:24px;padding-left:14px;border-left:3px solid var(--line)}
+.dark .lead{margin-top:6px}
+.bento{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
+.tile{background:#221d18;border:1px solid #3a322a;border-radius:24px;padding:24px 22px 0;display:flex;flex-direction:column;overflow:hidden}
+.tile .ic{color:#ffb07a;margin-bottom:12px;display:block}
+.tile h3{color:#fff}.tile p{color:#c9bfb3;font-size:.94rem;margin-bottom:20px}
+.tile .crop{margin-top:auto;height:290px;border-radius:20px 20px 0 0;overflow:hidden;border:6px solid #000;border-bottom:0;background:#000}
+.tile .crop img{width:100%;height:100%;object-fit:cover}
+.profit{background:var(--soft);padding:0;overflow:hidden}
+.profit .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:48px;align-items:center}
+.profit .wrap>div{padding:64px 0}
+.peek{margin:0;align-self:end;height:340px;overflow:hidden;border-radius:30px 30px 0 0;border:9px solid #1d1a16;border-bottom:0;max-width:290px;justify-self:center;margin-top:48px;box-shadow:0 -10px 50px rgba(80,40,10,.18)}
+.peek img{width:100%;border-radius:22px 22px 0 0;margin-top:-27%}
+@media (max-width:1000px){.bento{grid-template-columns:1fr 1fr}}
 @media (max-width:900px){
+  .split .wrap,.split.rev .wrap,.profit .wrap{grid-template-columns:1fr;gap:36px}
+  .split.rev .pair{order:2}
+  .pair{max-width:460px;margin:0 auto;width:100%}
+  .profit .wrap>div{padding:56px 0 0}.peek{margin-top:0}
   nav.links{display:none}
   .hero .wrap,.pain .wrap,.paise .wrap,.hindi .wrap,.formsec .wrap{grid-template-columns:1fr}
   .phones{height:470px;max-width:440px;margin:0 auto;width:100%}
@@ -280,6 +370,9 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
   .phones{height:420px}.phone{width:180px}.phones .p1{left:0}.phones .p2{right:0}
   .duo .phone{width:46%}
   .ctas .btn{width:100%}
+  .ticks.two{grid-template-columns:1fr}
+  .bento{grid-template-columns:1fr}.tile .crop{height:250px}
+  .pair .b{margin-top:36px}
 }@media (max-width:430px){
   header .wrap{gap:8px;padding-left:14px;padding-right:14px}.logo{font-size:1.08rem;gap:6px}header .btn.sm{padding:0 12px}header .btn .long{display:none}header .btn .short{display:inline}
 }
@@ -317,7 +410,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <header>
           <div class="wrap">
             <Logo />
-            <nav class="links"><a href="/#how">{p.k.nav[0]}</a><a href="/#features">{p.k.nav[1]}</a><a href="/#faq">{p.k.nav[2]}</a></nav>
+            <nav class="links">{['how', 'shop', 'tools', 'shipping', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
@@ -397,6 +490,45 @@ site.get('/', async (c) => {
             <p class="lead">{k.paiseP}</p>
           </div>
           <figure class="cards"><img src="/site/paise-cards.webp" alt={k.paiseAlt} loading="lazy" width="600" height="849" /><figcaption>{k.paiseCap}</figcaption></figure>
+        </div>
+      </section>
+
+      <section id="shop" class="split">
+        <div class="wrap">
+          <div>
+            <span class="eyebrow">{k.shopEyebrow}</span><h2>{k.shopH}</h2><p class="lead">{k.shopP}</p>
+            <ul class="ticks">{k.shopPts.map(([ic, h, p]) => <li><span class="ic">{svgIcon(ic)}</span><div><b>{h}</b><span>{p}</span></div></li>)}</ul>
+          </div>
+          <div class="pair"><Phone img="storefront" cls="a" alt={k.shopAlt[0]} /><Phone img="cart" cls="b" alt={k.shopAlt[1]} /></div>
+        </div>
+      </section>
+
+      <section id="tools" class="dark">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow" style="color:#ffb07a">{k.toolsEyebrow}</span><h2>{k.toolsH}</h2><p class="lead">{k.toolsP}</p></div>
+          <div class="bento">
+            {k.tools.map(([ic, h, p, img, y, alt]) => (
+              <div class="tile"><span class="ic">{svgIcon(ic, 26)}</span><h3>{h}</h3><p>{p}</p><div class="crop"><img src={`/site/${img}.webp`} alt={alt} loading="lazy" width="540" height="1169" style={`object-position:50% ${y}`} /></div></div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="shipping" class="split rev">
+        <div class="wrap">
+          <div class="pair"><Phone img="ship-book" cls="a" alt={k.shipAlt[0]} /><Phone img="track" cls="b" alt={k.shipAlt[1]} /></div>
+          <div>
+            <span class="eyebrow">{k.shipEyebrow}</span><h2>{k.shipH}</h2><p class="lead">{k.shipP}</p>
+            <ul class="ticks two">{k.shipPts.map(([ic, h, p]) => <li><span class="ic">{svgIcon(ic)}</span><div><b>{h}</b><span>{p}</span></div></li>)}</ul>
+            <p class="note small">{k.shipNote}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="profit">
+        <div class="wrap">
+          <div><span class="eyebrow">{k.profitEyebrow}</span><h2>{k.profitH}</h2><p class="lead">{k.profitP}</p></div>
+          <figure class="peek"><img src="/site/profit.webp" alt={k.profitAlt} loading="lazy" width="540" height="1169" /></figure>
         </div>
       </section>
 

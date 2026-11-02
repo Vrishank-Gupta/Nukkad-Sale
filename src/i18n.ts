@@ -9,6 +9,17 @@ import type { OrderStatus, ShipStatus } from './env'
 
 export type Lang = 'en' | 'hi'
 
+// Courier dates arrive as "2026-11-08" or "2026-11-05 14:30:00" – show them as "8 Nov" / "5 Nov, 2:30 pm".
+// Anything else (e.g. "Nov 8, 2026") is shown as it came.
+export function courierDate(d: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(d)
+  if (!m) return d
+  const day = `${+m[3]} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1]}`
+  if (!m[4] || (m[4] === '00' && m[5] === '00')) return day
+  const h = +m[4]
+  return `${day}, ${h % 12 || 12}:${m[5]} ${h < 12 ? 'am' : 'pm'}`
+}
+
 const en = {
   lang: 'en' as Lang,
   otherLangLabel: 'हिंदी',
@@ -534,8 +545,8 @@ const en = {
   shipAwb: (c: string, awb: string) => `${c} · AWB ${awb}`,
   srLabel: 'Print label',
   shipPickup: 'Schedule pickup',
-  shipPickupOn: (d: string) => `Pickup ${d}`,
-  shipEtd: (d: string) => `Expected by ${d}`,
+  shipPickupOn: (d: string) => `Pickup ${courierDate(d)}`,
+  shipEtd: (d: string) => `Expected by ${courierDate(d)}`,
   shipCancel: 'Cancel shipment',
   shipCancelConfirm: 'Cancel this shipment in Shiprocket?',
   shipCancelled: 'Shipment cancelled.',
@@ -1288,8 +1299,8 @@ const hi: Dict = {
   shipAwb: (c: string, awb: string) => `${c} · AWB ${awb}`,
   srLabel: 'लेबल प्रिंट करें',
   shipPickup: 'पिकअप तय करें',
-  shipPickupOn: (d: string) => `पिकअप ${d}`,
-  shipEtd: (d: string) => `${d} तक पहुँचने की उम्मीद`,
+  shipPickupOn: (d: string) => `पिकअप ${courierDate(d)}`,
+  shipEtd: (d: string) => `${courierDate(d)} तक पहुँचने की उम्मीद`,
   shipCancel: 'शिपमेंट रद्द करें',
   shipCancelConfirm: 'Shiprocket में यह शिपमेंट रद्द करें?',
   shipCancelled: 'शिपमेंट रद्द हो गया।',

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { raw } from 'hono/html'
 import type { AppEnv, Order, Seller } from '../env'
-import { tr, type Dict } from '../i18n'
+import { courierDate, tr, type Dict } from '../i18n'
 import { decrypt, sha256 } from '../lib/crypto'
 import { shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
 import { confirmGateway, confirmRazorpay, startGatewayPayment } from '../lib/gateway'
@@ -615,7 +615,7 @@ const TrackCard = ({ t, sh }: { t: Dict; sh: ShipmentRow }) => {
           {scans.slice(0, 8).map((x, i) => (
             <li class="row" style="gap:10px;align-items:flex-start;padding:6px 0">
               <span style={`flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px;background:${i ? 'var(--line)' : 'var(--ok)'}`} />
-              <span><b style={`display:block;font-size:.92rem;${i ? 'font-weight:500' : ''}`}>{x.text}</b><small>{[x.place, x.at].filter(Boolean).join(' · ')}</small></span>
+              <span><b style={`display:block;font-size:.92rem;${i ? 'font-weight:500' : ''}`}>{x.text}</b><small>{[x.place, x.at && courierDate(x.at)].filter(Boolean).join(' · ')}</small></span>
             </li>
           ))}
         </ol>
