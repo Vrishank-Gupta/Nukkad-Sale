@@ -9,7 +9,9 @@ import os from 'node:os'
 import path from 'node:path'
 
 const FILE = path.join(os.homedir(), '.khatakhat/youtube.env')
-const SCOPES = ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.readonly']
+// upload: post videos · force-ssl: edit titles/descriptions and set thumbnails · readonly: check the channel
+const SCOPES = ['https://www.googleapis.com/auth/youtube.upload', 'https://www.googleapis.com/auth/youtube.force-ssl', 'https://www.googleapis.com/auth/youtube.readonly']
+export const LINK_LINE = '👉 Start selling: https://nukkadsale.in'
 
 function readEnv() {
   const out = {}
@@ -81,7 +83,7 @@ export async function youtubeUpload(file, caption, { privacy = 'public' } = {}) 
   title += ' #Shorts'
   const tags = [...new Set((caption.match(/#([A-Za-z0-9]+)/g) ?? []).map((x) => x.slice(1)))].slice(0, 15)
   const meta = {
-    snippet: { title, description: clean(caption).slice(0, 4900) + '\n\nnukkadsale.in', tags: ['NukkadSale', ...tags], categoryId: '26', defaultLanguage: 'en' },
+    snippet: { title, description: (LINK_LINE + '\n\n' + clean(caption)).slice(0, 4900), tags: ['NukkadSale', ...tags], categoryId: '26', defaultLanguage: 'en' },
     status: { privacyStatus: privacy, selfDeclaredMadeForKids: false },
   }
   const bytes = fs.readFileSync(file)
@@ -99,7 +101,7 @@ export async function youtubeUpload(file, caption, { privacy = 'public' } = {}) 
 export async function youtubeUploadVideo(file, meta, { privacy = 'public' } = {}) {
   const token = await accessToken()
   const body = {
-    snippet: { title: meta.title.slice(0, 100), description: meta.description.slice(0, 4900), tags: ['NukkadSale', ...(meta.tags ?? [])].slice(0, 20), categoryId: '26', defaultLanguage: 'en', defaultAudioLanguage: 'en' },
+    snippet: { title: meta.title.slice(0, 100), description: (meta.description.startsWith(LINK_LINE) ? meta.description : LINK_LINE + '\n\n' + meta.description).slice(0, 4900), tags: ['NukkadSale', ...(meta.tags ?? [])].slice(0, 20), categoryId: '26', defaultLanguage: 'en', defaultAudioLanguage: 'en' },
     status: { privacyStatus: privacy, selfDeclaredMadeForKids: false },
   }
   const bytes = fs.readFileSync(file)
@@ -116,4 +118,21 @@ export async function youtubeUploadVideo(file, meta, { privacy = 'public' } = {}
     if (!r.ok) console.log('  (custom thumbnail not set: ' + ((await r.json()).error?.message ?? r.status) + ')')
   }
   return { video_id: v.id, url: `https://youtu.be/${v.id}`, privacy: v.status?.privacyStatus, title: body.snippet.title }
+}
+
+/** Puts the website link on the first line of an existing video's description (and can update thumbnails). */
+export async function youtubeAddLink(videoId) {
+  const token = await accessToken()
+  const d = await (await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}`, { headers: { Authorization: 'Bearer ' + token } })).json()
+  const v = d.items?.[0]; if (!v) throw new Error('No video ' + videoId)
+  if (v.snippet.description.startsWith(LINK_LINE)) return 'already'
+  const { title, description, tags, categoryId, defaultLanguage, defaultAudioLanguage } = v.snippet
+  const snippet = { title, categoryId, tags, defaultLanguage, defaultAudioLanguage, description: (LINK_LINE + '\n\n' + description.replace(/\n\nnukkadsale\.in\s*$/, '\n\nhttps://nukkadsale.in')).slice(0, 4990) }
+  const r = await fetch('https://www.googleapis.com/youtube/v3/videos?part=snippet', { method: 'PUT', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: videoId, snippet }) })
+  if (!r.ok) throw new Error((await r.json()).error?.message ?? r.status)
+  return 'updated'
+}
+export async function youtubeThumbnail(videoId, jpg) {
+  const r = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}`, { method: 'POST', headers: { Authorization: 'Bearer ' + (await accessToken()), 'Content-Type': 'image/jpeg' }, body: fs.readFileSync(jpg) })
+  if (!r.ok) throw new Error((await r.json()).error?.message ?? r.status)
 }
