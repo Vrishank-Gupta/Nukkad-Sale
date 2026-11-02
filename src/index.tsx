@@ -15,6 +15,7 @@ import { app as sellerApp } from './routes/seller'
 import { hooks } from './routes/webhooks'
 import { ICONS, SCREENSHOTS } from './icons'
 import { cleanEvents, collect } from './lib/analytics'
+import { refreshShipments } from './lib/shiprocket'
 import { Layout } from './views/layout'
 
 const app = new Hono<AppEnv>()
@@ -176,6 +177,7 @@ export default {
         env.DB.prepare(`DELETE FROM sessions WHERE expires_at < ?`).bind(Date.now()).run(),
         env.DB.prepare(`DELETE FROM webhook_events WHERE received_at < ?`).bind(Date.now() - 30 * 86_400_000).run(),
         cleanEvents(env.DB).catch(() => {}),
+        refreshShipments(env).catch((e) => console.error('shipments', e)),
       ]),
     )
   },

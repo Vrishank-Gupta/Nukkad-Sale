@@ -40,6 +40,8 @@ export type Bindings = {
   WA_API_BASE?: string
   /** Testing only: point Razorpay calls at a mock server. */
   RAZORPAY_API_BASE?: string
+  /** Shiprocket API base (tests point it at tests/e2e/mock_shiprocket.py). */
+  SHIPROCKET_API_BASE?: string
 }
 
 export type PayMode = 'direct' | 'razorpay'
@@ -53,6 +55,10 @@ export type Seller = {
   offer_min_paise?: number
   offer_off_paise?: number
   offer_pct?: number
+  sr_email?: string | null
+  sr_pickup?: string | null
+  sr_pickup_pin?: string | null
+  sr_box?: string
   phone: string
   name: string
   shop_name: string
@@ -91,6 +97,8 @@ export type Drop = {
   compare_paise: number
   /** Seller's own cost per piece, for profit. 0 = not set. */
   cost_paise: number
+  /** Weight of one piece in grams, for courier rates. 0 = 500 g. */
+  weight_g: number
 }
 
 /** A personal price link for one buyer. */

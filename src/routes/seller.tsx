@@ -5,6 +5,7 @@ import type { Child, FC } from 'hono/jsx'
 import type { AppEnv, Drop, Offer, Order, PayMode, Seller, ShipStatus, Variant } from '../env'
 import { pctOff } from '../lib/offers'
 import { TOOLS, toolOn, type Tool } from '../lib/tools'
+import { ACTIVE_SHIP, applyTracking, mapStatus, srBook, srCancel, srLabel, srLogin, srNdr, srPickup, srPickups, srPincode, srRates, srToken, srTrack, ShiprocketError, type ShipmentRow } from '../lib/shiprocket'
 import { dictFor, tr, type Dict } from '../i18n'
 import { allowedEndpoint, pushEnabled, pushToSeller } from '../lib/push'
 import { requireSeller } from '../lib/auth'
@@ -158,15 +159,15 @@ app.get('/', async (c) => {
     db.prepare(
       `SELECT COUNT(DISTINCT CASE WHEN status = 'verifying' THEN COALESCE(cart_id, id) END) AS checkPay,
               COUNT(DISTINCT CASE WHEN status = 'refund_due' THEN COALESCE(cart_id, id) END) AS refunds,
-              COUNT(DISTINCT CASE WHEN (status = 'paid' AND ship_status IN ('new', 'packed')) OR (status = 'pending' AND pay_mode = 'cod') THEN COALESCE(cart_id, id) END) AS toSend,
+              COUNT(DISTINCT CASE WHEN ${TO_SEND} THEN COALESCE(o.cart_id, o.id) END) AS toSend,
               COUNT(DISTINCT CASE WHEN status = 'pending' AND hold_until > ?2 THEN COALESCE(cart_id, id) END) AS paying
-       FROM orders WHERE seller_id = ?1`,
+       FROM orders o WHERE seller_id = ?1`,
     ).bind(s.id, Date.now()).first<{ checkPay: number; refunds: number; toSend: number; paying: number }>(),
   ])
   const n = counts ?? { checkPay: 0, refunds: 0, toSend: 0, paying: 0 }
   // The week at a glance: daily sales for the last 7 IST days, buyers, money not yet confirmed.
   const weekStart = istDayStart(Date.now()) - 6 * 86_400_000
-  const [{ results: week }, people, waiting, ever, { results: backIn }] = await Promise.all([
+  const [{ results: week }, people, waiting, ever, { results: backIn }, shipAttn] = await Promise.all([
     db.prepare(`SELECT paid_at, amount_paise FROM orders WHERE seller_id = ? AND status = 'paid' AND paid_at >= ?`).bind(s.id, weekStart).all<{ paid_at: number; amount_paise: number }>(),
     db.prepare(`SELECT COUNT(*) AS buyers, COALESCE(SUM(n > 1), 0) AS repeat FROM (SELECT COUNT(*) AS n FROM orders WHERE seller_id = ? AND status = 'paid' GROUP BY buyer_phone)`).bind(s.id).first<{ buyers: number; repeat: number }>(),
     db.prepare(`SELECT COALESCE(SUM(amount_paise), 0) AS amt FROM orders WHERE seller_id = ? AND status IN ('pending', 'verifying') AND pay_mode = 'direct'`).bind(s.id).first<{ amt: number }>(),
@@ -175,6 +176,8 @@ app.get('/', async (c) => {
     db.prepare(`SELECT w.drop_id, COUNT(*) AS n FROM waitlist w JOIN drops d ON d.id = w.drop_id
                 WHERE w.seller_id = ? AND w.notified_at IS NULL AND d.status = 'live' AND (SELECT SUM(available) FROM variants WHERE drop_id = d.id) > 0
                 GROUP BY w.drop_id ORDER BY n DESC`).bind(s.id).all<{ drop_id: string; n: number }>(),
+    // Shiprocket parcels the seller must act on: failed delivery, or returned and not yet restocked.
+    s.sr_email ? db.prepare(`SELECT COUNT(*) AS n FROM shipments WHERE seller_id = ? AND (status = 'failed' OR (status = 'returned' AND status_text <> 'restocked'))`).bind(s.id).first<{ n: number }>() : Promise.resolve({ n: 0 }),
   ])
   const days = Array.from({ length: 7 }, (_, i) => weekStart + i * 86_400_000)
   const perDay = days.map((d) => week.filter((o) => o.paid_at >= d && o.paid_at < d + 86_400_000).reduce((x, o) => x + o.amount_paise, 0))
@@ -182,7 +185,8 @@ app.get('/', async (c) => {
   const peak = Math.max(1, ...perDay)
   const dayLabel = (ms: number) => new Date(ms + 6 * 3600_000).toLocaleDateString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'narrow', timeZone: 'Asia/Kolkata' })
   const backInN = toolOn(s, 'waitlist') ? backIn.reduce((a, b) => a + b.n, 0) : 0
-  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN > 0
+  const shipN = shipAttn?.n ?? 0
+  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN + shipN > 0
   // Getting started: shown until the first confirmed payment, then the money card takes over.
   const setup: { done: boolean; label: string; href?: string }[] = [
     { done: true, label: t.gsShop },
@@ -236,6 +240,7 @@ app.get('/', async (c) => {
           {n.refunds > 0 && <Task href="/app/orders?tab=check" kind="bad" icon="refund" title={t.refunds(n.refunds)} sub={t.refundsSub} />}
           {n.toSend > 0 && <Task href="/app/orders?tab=send" kind="warn" icon="box" title={t.toSend(n.toSend)} sub={t.toSendSub} />}
           {n.paying > 0 && <Task href="/app/orders?tab=check" kind="" icon="clock" title={t.notPaid(n.paying)} sub={t.notPaidSub} />}
+          {shipN > 0 && <Task href="/app/orders?tab=done" kind="bad" icon="box" title={t.shipAttn(shipN)} sub={t.shipAttnSub} />}
           {backInN > 0 && <Task href={`/app/drops/${backIn[0].drop_id}#waiting`} kind="warn" icon="users" title={t.taskWaiting(backInN)} sub={t.taskWaitingSub} />}
           {!anyTask && <p class="muted">{t.allDone}</p>}
 
@@ -416,6 +421,7 @@ app.get('/drops/new', async (c) => {
           <summary>{t.moreOptions}</summary>
           <label for="max">{t.maxPer}</label>
           <div style="max-width:260px"><Stepper id="max" name="max" value={pre?.drop.max_per_order ?? 5} min={1} max={20} /></div>
+          {c.get('seller').sr_email && <><label for="wg" style="margin-top:14px">{t.shipWeight}</label><input id="wg" name="weight_g" inputmode="numeric" placeholder="500" style="max-width:200px" value={pre?.drop.weight_g ? String(pre.drop.weight_g) : undefined} /></>}
           <label for="liveat" style="margin-top:14px">{t.goLiveLabel}</label>
           <input id="liveat" name="live_at" type="datetime-local" style="max-width:260px" />
           <small>{t.goLiveHint}</small>
@@ -490,11 +496,12 @@ app.post('/drops/new', async (c) => {
   const shipFee = Math.min(100_000, parsePaise(one(f.ship_fee) || '0') ?? 0)
   const freeShipAbove = shipFee ? Math.min(100_000_000, parsePaise(one(f.free_ship_above) || '0') ?? 0) : 0
   const cost = Math.max(0, parsePaise(one(f.cost) || '0') ?? 0)
+  const weightG = Math.max(0, Math.min(30000, Math.floor(Number(one(f.weight_g)) || 0)))
 
   const now = Date.now()
   await c.env.DB.batch([
-    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt),
+    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at, weight_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt, weightG),
     ...imageKeys.map((k, i) => c.env.DB.prepare(`INSERT INTO drop_images (drop_id, image_key, position) VALUES (?, ?, ?)`).bind(id, k, i)),
     ...variants.map((v, i) =>
       c.env.DB.prepare(`INSERT INTO variants (drop_id, label, stock, available, position) VALUES (?, ?, ?, ?, ?)`).bind(id, v.label, v.qty, v.qty, i),
@@ -833,6 +840,287 @@ app.post('/cartoffer', async (c) => {
   return back('ok', t.cartOfferSaved)
 })
 
+// ---------- Shiprocket (optional): connect, check rates, book, label, pickup, track, failed delivery, returns ----------
+
+type SrRow = { sr_email: string | null; sr_password_enc: string | null; sr_token_enc: string | null; sr_token_exp: number; sr_pickup: string | null; sr_pickup_pin: string | null; sr_box: string; sr_hook: string | null }
+const srRow = (c: Context<AppEnv>) => c.env.DB.prepare(`SELECT id, sr_email, sr_password_enc, sr_token_enc, sr_token_exp, sr_pickup, sr_pickup_pin, sr_box, sr_hook FROM sellers WHERE id = ?`).bind(c.get('seller').id).first<SrRow & { id: string }>()
+const box = (b: string) => { const [l, w, h] = (b || '25x20x5').split('x').map((x) => Math.max(1, Math.min(200, Number(x) || 1))); return { l, b: w, h } }
+const srFail = (c: Context<AppEnv>, to: string, e: unknown) => c.redirect(`${to}${to.includes('?') ? '&' : '?'}err=${encodeURIComponent(tr(c).shipErr(e instanceof Error ? e.message : String(e)))}`, 303)
+
+app.get('/ship', async (c) => {
+  const t = tr(c)
+  const r = (await srRow(c))!
+  let pickups: { name: string; pin: string; address: string }[] = [], err = ''
+  if (r.sr_email) { try { pickups = await srPickups(c.env, await srToken(c.env, r)) } catch (e) { err = t.shipErr((e as Error).message) } }
+  // Rate checker: ?pin=&g=&cod= – courier prices before any booking.
+  const pin = (c.req.query('pin') ?? '').replace(/\D/g, ''), g = Math.max(50, Math.min(30000, Number(c.req.query('g')) || 500)), cod = c.req.query('cod') === '1'
+  let rates: Awaited<ReturnType<typeof srRates>> | null = null
+  if (r.sr_email && r.sr_pickup_pin && /^[1-9]\d{5}$/.test(pin)) { try { rates = await srRates(c.env, await srToken(c.env, r), r.sr_pickup_pin, pin, g / 1000, cod) } catch (e) { err = t.shipErr((e as Error).message) } }
+  const origin = new URL(c.req.url).origin
+  return page(c, 'settings', t.shipTitle, (
+    <>
+      <a class="back" href="/app/settings">← {t.settingsTitle}</a>
+      <h1>{t.shipTitle}</h1>
+      <p class="hint">{t.srHint}</p>
+      <Flash msg={c.req.query('err') || err} />
+      {!r.sr_email ? (
+        <form method="post" action="/app/ship/connect" class="card stack">
+          <div><label for="sre">{t.shipEmail}</label><input id="sre" name="email" type="email" required autocomplete="off" /></div>
+          <div><label for="srp">{t.shipPass}</label><input id="srp" name="password" type="password" required autocomplete="new-password" /></div>
+          <button class="btn primary block" type="submit">{t.shipConnect}</button>
+          <details><summary>{t.shipHow}</summary><ol style="margin:6px 0 0;padding-left:20px">{t.shipHowSteps.map((x) => <li>{x}</li>)}</ol></details>
+        </form>
+      ) : (
+        <>
+          <div class="card row between"><span class="row" style="gap:8px"><Icon n="check" s={18} />{t.shipConnected(r.sr_email)}</span>
+            <form method="post" action="/app/ship/disconnect"><button class="btn sm ghost" type="submit" data-confirm={t.shipDisconnect + '?'}>{t.shipDisconnect}</button></form></div>
+          <form method="post" action="/app/ship/settings" class="card stack">
+            <div><label for="pk">{t.shipPickupLabel}</label>
+              {pickups.length ? <select id="pk" name="pickup">{pickups.map((p) => <option value={p.name} selected={p.name === r.sr_pickup}>{p.name} – {p.address} ({p.pin})</option>)}</select> : <p class="hint">{t.shipPickupNone}</p>}</div>
+            <div><label for="bx">{t.shipBoxLabel}</label><input id="bx" name="box" value={r.sr_box} pattern="\d{1,3}x\d{1,3}x\d{1,3}" placeholder="25x20x5" style="max-width:200px" /></div>
+            <button class="btn block" type="submit">{t.shipSave}</button>
+          </form>
+
+          <h2 id="rates">{t.shipCourier}</h2>
+          <form method="get" action="/app/ship#rates" class="card stack">
+            <div class="duo">
+              <div><label for="rpin">{t.pincode}</label><input id="rpin" name="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength={6} required value={pin} placeholder="560038" /></div>
+              <div><label for="rg">{t.shipWeight}</label><input id="rg" name="g" inputmode="numeric" value={String(g)} /></div>
+            </div>
+            <label class="row" style="gap:8px"><input type="checkbox" name="cod" value="1" checked={cod} style="width:auto;min-height:0" />{t.codBtn}</label>
+            <button class="btn block" type="submit">{t.shipCheck}</button>
+          </form>
+          {rates && <CourierList t={t} rates={rates} />}
+
+          <h2>{t.shipHookTitle}</h2>
+          <div class="card stack"><small>{t.shipHookHint}</small>
+            <input readonly value={`${origin}/webhooks/shiprocket/${r.sr_hook ?? ''}`} aria-label="URL" id="hookurl" />
+            <button type="button" class="btn sm" data-copy="#hookurl" data-done={t.copiedLink}>{t.copyLink}</button></div>
+        </>
+      )}
+    </>
+  ))
+})
+
+const CourierList: FC<{ t: Dict; rates: Awaited<ReturnType<typeof srRates>>; pick?: boolean }> = ({ t, rates, pick }) => {
+  if (!rates.list.length) return <div class="alert info">{t.shipNoCourier}</div>
+  const fastest = [...rates.list].sort((a, b) => (Number(a.days) || 99) - (Number(b.days) || 99))[0]
+  const chosen = rates.recommended ?? rates.list[0].id
+  return (
+    <div class="card" style="padding:4px 16px">
+      {rates.list.slice(0, 12).map((x, i) => (
+        <label class="row" style={`gap:12px;padding:12px 0;align-items:center;${i ? 'border-top:1px solid var(--line)' : ''}${pick ? ';cursor:pointer' : ''}`}>
+          {pick && <input type="radio" name="courier" value={String(x.id)} checked={x.id === chosen} required style="width:auto;min-height:0" />}
+          <span class="grow"><b style="display:block">{x.name}</b><small>{[t.shipDays(x.days), x.etd ? t.shipEtd(x.etd) : ''].filter(Boolean).join(' · ')}
+            {x.id === rates.list[0].id && <span class="chip paid" style="margin-left:6px">{t.shipCheapest}</span>}{x.id === fastest.id && x.id !== rates.list[0].id && <span class="chip pending" style="margin-left:6px">{t.shipFastest}</span>}</small></span>
+          <b>{rupees(x.rate)}</b>
+        </label>
+      ))}
+    </div>
+  )
+}
+
+app.post('/ship/connect', async (c) => {
+  const t = tr(c)
+  const f = await c.req.parseBody()
+  const email = String(f.email ?? '').trim(), password = String(f.password ?? '')
+  try {
+    const token = await srLogin(c.env, email, password)
+    const pickups = await srPickups(c.env, token).catch(() => [])
+    await c.env.DB.prepare(`UPDATE sellers SET sr_email = ?, sr_password_enc = ?, sr_token_enc = ?, sr_token_exp = ?, sr_pickup = ?, sr_pickup_pin = ?, sr_hook = COALESCE(sr_hook, ?) WHERE id = ?`)
+      .bind(email, await encrypt(password, c.env.SECRET_KEY), await encrypt(token, c.env.SECRET_KEY), Date.now() + 9 * 86_400_000, pickups[0]?.name ?? null, pickups[0]?.pin ?? null, randomId(24), c.get('seller').id).run()
+    return c.redirect(`/app/ship?ok=${encodeURIComponent(t.shipSaved)}`, 303)
+  } catch {
+    return c.redirect(`/app/ship?err=${encodeURIComponent(t.shipBadLogin)}`, 303)
+  }
+})
+
+app.post('/ship/settings', async (c) => {
+  const t = tr(c)
+  const r = (await srRow(c))!
+  const f = await c.req.parseBody()
+  const boxIn = String(f.box ?? '').replace(/\s/g, '').toLowerCase()
+  let pickup = r.sr_pickup, pin = r.sr_pickup_pin
+  if (f.pickup) { try { const p = (await srPickups(c.env, await srToken(c.env, r))).find((x) => x.name === String(f.pickup)); if (p) { pickup = p.name; pin = p.pin } } catch (e) { return srFail(c, '/app/ship', e) } }
+  await c.env.DB.prepare(`UPDATE sellers SET sr_pickup = ?, sr_pickup_pin = ?, sr_box = ? WHERE id = ?`).bind(pickup, pin, /^\d{1,3}x\d{1,3}x\d{1,3}$/.test(boxIn) ? boxIn : r.sr_box, c.get('seller').id).run()
+  return c.redirect(`/app/ship?ok=${encodeURIComponent(t.shipSaved)}`, 303)
+})
+
+app.post('/ship/disconnect', async (c) => {
+  await c.env.DB.prepare(`UPDATE sellers SET sr_email = NULL, sr_password_enc = NULL, sr_token_enc = NULL, sr_token_exp = 0, sr_pickup = NULL, sr_pickup_pin = NULL WHERE id = ?`).bind(c.get('seller').id).run()
+  return c.redirect(`/app/settings?ok=${encodeURIComponent(tr(c).shipDisconnected)}`, 303)
+})
+
+// The parcel for one order/cart: everything in it, its weight and the COD cash.
+async function parcelFor(c: Context<AppEnv>, key: string) {
+  const { results: lines } = await c.env.DB.prepare(
+    `SELECT o.*, d.title, d.weight_g, v.label FROM orders o JOIN drops d ON d.id = o.drop_id JOIN variants v ON v.id = o.variant_id
+     WHERE (o.id = ?1 OR o.cart_id = ?1) AND o.seller_id = ?2 AND (o.status = 'paid' OR (o.status = 'pending' AND o.pay_mode = 'cod'))`,
+  ).bind(key, c.get('seller').id).all<Order & { title: string; weight_g: number; label: string }>()
+  if (!lines.length) return null
+  const o = lines[0]
+  const pin = (o.address.match(/\b[1-9]\d{5}\b(?!.*\b[1-9]\d{5}\b)/s) ?? [''])[0]
+  const cod = o.pay_mode === 'cod' && o.status === 'pending'
+  return { lines, o, pin, cod, total: lines.reduce((n, l) => n + l.amount_paise, 0), grams: lines.reduce((n, l) => n + (l.weight_g || 500) * l.qty, 0) }
+}
+
+app.get('/ship/book/:key', async (c) => {
+  const t = tr(c)
+  const key = c.req.param('key')
+  const r = (await srRow(c))!
+  if (!r.sr_email) return c.redirect('/app/ship', 303)
+  const p = await parcelFor(c, key)
+  if (!p) return c.notFound()
+  const dupe = await c.env.DB.prepare(`SELECT id FROM shipments WHERE order_key = ? AND ${OPEN_SHIP}`).bind(key).first()
+  if (dupe) return c.redirect('/app/orders?tab=send', 303)
+  const pin = (c.req.query('pin') ?? p.pin).replace(/\D/g, '')
+  const grams = Math.max(50, Math.min(30000, Number(c.req.query('g')) || p.grams))
+  const bx = c.req.query('box') && /^\d{1,3}x\d{1,3}x\d{1,3}$/.test(c.req.query('box')!) ? c.req.query('box')! : r.sr_box
+  let rates: Awaited<ReturnType<typeof srRates>> | null = null, place = { city: '', state: '' }, err = ''
+  try {
+    const token = await srToken(c.env, r)
+    if (!r.sr_pickup_pin) throw new ShiprocketError(t.shipPickupNone)
+    ;[rates, place] = await Promise.all([srRates(c.env, token, r.sr_pickup_pin, pin, grams / 1000, p.cod), srPincode(c.env, token, pin)])
+  } catch (e) { err = t.shipErr((e as Error).message) }
+  return page(c, 'orders', t.shipBookTitle, (
+    <>
+      <a class="back" href="/app/orders?tab=send">← {t.ordersPageTitle}</a>
+      <h1>{t.shipBookTitle}</h1>
+      <Flash msg={c.req.query('err') || err} />
+      <div class="card">
+        <small>{t.shipTo}</small>
+        <b style="display:block">{p.o.buyer_name}</b>
+        <span style="white-space:pre-line">{p.o.address}</span>
+        <small style="display:block">{displayPhone(p.o.buyer_phone)} · #{shortNo(key)} · {p.lines.map((l) => `${clip(l.title, 28)}${l.label ? ` (${l.label})` : ''} ×${l.qty}`).join(', ')}</small>
+        {p.cod && <small style="display:block;color:var(--warn);font-weight:700;margin-top:4px">{t.shipCod(rupees(p.total))}</small>}
+      </div>
+      <form method="get" action={`/app/ship/book/${key}`} class="card stack">
+        <div class="duo">
+          <div><label for="bpin">{t.pincode}</label><input id="bpin" name="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength={6} value={pin} required /></div>
+          <div><label for="bg">{t.shipWeight}</label><input id="bg" name="g" inputmode="numeric" value={String(grams)} /></div>
+        </div>
+        <div><label for="bbox">{t.shipBox}</label><input id="bbox" name="box" value={bx} pattern="\d{1,3}x\d{1,3}x\d{1,3}" style="max-width:200px" /></div>
+        <button class="btn block sm" type="submit"><Icon n="refresh" s={16} />{t.shipCheck}</button>
+      </form>
+      {rates && rates.list.length > 0 ? (
+        <form method="post" action={`/app/ship/book/${key}`} class="stack">
+          <div class="duo">
+            <div><label for="bcity">{t.shipCity}</label><input id="bcity" name="city" value={place.city} required maxlength={40} /></div>
+            <div><label for="bstate">{t.shipState}</label><input id="bstate" name="state" value={place.state} required maxlength={40} /></div>
+          </div>
+          <h2 style="margin-bottom:0">{t.shipCourier}</h2>
+          <CourierList t={t} rates={rates} pick />
+          <input type="hidden" name="pin" value={pin} /><input type="hidden" name="g" value={String(grams)} /><input type="hidden" name="box" value={bx} />
+          <div class="sticky-pay"><button class="btn primary block big" type="submit">{t.shipBook}</button></div>
+        </form>
+      ) : rates ? <div class="alert info">{t.shipNoCourier}</div> : null}
+    </>
+  ))
+})
+
+app.post('/ship/book/:key', async (c) => {
+  const t = tr(c)
+  const key = c.req.param('key')
+  const r = (await srRow(c))!
+  const p = await parcelFor(c, key)
+  if (!r.sr_email || !p) return c.redirect('/app/orders?tab=send', 303)
+  if (await c.env.DB.prepare(`SELECT 1 FROM shipments WHERE order_key = ? AND ${OPEN_SHIP}`).bind(key).first()) return c.redirect('/app/orders?tab=send', 303)
+  const f = await c.req.parseBody()
+  const pin = String(f.pin ?? '').replace(/\D/g, ''), grams = Math.max(50, Math.min(30000, Number(f.g) || p.grams)), b = box(String(f.box ?? r.sr_box))
+  const courierId = Number(f.courier)
+  const back = `/app/ship/book/${key}?pin=${pin}&g=${grams}`
+  if (!courierId || !/^[1-9]\d{5}$/.test(pin)) return c.redirect(back, 303)
+  const id = `${shortNo(key)}-${randomId(4)}`.toLowerCase()
+  const date = new Date(Date.now() + 19_800_000).toISOString().slice(0, 16).replace('T', ' ')
+  try {
+    const token = await srToken(c.env, r)
+    const res = await srBook(c.env, token, {
+      id, date, pickup: r.sr_pickup!, name: p.o.buyer_name, phone: p.o.buyer_phone.slice(-10), address: p.o.address.replace(/\s+/g, ' ').slice(0, 190),
+      city: String(f.city ?? '').trim(), state: String(f.state ?? '').trim(), pincode: pin,
+      items: p.lines.map((l) => ({ name: `${l.title}${l.label ? ` (${l.label})` : ''}`.slice(0, 90), sku: `${l.drop_id}-${l.variant_id}`, units: l.qty, price: Math.round(l.amount_paise / l.qty) })),
+      cod: p.cod, subTotal: p.total, codAmount: p.cod ? p.total : 0, l: b.l, b: b.b, h: b.h, weightKg: grams / 1000, courierId,
+    })
+    const now = Date.now()
+    await c.env.DB.batch([
+      c.env.DB.prepare(`INSERT INTO shipments (id, seller_id, order_key, sr_order_id, shipment_id, awb, courier, status, label_url, pickup_date, charge_paise, cod_paise, weight_g, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(id, c.get('seller').id, key, res.srOrderId, res.shipmentId, res.awb, res.courier, res.pickupDate ? 'pickup' : 'booked', res.label, res.pickupDate, res.charge, p.cod ? p.total : 0, grams, now, now),
+      // Booked = packed and waiting for pickup.
+      c.env.DB.prepare(`UPDATE orders SET ship_status = 'packed' WHERE (id = ?1 OR cart_id = ?1) AND ship_status = 'new'`).bind(key),
+    ])
+    return c.redirect(`/app/orders?tab=send&ok=${encodeURIComponent(t.shipBooked)}`, 303)
+  } catch (e) { return srFail(c, back, e) }
+})
+
+const ownShipment = (c: Context<AppEnv>) => c.env.DB.prepare(`SELECT * FROM shipments WHERE id = ? AND seller_id = ?`).bind(c.req.param('id'), c.get('seller').id).first<ShipmentRow>()
+
+app.post('/ship/:id/label', async (c) => {
+  const sh = await ownShipment(c); const r = (await srRow(c))!
+  if (!sh?.shipment_id) return c.redirect('/app/orders?tab=send', 303)
+  try {
+    const url = sh.label_url || (await srLabel(c.env, await srToken(c.env, r), sh.shipment_id))
+    if (url && !sh.label_url) await c.env.DB.prepare(`UPDATE shipments SET label_url = ? WHERE id = ?`).bind(url, sh.id).run()
+    return url ? c.redirect(url, 303) : c.redirect('/app/orders?tab=send', 303)
+  } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
+})
+
+app.post('/ship/:id/pickup', async (c) => {
+  const sh = await ownShipment(c); const r = (await srRow(c))!
+  if (!sh?.shipment_id) return c.redirect('/app/orders?tab=send', 303)
+  try {
+    const d = await srPickup(c.env, await srToken(c.env, r), sh.shipment_id)
+    await c.env.DB.prepare(`UPDATE shipments SET pickup_date = ?, status = 'pickup', updated_at = ? WHERE id = ?`).bind(d, Date.now(), sh.id).run()
+    return backWith(c, '/app/orders?tab=send', d ? tr(c).shipPickupOn(d) : tr(c).shipSaved)
+  } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
+})
+
+app.post('/ship/:id/cancel', async (c) => {
+  const sh = await ownShipment(c); const r = (await srRow(c))!
+  if (!sh || !['booked', 'pickup'].includes(sh.status)) return c.redirect('/app/orders?tab=send', 303)
+  try {
+    if (sh.sr_order_id) await srCancel(c.env, await srToken(c.env, r), sh.sr_order_id)
+    await c.env.DB.batch([
+      c.env.DB.prepare(`UPDATE shipments SET status = 'cancelled', updated_at = ? WHERE id = ?`).bind(Date.now(), sh.id),
+      c.env.DB.prepare(`UPDATE orders SET ship_status = 'new' WHERE (id = ?1 OR cart_id = ?1) AND ship_status = 'packed'`).bind(sh.order_key),
+    ])
+    return backWith(c, '/app/orders?tab=send', tr(c).shipCancelled)
+  } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
+})
+
+app.post('/ship/:id/ndr', async (c) => {
+  const sh = await ownShipment(c); const r = (await srRow(c))!
+  const action = String((await c.req.parseBody()).action) === 'return' ? 'return' : 're-attempt'
+  if (!sh?.awb || sh.status !== 'failed') return c.redirect('/app/orders?tab=send', 303)
+  try {
+    await srNdr(c.env, await srToken(c.env, r), sh.awb, action)
+    await c.env.DB.prepare(`UPDATE shipments SET status = ?, status_text = ?, updated_at = ? WHERE id = ?`).bind(action === 'return' ? 'rto' : 'transit', action === 'return' ? 'RTO requested' : 'Re-attempt requested', Date.now(), sh.id).run()
+    return backWith(c, '/app/orders?tab=send', tr(c).shipNdrDone)
+  } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
+})
+
+app.post('/ship/:id/refresh', async (c) => {
+  const sh = await ownShipment(c); const r = (await srRow(c))!
+  if (!sh?.awb) return c.redirect('/app/orders?tab=send', 303)
+  try { await applyTracking(c.env, sh, await srTrack(c.env, await srToken(c.env, r), sh.awb)) } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
+  return c.redirect('/app/orders?tab=send', 303)
+})
+
+// Parcel came back: the pieces go back on sale (once).
+app.post('/ship/:id/restock', async (c) => {
+  const sh = await ownShipment(c)
+  if (!sh || sh.status !== 'returned') return c.redirect('/app/orders?tab=send', 303)
+  // Claim the restock first so a double tap can't add the pieces twice.
+  const claim = await c.env.DB.prepare(`UPDATE shipments SET status_text = 'restocked', updated_at = ? WHERE id = ? AND status_text <> 'restocked'`).bind(Date.now(), sh.id).run()
+  if (claim.meta.changes !== 1) return c.redirect('/app/orders?tab=send', 303)
+  const { results } = await c.env.DB.prepare(`SELECT id, variant_id, qty, status, pay_mode FROM orders WHERE id = ?1 OR cart_id = ?1`).bind(sh.order_key).all<{ id: string; variant_id: number; qty: number; status: string; pay_mode: string }>()
+  for (const l of results) {
+    // Cash on delivery never got paid: the order is off (cancelCod gives its stock back).
+    if (l.pay_mode === 'cod' && l.status === 'pending') await cancelCod(c.env, l.id, c.get('seller').id)
+    else await c.env.DB.prepare(`UPDATE variants SET available = MIN(stock, available + ?) WHERE id = ?`).bind(l.qty, l.variant_id).run()
+  }
+  return backWith(c, '/app/orders?tab=all', tr(c).shipRestocked)
+})
+
 app.post('/tools', async (c) => {
   const t = tr(c)
   const on = new Set(([] as unknown[]).concat((await c.req.parseBody({ all: true })).on ?? []).map(String))
@@ -853,7 +1141,38 @@ type OrderRow = Order & { title: string; label: string; image_key: string | null
 
 const NEXT_SHIP: Record<ShipStatus, ShipStatus | null> = { new: 'packed', packed: 'shipped', shipped: 'delivered', delivered: null }
 
-const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; shop: string }> = ({ t, o, group, origin, shop }) => {
+// Shiprocket on an order card: book (if connected and not booked yet), or the parcel's status and actions.
+// A parcel that blocks booking another: anything not cancelled, except one that came back and wasn't restocked.
+const OPEN_SHIP = `status <> 'cancelled' AND NOT (status = 'returned' AND status_text <> 'restocked')`
+
+const ShipBox: FC<{ t: Dict; o: OrderRow; ship?: ShipmentRow; sr?: boolean; origin: string; shop: string }> = ({ t, o, ship, sr, origin, shop }) => {
+  if (!ship) return sr && o.ship_status !== 'delivered' ? <a class="btn block" style="margin-top:10px" href={`/app/ship/book/${cartKeyOf(o)}`}><Icon n="box" s={18} />{t.shipBtn}</a> : null
+  const live = !['delivered', 'returned', 'cancelled'].includes(ship.status)
+  const tone = ship.status === 'delivered' ? 'paid' : ship.status === 'failed' || ship.status === 'rto' ? 'refund' : 'pending'
+  return (
+    <div class="card" style="margin:10px 0 0;background:var(--bg)">
+      <div class="row between"><b style="font-size:.92rem">{ship.awb ? t.shipAwb(ship.courier, ship.awb) : ship.courier}</b><span class={`chip ${tone}`}>{t.shipStatus[ship.status]}</span></div>
+      <small>{ship.status === 'booked' || ship.status === 'pickup' ? (ship.pickup_date ? t.shipPickupOn(ship.pickup_date) : '') : ship.etd && live ? t.shipEtd(ship.etd) : ship.status_text === 'restocked' ? t.shipRestocked : ship.status_text}</small>
+      {ship.cod_paise > 0 && <small style="display:block;color:var(--warn);font-weight:700">{t.shipCod(rupees(ship.cod_paise))}</small>}
+      {ship.status === 'failed' && <p class="hint" style="margin:6px 0">{t.shipFailedHint}</p>}
+      {ship.status === 'returned' && <p class="hint" style="margin:6px 0">{ship.status_text === 'restocked' ? (o.status === 'paid' ? t.shipRefundHint : '') : t.shipBackHint}</p>}
+      <div class="row wrap" style="gap:6px;margin-top:8px">
+        {ship.status === 'failed' && <><form method="post" action={`/app/ship/${ship.id}/ndr`}><button class="btn sm primary" name="action" value="re-attempt" type="submit">{t.shipReattempt}</button></form>
+          <form method="post" action={`/app/ship/${ship.id}/ndr`}><button class="btn sm" name="action" value="return" type="submit">{t.shipReturn}</button></form></>}
+        {ship.status === 'returned' && ship.status_text !== 'restocked' && <><a class="btn sm primary" href={`/app/ship/book/${cartKeyOf(o)}`}>{t.shipResend}</a>
+          <form method="post" action={`/app/ship/${ship.id}/restock`}><button class="btn sm" type="submit" data-confirm={o.pay_mode === 'cod' ? t.shipRestockCod : undefined}>{t.shipRestock}</button></form></>}
+        {ship.status === 'returned' && ship.status_text === 'restocked' && o.status === 'paid' && <a class="btn sm wa" href={waLink(o.buyer_phone, t.shipRefundMsg(o.buyer_name.split(' ')[0], shop))}><Icon n="chat" s={16} />{t.shipRefundBtn}</a>}
+        {['booked', 'pickup'].includes(ship.status) && <form method="post" action={`/app/ship/${ship.id}/label`}><button class="btn sm" type="submit"><Icon n="receipt" s={16} />{t.srLabel}</button></form>}
+        {ship.status === 'booked' && !ship.pickup_date && <form method="post" action={`/app/ship/${ship.id}/pickup`}><button class="btn sm" type="submit">{t.shipPickup}</button></form>}
+        {live && ship.awb && <a class="btn sm wa" href={waLink(o.buyer_phone, t.shipTrackMsg(o.buyer_name.split(' ')[0], shop, ship.courier, ship.awb, `${origin}/o/${cartKeyOf(o)}`))}><Icon n="chat" s={16} />{t.shipSendTrack}</a>}
+        {live && ship.awb && <form method="post" action={`/app/ship/${ship.id}/refresh`}><button class="btn sm ghost" type="submit" aria-label={t.shipRefresh}><Icon n="refresh" s={16} /></button></form>}
+        {['booked', 'pickup'].includes(ship.status) && <form method="post" action={`/app/ship/${ship.id}/cancel`}><button class="btn sm ghost" type="submit" data-confirm={t.shipCancelConfirm} style="color:var(--bad)">{t.shipCancel}</button></form>}
+      </div>
+    </div>
+  )
+}
+
+const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; shop: string; ship?: ShipmentRow; sr?: boolean }> = ({ t, o, group, origin, shop, ship, sr }) => {
   // A payment can hold several items; the card stands for all of them.
   const lines = group?.length ? group : [o]
   const item = lines.map((l) => `${l.title}${l.label ? ` (${l.label})` : ''} ×${l.qty}`).join(', ')
@@ -921,6 +1240,7 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
       {status === 'paid' && (
         <>
           <ShipSteps t={t} ship={o.ship_status} />
+          <ShipBox t={t} o={o} ship={ship} sr={sr} origin={origin} shop={shop} />
           <div class="stack" style="margin-top:10px">
             {next && (
               <form method="post" action={`/app/orders/${o.id}/ship`}>
@@ -945,6 +1265,7 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
             <div class="q" style="color:var(--warn);display:flex;gap:8px;align-items:center"><Icon n="cash" />{t.codCollect(amt)}</div>
           </div>
           <ShipSteps t={t} ship={o.ship_status} labels={t.codSteps} />
+          <ShipBox t={t} o={o} ship={ship} sr={sr} origin={origin} shop={shop} />
           <div class="stack" style="margin-top:10px">
             {o.ship_status === 'new' && (
               <a class="btn wa block" href={waLink(o.buyer_phone, t.codConfirmMsg(o.buyer_name, item, amt, shop))}><Icon n="chat" s={18} />{t.codConfirmBtn}</a>
@@ -985,10 +1306,14 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
 // including holds that lapsed in the last day, since buyers often pay without telling anyone.
 const CHECK_WHERE = `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'direct' AND (o.status = 'pending' OR (o.status = 'expired' AND o.created_at > ?2 - 86400000))))`
 
+// Waiting to be sent: paid and not yet out, or cash on delivery – unless the parcel came back and went back into stock.
+const TO_SEND = `((o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod'))
+  AND NOT EXISTS (SELECT 1 FROM shipments sh WHERE sh.order_key = COALESCE(o.cart_id, o.id) AND sh.status = 'returned' AND sh.status_text = 'restocked')`
+
 const TABS = [
   { key: 'check', label: (t: Dict) => t.tabCheck, where: CHECK_WHERE },
   // Cash-on-delivery orders are sent first and paid later, so they sit here until delivered.
-  { key: 'send', label: (t: Dict) => t.tabSend, where: `(o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod')` },
+  { key: 'send', label: (t: Dict) => t.tabSend, where: TO_SEND },
   { key: 'done', label: (t: Dict) => t.tabDone, where: `o.status = 'paid'` },
   { key: 'all', label: (t: Dict) => t.tabAll, where: `o.status <> 'expired' OR ?2 = 0` },
 ] as const
@@ -999,7 +1324,7 @@ app.get('/orders/labels', async (c) => {
   const s = c.get('seller')
   const { results } = await c.env.DB.prepare(
     `SELECT o.*, d.title, v.label FROM orders o JOIN drops d ON d.id = o.drop_id JOIN variants v ON v.id = o.variant_id
-     WHERE o.seller_id = ? AND ((o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod'))
+     WHERE o.seller_id = ? AND ${TO_SEND}
      ORDER BY o.created_at`,
   ).bind(s.id).all<Order & { title: string; label: string }>()
   // One label per parcel: lines paid together (a cart) go in one box.
@@ -1068,6 +1393,10 @@ app.get('/orders', async (c) => {
   const byKey = new Map<string, OrderRow[]>()
   for (const r of results) byKey.set(r.cart_id ?? r.id, [...(byKey.get(r.cart_id ?? r.id) ?? []), r])
   const groups = [...byKey.values()].map((g) => g.sort((a, b) => a.created_at - b.created_at))
+  // Shiprocket parcels for these orders (only for sellers who connected it).
+  const keys = groups.map((g) => cartKeyOf(g[0]))
+  const ships = new Map<string, ShipmentRow>()
+  if (s.sr_email && keys.length) for (const r of (await c.env.DB.prepare(`SELECT * FROM shipments WHERE ${ACTIVE_SHIP} AND order_key IN (${keys.map(() => '?').join(',')}) ORDER BY created_at`).bind(...keys).all<ShipmentRow>()).results) ships.set(r.order_key, r)
   return page(c, 'orders', t.ordersPageTitle, (
     <>
       <div class="row between"><h1>{t.ordersPageTitle}</h1><a class="btn sm" href="/app/quick-order"><Icon n="edit" s={16} />{t.qoTitle}</a></div>
@@ -1092,7 +1421,7 @@ app.get('/orders', async (c) => {
               <p class="hint" style="margin-top:-4px">{t.waitingMoneySub}</p>
             </>
           )}
-          <OrderCard t={t} o={g[0]} group={g} origin={origin} shop={s.shop_name} />
+          <OrderCard t={t} o={g[0]} group={g} origin={origin} shop={s.shop_name} ship={ships.get(cartKeyOf(g[0]))} sr={Boolean(s.sr_email)} />
         </>
       ))}
       </div>
@@ -1422,6 +1751,8 @@ app.get('/settings', async (c) => {
           {(s.offer_min_paise ?? 0) > 0 && <button class="btn grow ghost" type="submit" name="clear" value="1">{t.cartOfferOff}</button>}
         </div>
       </form>
+
+      <a class="card task" href="/app/ship" id="shipping"><span class="ic"><Icon n="box" /></span><span class="grow"><b>{t.shipTitle}</b><small>{s.sr_email ? t.shipConnected(s.sr_email) : t.srHint}</small></span><span class="go"><Icon n="chevron" s={18} /></span></a>
 
       <h2 id="tools">{t.toolsTitle}</h2>
       <p class="hint" style="margin-top:-4px">{t.toolsHint}</p>

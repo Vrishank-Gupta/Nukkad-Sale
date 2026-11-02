@@ -13,6 +13,7 @@ import { isValidUtr, qrSvg, upiAppLinks, upiLink } from '../lib/upi'
 import { clip, liveWhen, normalizePhone, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
 import { checkOffer, pctOff } from '../lib/offers'
+import { ACTIVE_SHIP, applyTracking, srToken, srTrack, type Scan, type ShipmentRow } from '../lib/shiprocket'
 import { toolOn } from '../lib/tools'
 import { Flash, Icon, Layout, PhoneInput, ShipSteps, StatusChip, Stepper } from '../views/layout'
 
@@ -601,6 +602,29 @@ if(document.visibilityState==='visible'&&b&&left===location.pathname){try{sessio
 
 const ORDER_POLL_JS = `(function(){var s=document.getElementById('st').dataset.s;setInterval(function(){if(document.hidden)return;fetch(location.pathname+'/status.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(d){if(d.status!==s)location.reload()}).catch(function(){})},6000)})();`
 
+const TrackCard = ({ t, sh }: { t: Dict; sh: ShipmentRow }) => {
+  let scans: Scan[] = []
+  try { scans = JSON.parse(sh.scans) } catch { scans = [] }
+  return (
+    <div class="card">
+      <div class="row between"><b>{t.trackTitle}</b><span class={`chip ${sh.status === 'delivered' ? 'paid' : 'pending'}`}>{t.shipStatus[sh.status]}</span></div>
+      {sh.awb && <small style="display:block;margin-top:2px">{t.shipAwb(sh.courier, sh.awb)}</small>}
+      {sh.etd && sh.status !== 'delivered' && <small style="display:block;color:var(--ok);font-weight:700">{t.shipEtd(sh.etd)}</small>}
+      {scans.length ? (
+        <ol style="list-style:none;padding:0;margin:12px 0 0">
+          {scans.slice(0, 8).map((x, i) => (
+            <li class="row" style="gap:10px;align-items:flex-start;padding:6px 0">
+              <span style={`flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px;background:${i ? 'var(--line)' : 'var(--ok)'}`} />
+              <span><b style={`display:block;font-size:.92rem;${i ? 'font-weight:500' : ''}`}>{x.text}</b><small>{[x.place, x.at].filter(Boolean).join(' · ')}</small></span>
+            </li>
+          ))}
+        </ol>
+      ) : <p class="muted" style="margin:8px 0 0;font-size:.9rem">{t.trackNoScans}</p>}
+      {sh.awb && <a class="btn sm block" style="margin-top:10px" href={`https://shiprocket.co/tracking/${sh.awb}`} target="_blank" rel="noopener">{t.trackCourier} ↗</a>}
+    </div>
+  )
+}
+
 pub.get('/o/:id', async (c) => {
   const t = tr(c)
   const order = await c.env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(c.req.param('id')).first<Order>()
@@ -620,6 +644,14 @@ pub.get('/o/:id', async (c) => {
   const amt = rupees(total)
   const shipTotal = lines.reduce((n, l) => n + (l.ship_paise || 0), 0)
   const discTotal = lines.reduce((n, l) => n + (l.disc_paise || 0), 0)
+  // Shiprocket parcel (only if the seller booked one). Tracking older than 30 min refreshes in the background.
+  const shipment = await c.env.DB.prepare(`SELECT * FROM shipments WHERE order_key = ? AND ${ACTIVE_SHIP} ORDER BY created_at DESC LIMIT 1`).bind(cartKeyOf(order)).first<ShipmentRow>()
+  if (shipment?.awb && !['delivered', 'returned'].includes(shipment.status) && shipment.checked_at < Date.now() - 30 * 60_000) {
+    c.executionCtx.waitUntil((async () => {
+      const sr = await c.env.DB.prepare(`SELECT id, sr_email, sr_password_enc, sr_token_enc, sr_token_exp FROM sellers WHERE id = ?`).bind(shipment.seller_id).first<{ id: string; sr_email: string | null; sr_password_enc: string | null; sr_token_enc: string | null; sr_token_exp: number }>()
+      if (sr?.sr_email) await applyTracking(c.env, shipment, await srTrack(c.env, await srToken(c.env, sr), shipment.awb!))
+    })().catch((e) => console.error('track refresh', e)))
+  }
   const codFee = order.pay_mode === 'cod' ? data.drop.cod_fee_paise || 0 : 0
   // Quick orders made by the seller may not have the address yet – ask for it here.
   const needDetails = !lines[0].address && ['pending', 'verifying', 'expired'].includes(status)
@@ -668,9 +700,10 @@ pub.get('/o/:id', async (c) => {
       )}
       {status === 'paid' && <h1 style="text-align:center;color:var(--ok);margin-top:0">{t.paidBig}</h1>}
       {status === 'paid' && <div class="card"><ShipSteps t={t} ship={order.ship_status} /></div>}
+      {shipment && <TrackCard t={t} sh={shipment} />}
       {status === 'paid' && (
         <div class="alert ok">
-          {t.paidOk}
+          {order.ship_status === 'delivered' ? t.deliveredTo : order.ship_status === 'shipped' ? t.sentTo : t.paidOk}
           <div style="white-space:pre-line;font-weight:400;margin-top:6px">{order.buyer_name}{'\n'}{order.address}</div>
         </div>
       )}
@@ -683,6 +716,7 @@ pub.get('/o/:id', async (c) => {
             {data.drop.cod_fee_paise > 0 && <small>{t.codIncludesFee(rupees(data.drop.cod_fee_paise))}</small>}
           </div>
           <div class="card"><ShipSteps t={t} ship={order.ship_status} labels={t.codSteps} /></div>
+          {shipment && <TrackCard t={t} sh={shipment} />}
           <div class="card"><b>{t.yourDetails}</b><div style="white-space:pre-line;margin-top:6px">{order.buyer_name}{'\n'}{order.address}</div></div>
         </>
       )}

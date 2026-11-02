@@ -1,3 +1,4 @@
+import { shiprocketWebhook } from '../lib/shiprocket'
 import { Hono } from 'hono'
 import type { AppEnv } from '../env'
 import { decrypt } from '../lib/crypto'
@@ -7,6 +8,14 @@ import { handleInbound, type Inbound } from '../lib/wa-bot'
 import { verifySignature, waBotEnabled } from '../lib/whatsapp'
 
 export const hooks = new Hono<AppEnv>()
+
+// Shiprocket tracking updates – the seller pastes this URL (with their secret) into Shiprocket → Settings → API → Webhooks.
+hooks.post('/shiprocket/:hook', async (c) => {
+  let body: unknown = null
+  try { body = await c.req.json() } catch { return c.json({ ok: false }, 200) }
+  await shiprocketWebhook(c.env, c.req.param('hook'), body).catch((e) => console.error('shiprocket hook', e))
+  return c.json({ ok: true })
+})
 
 type PaymentLinkPaid = {
   event: string
