@@ -239,6 +239,62 @@ await step('buyer: sold-out sale', async () => {
   if (await b.locator('#paybtn:enabled').count()) add('high', 'buyer sold-out', 'Pay button still enabled on a sold-out sale'); await c.close()
 })
 
+// ================= 4b. NEW SELLER TOOLS (by tapping, like a seller would) =================
+await step('seller: add cost → profit line on the sale page', async () => {
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('#cost summary').click()
+  await s.fill('#costin', '450'); await s.getByRole('button', { name: 'Save cost' }).click(); await s.waitForLoadState('networkidle')
+  if (!/Profit ₹349 per piece/.test(await s.innerText('main'))) throw new Error('profit line not shown: ' + (await s.locator('#cost summary').innerText()))
+  await check(s, 'seller', 'sale-with-profit', { dark: false })
+})
+await step('seller: start a discount with the 20% shortcut', async () => {
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details.tool summary', { hasText: 'Discount' }).click()
+  await check(s, 'seller', 'discount-panel')
+  await s.getByRole('button', { name: '20% off' }).click()
+  if ((await s.inputValue('#dprice')) !== '639') throw new Error('20% shortcut filled ' + (await s.inputValue('#dprice')))
+  await s.getByRole('button', { name: 'Start discount' }).click(); await s.waitForLoadState('networkidle')
+  const t = await s.innerText('main'); if (!/₹639/.test(t) || !/20% off/.test(t)) throw new Error('discount not shown on the seller sale page')
+  const c = await ctx(), b = watch(await c.newPage(), 'buyer'); await b.goto(`${B}/d/${drop}`); await check(b, 'buyer', 'discounted-sale')
+  const bt = await b.innerText('main'); if (!/₹639/.test(bt) || !/₹799/.test(bt) || !/20% off/.test(bt)) throw new Error('buyer page missing discount')
+  if (!/₹639/.test(await b.locator('#paybtn').innerText())) throw new Error('pay button not at the discounted price'); await c.close()
+})
+let offerUrl
+await step('seller: special price link for one buyer', async () => {
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details.tool summary', { hasText: 'Special price' }).click()
+  await s.fill('#oprice', '550'); await s.fill('#ophone', '9822012345'); await s.fill('#oname', 'Meena')
+  await s.getByRole('button', { name: 'Create link' }).click(); await s.waitForLoadState('networkidle')
+  await check(s, 'seller', 'special-price-ready')
+  offerUrl = await s.inputValue('#offerlink'); if (!/\?o=/.test(offerUrl)) throw new Error('no link')
+  const wa = await s.locator('a.btn.wa', { hasText: 'Send on WhatsApp' }).getAttribute('href'); if (!/wa\.me\/919822012345/.test(wa)) throw new Error('WhatsApp button not to the buyer: ' + wa)
+})
+await step('buyer: opens the special link and orders at ₹550', async () => {
+  const c = await ctx(), b = watch(await c.newPage(), 'buyer'); await b.goto(offerUrl); await check(b, 'buyer', 'special-price-page')
+  if (!/Special price for Meena/.test(await b.innerText('main'))) throw new Error('no special-price banner')
+  await b.locator('.pills label:text-is("L")').click().catch(() => {})
+  await b.fill('#name', 'Meena Shah'); await b.fill('#phone', '9822012345'); await b.fill('#address', '4 Ring Road, Surat'); await b.fill('#pincode', '395002')
+  await b.locator('#paybtn').click(); await b.waitForURL(/\/o\//); await check(b, 'buyer', 'special-price-order', { dark: false })
+  const amt = Number((await b.innerText('main')).match(/₹(5\d\d\.\d\d)/)?.[1] ?? 0); if (!(amt > 549 && amt <= 550)) throw new Error('order amount ' + amt)
+  // Someone else can't use her link
+  const c2 = await ctx(), x = watch(await c2.newPage(), 'buyer'); await x.goto(offerUrl)
+  await x.locator('.pills label:text-is("S")').click().catch(() => {})
+  await x.fill('#name', 'Not Meena'); await x.fill('#phone', '9822099999'); await x.fill('#address', '1 Other Street, Surat'); await x.fill('#pincode', '395002')
+  x.__expect4xx = true; await x.locator('#paybtn').click(); await x.waitForLoadState('networkidle')
+  // Her link is used now, so a second phone must only ever get the regular price (an order at ₹799.xx is fine).
+  if (/\/o\//.test(x.url()) && /₹5\d\d\.\d\d/.test(await x.innerText('main'))) add('high', 'buyer special link', 'a different number got the special price')
+  await c.close(); await c2.close()
+})
+await step('buyer: sold-out sale → Notify me; seller sees the list', async () => {
+  const c = await ctx(), b = watch(await c.newPage(), 'buyer'); await b.goto(`${B}/d/${drop2}`)
+  await b.fill('#wname', 'Ritu Jain'); await b.fill('#wphone', '9822033344'); await b.getByRole('button', { name: 'Notify me' }).click(); await b.waitForLoadState('networkidle')
+  await check(b, 'buyer', 'notify-me-done', { dark: false }); if (!/on the list/.test(await b.content())) throw new Error('no confirmation'); await c.close()
+  await s.goto(`${B}/app/drops/${drop2}`); await check(s, 'seller', 'waitlist')
+  if (!/Waiting for restock \(1\)/.test(await s.innerText('main'))) throw new Error('seller does not see the waiting buyer')
+})
+await step('seller: end the discount', async () => {
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details.tool summary', { hasText: 'Discount' }).click()
+  await s.getByRole('button', { name: /End discount/ }).click(); await s.waitForLoadState('networkidle')
+  if (/20% off/.test(await s.innerText('main'))) throw new Error('discount still shown')
+})
+
 // ================= 5. SELLER RUNS THE SHOP =================
 await step('seller: every app page (English + dark)', async () => {
   for (const [p, l] of [['/app', 'home'], ['/app/orders?tab=check', 'orders-check'], ['/app/orders?tab=send', 'orders-send'], ['/app/orders?tab=paying', 'orders-paying'], ['/app/orders?tab=all', 'orders-all'],
@@ -255,6 +311,15 @@ await step('seller: rejects a payment ("No")', async () => {
 await step('seller: packs and sends', async () => {
   await s.goto(B + '/app/orders?tab=send'); const b = s.getByRole('button', { name: /packed|Mark as/i }).first()
   if (await b.count()) { await b.click(); await s.waitForLoadState('networkidle') } ; await check(s, 'seller', 'after-packed', { dark: false })
+})
+await step('seller: khata shows profit this month', async () => {
+  await s.goto(B + '/app/khata'); if (!/Profit this month/.test(await s.innerText('main'))) throw new Error('no profit card'); await check(s, 'seller', 'khata-profit')
+})
+await step('seller: print shipping labels from "To send"', async () => {
+  await s.goto(B + '/app/orders?tab=send'); const btn = s.locator('a', { hasText: 'Print shipping labels' })
+  if (!(await btn.count())) throw new Error('no labels button on To send')
+  await btn.click(); await s.waitForURL(/labels/); await check(s, 'seller', 'labels', { dark: false })
+  if ((await s.locator('.lbl').count()) < 1) throw new Error('no labels printed')
 })
 await step('seller: khata entry + CSV downloads', async () => {
   await s.goto(B + '/app/khata'); await s.getByText(/You gave/).first().click(); await s.fill('[name=amount]', '120'); await s.fill('[name=note]', 'Delhivery courier')
@@ -276,12 +341,12 @@ await step('seller: Hindi everywhere', async () => {
   await s.goto(B + '/lang?to=en&back=/app')
 })
 await step('seller: drop actions (pause / stock)', async () => {
-  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details summary').filter({ hasText: /close sale|stock/i }).first().click()   // Stop/stock live under "Manage"
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details:not(.tool):not(.quiet) > summary').filter({ hasText: /close sale|stock/i }).first().click()   // Stop/stock live under "Change stock or close sale"
   const pause = s.getByRole('button', { name: /Stop this sale/ }).first()
   if (await pause.count()) { await pause.click(); await s.waitForLoadState('networkidle'); await check(s, 'seller', 'sale-paused', { dark: false }) }
   const c = await ctx(), b = watch(await c.newPage(), 'buyer'); await b.goto(`${B}/d/${drop}`); await check(b, 'buyer', 'paused-sale', { dark: false })
   if (await b.locator('#paybtn:enabled').isVisible().catch(() => false)) add('high', 'buyer stopped sale', 'buyers can still pay on a sale the seller stopped'); await c.close()
-  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details summary').first().click().catch(() => {}); await s.getByRole('button', { name: /Start selling again/ }).click(); await s.waitForLoadState('networkidle')
+  await s.goto(`${B}/app/drops/${drop}`); await s.locator('details:not(.tool):not(.quiet) > summary').filter({ hasText: /close sale|stock/i }).first().click().catch(() => {}); await s.getByRole('button', { name: /Start selling again/ }).click(); await s.waitForLoadState('networkidle')
 })
 await step('buyer: sees "paid" after seller confirmed', async () => { await b1.reload(); await check(b1, 'buyer', 'priya-after-confirm') })
 await step('seller: log out', async () => {

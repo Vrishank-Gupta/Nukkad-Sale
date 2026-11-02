@@ -222,8 +222,7 @@ pub.get('/d/:id', async (c) => {
         <>
           <div class="alert info">{drop.status !== 'live' ? t.saleClosed : counts.held > 0 ? t.allHeld : t.allSold}</div>
           <form method="post" action={`/d/${drop.id}/waitlist`} class="card stack" id="notify">
-            <b>{t.waitTitle}</b>
-            <small style="margin-top:-6px">{t.waitSub(seller.shop_name)}</small>
+            <div><b style="display:block">{t.waitTitle}</b><small>{t.waitSub(seller.shop_name)}</small></div>
             <div><label for="wname">{t.yourName}</label><input id="wname" name="name" autocomplete="name" required maxlength={60} /></div>
             <div><label for="wphone">{t.phone}</label><PhoneInput id="wphone" name="phone" /></div>
             <button class="btn primary block" type="submit"><Icon n="clock" s={18} />{t.waitBtn}</button>

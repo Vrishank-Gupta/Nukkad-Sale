@@ -42,6 +42,18 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .paidcard{position:absolute;left:60px;right:60px;height:104px;background:#fff;color:#1d1a16;border-radius:24px;display:flex;align-items:center;gap:18px;padding:0 24px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
 .paidcard .pc-ic{width:58px;height:58px;border-radius:50%;background:#2b8a3e;color:#fff;font-size:32px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none}
 .paidcard b{font-size:27px;display:block}.paidcard small{font-size:19px;color:#6b6258}.paidcard .pc-amt{margin-left:auto;font-size:30px;font-weight:900;color:#2b8a3e}
+.yellowp{background:#ffd43b;color:#14120f}.greyp{background:#e9e6e1;color:#1d1a16}.navyp{background:radial-gradient(circle at 50% 10%,#1d2f55,#0b1426 75%);color:#fff}
+.receiptp{background:#f1ede4;color:#1d1a16}.kraftp{background:#c9a26b;color:#1d1a16}.blackp{background:#14120f;color:#fff}
+.ptag{display:inline-block;position:relative;background:#fff;color:#14120f;font-weight:900;border-radius:18px;padding:12px 28px 12px 54px;box-shadow:0 14px 36px rgba(0,0,0,.2)}
+.ptag:before{content:"";position:absolute;left:18px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;background:#ffd43b;box-shadow:inset 0 0 0 4px #14120f}
+.pburst{display:inline-flex;width:150px;height:150px;border-radius:50%;background:#e03131;color:#fff;align-items:center;justify-content:center;text-align:center;font-weight:900;font-size:34px;line-height:.95;transform:rotate(-12deg)}
+.pbub{display:inline-block;background:#fff;border-radius:26px;border-bottom-left-radius:6px;padding:18px 26px;font-size:34px;font-weight:800;box-shadow:0 10px 26px rgba(0,0,0,.12)}
+.pbub small{display:block;font-size:18px;color:#6f675d}
+.rcpt{background:#fffdf6;border-radius:6px;padding:26px 30px;box-shadow:0 18px 44px rgba(0,0,0,.15);font-family:"DejaVu Sans Mono","Courier New",monospace;font-size:26px;line-height:1.75}
+.rcpt div{display:flex;justify-content:space-between;border-bottom:2px dashed #d9d2c4}.rcpt div:last-child{border:0}
+.dot5{display:inline-block;width:22px;height:22px;border-radius:50%;margin-right:8px}
+.lblsheet{border-radius:6px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);background:#fff}
+.lblsheet img{width:100%;display:block}
 .slot{position:absolute;left:60px;right:60px;border:4px dashed rgba(255,255,255,.55);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;opacity:.8;text-align:center;padding:20px}
 .cream .slot{border-color:rgba(29,26,22,.3)}
 </style>
@@ -182,6 +194,74 @@ p11f: `<div class="f night">${B()}
     <div style="margin-top:50px"><span class="chip" style="background:#69db7c;color:#0e2a16;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div>
     <div class="s" style="margin-top:18px;font-size:23px;color:#a69d91">Already selling with us? Message us to turn on automatic payments.</div></div></div>`,
 
+// ─────── Feature posts (each its own look; see docs/social/FEATURE-CAMPAIGNS.md) ───────
+// Post 12 · Discount – yellow price-tag look
+p12: `<div class="f yellowp">${B()}
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <div class="h" style="font-size:58px">Item not moving?</div>
+    <div class="m" style="font-size:34px;margin-top:10px">Run a sale in 10 seconds.</div>
+    <div style="margin-top:44px;position:relative"><span class="ptag" style="font-size:54px;text-decoration:line-through;text-decoration-color:#e03131;text-decoration-thickness:7px">₹799</span></div>
+    <div style="margin-top:20px;display:flex;align-items:center;gap:18px"><span style="font-size:88px;font-weight:900">₹639</span><span class="pburst">20%<br>OFF</span></div>
+    <div class="s" style="margin-top:18px;font-size:22px">Tap Discount → 20% off. Buyers see the old price struck through. Orders already placed keep their price.</div></div>
+  ${P('feat-buyer-discount', 420, 130, 270)}</div>`,
+// Post 13 · Special price – carousel, grey + chat bubble cover (no phone on the cover)
+p13a: `<div class="f greyp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:150px">
+    <div class="pbub"><small>Meena</small>Bhaiya, ₹650 mein de do na? 🙏</div>
+    <div class="h" style="font-size:66px;margin-top:50px">Gave one buyer<br>a better price?</div>
+    <div class="h" style="font-size:44px;margin-top:16px;color:#d9480f">Don’t change it<br>for everyone.</div></div>
+  <div class="swipe">Swipe →</div></div>`,
+p13b: sp(1, 'Make a link with <span class="o">her</span> price', 'Open the sale → Special price for one buyer. Her price, her WhatsApp number, how many pieces, how long it works.', 'feat-offer-form'),
+p13c: sp(2, 'Send it on WhatsApp', 'One tap opens WhatsApp with her link and a message ready. Copy it if you prefer.', 'feat-offer-ready'),
+p13d: sp(3, 'Only she gets ₹650', 'Her number only, one order, ends on time. Everyone else still sees ₹799.', 'feat-buyer-offer'),
+p13e: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:240px;text-align:center">
+    <div class="h" style="font-size:64px">Bargain in the chat.<br>Not on your<br>price list.</div>
+    <div style="margin-top:46px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div></div></div>`,
+// Post 14 · Waitlist – navy, the real home task
+p14: `<div class="f navyp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:110px;text-align:center">
+    <div class="h" style="font-size:52px">6 buyers are waiting<br><span style="color:#ffd43b">for your restock.</span></div>
+    <div class="s" style="margin-top:14px;font-size:23px;color:#c9d3e6">Sold out? Buyers tap “Notify me”. Add stock – your app tells you who’s waiting, and one tap messages each of them.</div></div>
+  ${P('feat-home-waiting', 225, 330, 270, 'box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 3px rgba(255,212,59,.35)')}</div>`,
+// Post 15 · Profit – receipt-paper carousel "3 numbers every seller should know"
+p15a: `<div class="f receiptp">${B()}
+  <div style="position:absolute;left:60px;right:60px;top:130px">
+    <div class="h" style="font-size:58px">3 numbers every<br>seller should know</div>
+    <div class="rcpt" style="margin-top:40px"><div><span>MONEY IN</span><b>₹ ?</b></div><div><span>PRODUCT COST</span><b>₹ ?</b></div><div><span>EXPENSES</span><b>₹ ?</b></div><div style="font-size:32px"><b>PROFIT</b><b style="color:#d9480f">₹ ?</b></div></div>
+    <div class="s" style="margin-top:26px;font-size:24px">Sales aren’t profit. Swipe →</div></div></div>`,
+p15b: rc(1, 'Money in', 'Every paid order lands in your khata by itself – UPI, gateway or COD. Add cash sales with “+ You got ₹”.', 'feat-khata-profit'),
+p15c: rc(2, 'Product cost', 'What each piece costs you. Add it once when you create a sale – only you see it.', 'feat-newsale-cost'),
+p15d: rc(3, 'Expenses', 'Courier, packing, ads – one tap each with “− You gave ₹”.', 'khata'),
+p15e: `<div class="f receiptp">${B()}
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <div class="h" style="font-size:52px">= Profit.<br><span style="color:#d9480f">Already done.</span></div>
+    <div class="s" style="margin-top:16px;font-size:24px">NukkadSale shows profit per piece on every sale and your profit this month in the khata.</div>
+    <div style="margin-top:34px"><span class="chip" style="background:#1d1a16;color:#fffdf6;border:0;font-size:26px;padding:14px 24px">Get started · nukkadsale.in</span></div></div>
+  ${P('feat-khata-profit', 420, 130, 270)}</div>`,
+// Post 16 · Labels – kraft paper, the real label sheet
+p16: `<div class="f kraftp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:110px">
+    <div class="h" style="font-size:56px">Stop copying<br>addresses by hand.</div>
+    <div class="s" style="margin-top:12px;font-size:24px">One tap on “To send” prints a label for every parcel – name, address, items, COD. 8 on an A4 page.</div></div>
+  <div class="lblsheet" style="position:absolute;left:90px;right:90px;top:400px;height:470px;transform:rotate(-2deg)"><img src="img/feat-labels-sheet.png"></div></div>`,
+// Post 17 · "5 new things in NukkadSale" – one slide per feature in that feature's own colour
+p17a: `<div class="f blackp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:220px">
+    <div style="margin-bottom:30px">${['#ffd43b', '#e9e6e1', '#ffd43b;box-shadow:0 0 0 4px #1d2f55', '#fffdf6', '#c9a26b'].map((c) => `<span class="dot5" style="background:${c}"></span>`).join('')}</div>
+    <div class="h" style="font-size:84px">5 new things<br>in NukkadSale</div>
+    <div class="s" style="margin-top:20px;font-size:28px;opacity:.85">Built for how you actually sell. Swipe →</div></div></div>`,
+p17b: nw('yellowp', 1, 'Discounts', 'Put any item on sale in seconds. Old price struck through.', 'feat-buyer-discount'),
+p17c: nw('greyp', 2, 'Special price for one buyer', 'Agreed a rate in the chat? A link only she can use.', 'feat-buyer-offer'),
+p17d: nw('navyp', 3, 'Restock waitlist', 'Sold out? Buyers tap “Notify me”. You message them when it’s back.', 'feat-home-waiting'),
+p17e: nw('receiptp', 4, 'Profit, not just sales', 'Add your cost – see profit per piece and this month.', 'feat-khata-profit'),
+p17f: nw('kraftp', 5, 'Shipping labels', 'Print a label for every parcel in one tap.', 'feat-labels-btn'),
+p17g: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:250px;text-align:center">
+    <div class="h" style="font-size:62px">All live now.<br>All in one app.</div>
+    <div class="s" style="margin-top:18px;font-size:27px">On your phone, in English and हिंदी.</div>
+    <div style="margin-top:44px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div></div></div>`,
+
 // ── Stories
 s1: `<div class="f story dark">${B()}
   <div style="position:absolute;left:50px;right:50px;top:260px;text-align:center"><div class="h" style="font-size:84px">Orders kaise<br>lete ho? 🤔</div></div></div>`,
@@ -213,6 +293,28 @@ function big(label, title, body, img, focus = 'center') {
     <div class="h" style="font-size:46px;margin-top:16px;color:#fff;line-height:1.08">${title}</div>
     <div class="s" style="margin:14px auto 0;font-size:23px;color:#d8d0c6;max-width:560px">${body}</div></div>
   ${P(img, 210, focus === 'top' ? 470 : 480, 300, 'box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 2px rgba(105,219,124,.25)')}</div>`
+}
+function sp(n, title, body, img) {
+  return `<div class="f greyp">${B()}<div class="handle">${n}/3</div>
+  <div style="position:absolute;left:50px;right:50px;top:120px;text-align:center"><span class="num">${n}</span>
+    <div class="m" style="font-size:44px;margin-top:16px">${title}</div><div class="s" style="margin:12px auto 0;font-size:23px;color:#5c5248;max-width:560px">${body}</div></div>
+  ${P(img, 225, 400, 270)}<div class="swipe">Swipe →</div></div>`
+}
+function rc(n, title, body, img) {
+  return `<div class="f receiptp">${B()}<div class="handle">${n}/3</div>
+  <div style="position:absolute;left:44px;top:120px;width:360px">
+    <div style="font-family:'DejaVu Sans Mono',monospace;font-size:22px;font-weight:700;color:#d9480f">NUMBER ${n}</div>
+    <div class="h" style="font-size:54px;margin-top:8px">${title}</div>
+    <div class="s" style="margin-top:16px;font-size:24px;color:#5c5248">${body}</div></div>
+  ${P(img, 420, 130, 270)}<div class="swipe">Swipe →</div></div>`
+}
+function nw(cls, n, title, body, img) {
+  return `<div class="f ${cls}">${B()}<div class="handle">${n}/5</div>
+  <div style="position:absolute;left:44px;top:130px;width:360px">
+    <div style="font-size:120px;font-weight:900;line-height:1;opacity:.25">${n}</div>
+    <div class="h" style="font-size:48px;margin-top:-20px">${title}</div>
+    <div class="s" style="margin-top:14px;font-size:24px">${body}</div></div>
+  ${P(img, 420, 130, 270)}<div class="swipe">Swipe →</div></div>`
 }
 function step(n, title, body, img) {
   return `<div class="f cream">${B()}

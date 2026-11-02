@@ -27,7 +27,7 @@ const C = {
   en: {
     title: 'NukkadSale – Sell on WhatsApp, without the DM chaos',
     desc: 'Take orders from your WhatsApp groups, get paid on UPI and know exactly who paid. Stock held while buyers pay, khata that writes itself. हिंदी + English.',
-    nav: ['How it works', 'Features', 'FAQ'], login: 'Seller login', cta: 'Get started', other: 'हिंदी', otherLang: 'hi',
+    nav: ['How it works', 'Features', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get started', other: 'हिंदी', otherLang: 'hi',
     eyebrow: 'For sellers on WhatsApp',
     h1a: 'Sell on WhatsApp.', h1b: 'Without the DM chaos.',
     sub: (bot: boolean): string => bot
@@ -88,7 +88,7 @@ const C = {
   hi: {
     title: 'NukkadSale – WhatsApp पर बेचिए, DM के झंझट के बिना',
     desc: 'WhatsApp ग्रुप से ऑर्डर लें, UPI पर पैसे पाएं और जानें किसने पेमेंट किया। पेमेंट होने तक स्टॉक होल्ड, खाता अपने आप। हिंदी + English।',
-    nav: ['कैसे काम करता है', 'फ़ीचर', 'सवाल'], login: 'सेलर लॉग इन', cta: 'शुरू करें', other: 'English', otherLang: 'en',
+    nav: ['कैसे काम करता है', 'फ़ीचर', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'शुरू करें', other: 'English', otherLang: 'en',
     eyebrow: 'WhatsApp पर बेचने वालों के लिए',
     h1a: 'WhatsApp पर बेचिए।', h1b: 'DM के झंझट के बिना।',
     sub: (bot: boolean): string => bot
@@ -171,7 +171,7 @@ nav.links a{text-decoration:none;font-weight:600;color:var(--muted)}
 nav.links a:hover{color:var(--ink)}
 .hgap{flex:1}
 .lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem}
-.login{font-weight:700;text-decoration:none;font-size:.95rem}
+.login{font-weight:700;text-decoration:none;font-size:.95rem;display:inline-flex;align-items:center;min-height:40px;white-space:nowrap}.login .short,header .btn .short{display:none}
 section{padding:72px 0}
 .eyebrow{display:inline-block;font-weight:800;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin-bottom:10px}
 h1{font-size:clamp(2.3rem,6vw,4rem);line-height:1.04;letter-spacing:-1.5px;font-weight:900}
@@ -273,22 +273,22 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
   section{padding:56px 0}
 }
 @media (max-width:560px){
-  header .wrap{gap:10px}.login{display:none}header .btn.sm{white-space:nowrap}
+  header .wrap{gap:10px}.login .long{display:none}.login .short{display:inline}.links{display:none}header .btn.sm{white-space:nowrap}
   .steps,.grid,.fields{grid-template-columns:1fr}
   .step .shot{aspect-ratio:9/11}
   .phones{height:420px}.phone{width:180px}.phones .p1{left:0}.phones .p2{right:0}
   .duo .phone{width:46%}
   .ctas .btn{width:100%}
-}@media (max-width:380px){
-  header .wrap{gap:8px}.logo{font-size:1.02rem;gap:6px}header .btn.sm{padding:0 10px;font-size:.85rem}
+}@media (max-width:430px){
+  header .wrap{gap:8px;padding-left:14px;padding-right:14px}.logo{font-size:1.08rem;gap:6px}header .btn.sm{padding:0 12px}header .btn .long{display:none}header .btn .short{display:inline}
 }
-@media (max-width:340px){
-  header .wrap{padding-left:12px;padding-right:12px}
+@media (max-width:350px){
+  header .logo>:not(i){display:none}
 }
 
 `
 
-const Logo = () => <a class="logo" href="/"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="#fff" stroke-width="1.4" /><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5" /></svg></i>NukkadSale</a>
+const Logo = () => <a class="logo" href="/"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="#fff" stroke-width="1.4" /><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5" /></svg></i><span>NukkadSale</span></a>
 const Phone = (p: { img: string; cls?: string; alt: string }) => <div class={`phone ${p.cls ?? ''}`}><img src={`/site/${p.img}.webp`} alt={p.alt} loading="lazy" width="540" height="1169" /></div>
 
 function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string; children: Child }) {
@@ -319,8 +319,8 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
             <nav class="links"><a href="/#how">{p.k.nav[0]}</a><a href="/#features">{p.k.nav[1]}</a><a href="/#faq">{p.k.nav[2]}</a></nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
-            <a class="login" href="/login">{p.k.login}</a>
-            <a class="btn primary sm" href="/#get-started">{p.k.cta}</a>
+            <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
+            <a class="btn primary sm" href="/#get-started"><span class="long">{p.k.cta}</span><span class="short">{p.k.ctaShort}</span></a>
           </div>
         </header>
         <main>{p.children}</main>

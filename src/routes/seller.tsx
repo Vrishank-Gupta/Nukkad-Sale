@@ -69,13 +69,15 @@ function backWith(c: Context<AppEnv>, fallback: string, ok: string) {
 }
 
 /** Every dashboard page shares the same frame: bottom nav, attention badge, toast, live refresh. */
+// Pages laid out in two columns on a computer.
+const WIDE = /^\/app(\/|\/orders|\/drops\/[a-z0-9]+|\/buyers)?$/
 async function page(c: Context<AppEnv>, nav: Nav, title: string, body: Child, scripts = PULSE_JS, say?: string) {
   const t = tr(c)
   const s = c.get('seller')
   const [badge, bill] = await Promise.all([attentionCount(c.env.DB, s.id), billingState(c.env, s.id)])
   const keysMissing = s.pay_mode === 'razorpay' && !s.rzp_secret_enc
   return c.html(
-    <Layout t={t} path={here(c)} nav={nav} badge={badge} title={title} brand={s.shop_name} ok={c.req.query('ok')} scripts={scripts} say={say}>
+    <Layout t={t} path={here(c)} nav={nav} badge={badge} title={title} brand={s.shop_name} ok={c.req.query('ok')} scripts={scripts} say={say} wide={WIDE.test(c.req.path) && c.req.path !== '/app/drops/new'}>
       {s.account_status === 'suspended' && <div class="alert bad">{t.accountSuspended}</div>}
       {bill.open && !c.req.path.startsWith('/app/billing') && (
         <a class={`alert ${bill.overdue ? 'bad' : 'info'}`} href="/app/billing" style="display:block;text-decoration:none">
@@ -227,7 +229,7 @@ app.get('/', async (c) => {
           <a class="btn primary block big" href="/app/drops/new" style="margin-top:6px">{t.createFirst}</a>
         </>
       ) : (
-        <>
+        <div class="cols"><div>
           <h2>{t.attention}</h2>
           {n.checkPay > 0 && <Task href="/app/orders?tab=check" kind="info" icon="search" title={t.toCheck(n.checkPay)} sub={t.toCheckSub} />}
           {n.refunds > 0 && <Task href="/app/orders?tab=check" kind="bad" icon="refund" title={t.refunds(n.refunds)} sub={t.refundsSub} />}
@@ -255,6 +257,7 @@ app.get('/', async (c) => {
           {(people?.buyers ?? 0) > 0 && <a class="card task" href="/app/buyers"><span class="ic"><Icon n="users" /></span><span><b>{t.buyersLink(people?.buyers ?? 0, people?.repeat ?? 0)}</b></span><span class="go">›</span></a>}
 
 
+          </div><div>
           <h2>{t.yourSales}</h2>
           {drops.map((d) => (
             <div class="card">
@@ -271,7 +274,7 @@ app.get('/', async (c) => {
               )}
             </div>
           ))}
-        </>
+        </div></div>
       )}
     </>
   ), PULSE_JS, t.sayHome)
@@ -577,13 +580,14 @@ app.get('/drops/:id', async (c) => {
               <span><b>{w.name}</b><br /><small>{displayPhone(w.phone)}</small></span>
               <span class="row" style="gap:6px">
                 <a class="btn wa sm" href={waLink(w.phone, t.waitlistMsg(w.name.split(' ')[0], drop.title, s.shop_name, `${origin}/d/${drop.id}`))} aria-label={t.offerSend}><Icon n="chat" s={16} /></a>
-                <form method="post" action={`/app/drops/${drop.id}/waitlist/${w.id}/done`}><button class="btn sm" type="submit">{t.waitlistMark}</button></form>
+                <form method="post" action={`/app/drops/${drop.id}/waitlist/${w.id}/done`}><button class="btn sm" type="submit" aria-label={t.waitlistMark} title={t.waitlistMark}><Icon n="check" s={16} />{t.waitlistDoneShort}</button></form>
               </span>
             </div>
           ))}
         </div>
       )}
 
+      <div class="cols"><div>
       {drop.status === 'live' && (
         <>
           <h2 id="share">{t.shareTitle}</h2>
@@ -606,7 +610,7 @@ app.get('/drops/:id', async (c) => {
       )}
 
       {drop.status === 'live' && (
-        <div class="tools">
+        <div class="saletools">
           <details class="card tool" open={Boolean(c.req.query('discount'))}>
             <summary><span class="ic"><Icon n="receipt" s={18} /></span><span class="grow"><b>{t.discountTitle}</b><small>{drop.compare_paise > drop.price_paise ? t.discountOn(pctOff(drop.compare_paise, drop.price_paise), rupees(drop.compare_paise)) : t.discountHint}</small></span></summary>
             <form method="post" action={`/app/drops/${drop.id}/discount`} class="stack" style="margin-top:10px">
@@ -663,6 +667,7 @@ app.get('/drops/:id', async (c) => {
         </div>
       )}
 
+      </div><div>
       <h2>{t.stockTitle}</h2>
       <div class="card"><StockSummary t={t} {...counts} /></div>
 
@@ -691,6 +696,7 @@ app.get('/drops/:id', async (c) => {
           )}
         </form>
       </details>
+      </div></div>
     </>
   ), PULSE_JS, drop.status === 'live' ? t.sayShare : undefined)
 })
@@ -1025,6 +1031,7 @@ app.get('/orders', async (c) => {
         <a class="btn block sm" href="/app/orders/labels" style="margin:4px 0 8px"><Icon n="receipt" s={18} />{t.labelsBtn(new Set(results.map((o) => cartKeyOf(o))).size)}</a>
       )}
       {results.length === 0 && (tab.key === 'check' ? <Empty icon="search" title={t.emptyCheckT} sub={t.emptyCheckS} /> : tab.key === 'send' ? <Empty icon="box" title={t.emptySendT} sub={t.emptySendS} /> : <Empty icon="receipt" title={t.emptyDoneT} sub={t.emptyDoneS} />)}
+      <div class="ordergrid">
       {groups.map((g, i) => (
         <>
           {tab.key === 'check' && ['pending', 'expired'].includes(g[0].status) && !['pending', 'expired'].includes(groups[i - 1]?.[0].status ?? '') && (
@@ -1036,6 +1043,7 @@ app.get('/orders', async (c) => {
           <OrderCard t={t} o={g[0]} group={g} origin={origin} shop={s.shop_name} />
         </>
       ))}
+      </div>
     </>
   ), PULSE_JS, t.sayOrders)
 })

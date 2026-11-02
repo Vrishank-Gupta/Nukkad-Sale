@@ -26,16 +26,22 @@ const Brand = ({ t }: { t: Dict }) => (
   </div>
 )
 
+// Short address to give sellers: nukkadsale.in/seller
+auth.get('/seller', (c) => c.redirect('/login' + (new URL(c.req.url).search || ''), 302))
+
 auth.get('/login', (c) => {
   const t = tr(c)
+  // Pre-filled from the link the admin sends on WhatsApp (/seller?p=98XXXXXXXX), so the seller only types the PIN.
+  const pre = (c.req.query('p') ?? '').replace(/\D/g, '').slice(-10)
+  const preOk = /^[6-9]\d{9}$/.test(pre)
   const canReset = waEnabled(c.env) && c.env.WA_OTP_TEMPLATE
   return c.html(
     <Layout t={t} path={here(c)} title={`${t.logIn} – NukkadSale`} ok={c.req.query('ok')}>
       <Brand t={t} />
       <Flash msg={c.req.query('err')} />
       <form method="post" class="card stack">
-        <div><label for="phone">{t.phone}</label><PhoneInput id="phone" name="phone" /></div>
-        <div><label for="pin">{t.pin}</label><PinInput id="pin" t={t} autocomplete="current-password" /></div>
+        <div><label for="phone">{t.phone}</label><PhoneInput id="phone" name="phone" value={preOk ? pre : undefined} /></div>
+        <div><label for="pin">{t.pin}</label><PinInput id="pin" t={t} autocomplete="current-password" autofocus={preOk} /></div>
         <button class="btn primary block big" type="submit">{t.logIn}</button>
       </form>
       {canReset ? (

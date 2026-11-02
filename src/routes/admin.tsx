@@ -502,7 +502,7 @@ const ShopForm = ({ lead }: { lead?: Lead }) => (
 
 // Shown once, right after creating a shop or resetting a PIN (the PIN is never stored in plain text).
 function credentialsPage(c: Context<AppEnv>, s: { id: string; name: string; shop: string; phone: string; lang: string }, pin: string, kind: 'new' | 'reset') {
-  const login = `${new URL(c.req.url).origin}/login`
+  const login = `${new URL(c.req.url).origin}/seller?p=${s.phone.slice(2)}`
   const first = s.name.split(' ')[0]
   const msg = s.lang === 'hi'
     ? (kind === 'new' ? `नमस्ते ${first} जी! आपकी NukkadSale दुकान "${s.shop}" तैयार है 🎉\n\n` : `नमस्ते ${first} जी, आपका नया NukkadSale PIN:\n\n`) +

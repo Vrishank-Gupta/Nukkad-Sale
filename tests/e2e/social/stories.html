@@ -17,6 +17,9 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .cream{background:radial-gradient(circle at 20% 15%,#fff1e8,#faf7f2 55%,#f3e7d8);color:#1d1a16}
 .dark{background:radial-gradient(circle at 50% 30%,#2a2620,#0e0d0b);color:#fff}
 .green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e);color:#fff}
+.yellow{background:#ffd43b;color:#14120f}.greyb{background:#e9e6e1;color:#1d1a16}.navy{background:radial-gradient(circle at 50% 10%,#1d2f55,#0b1426 75%);color:#fff}
+.receipt{background:#f1ede4;color:#1d1a16}.kraft{background:#c9a26b;color:#1d1a16}.black{background:#14120f;color:#fff}
+.yellow .series,.receipt .series,.kraft .series,.greyb .series{background:rgba(0,0,0,.08);color:#14120f}
 .top{position:absolute;left:44px;right:44px;top:150px;display:flex;align-items:center;justify-content:space-between}
 .brand{display:inline-flex;align-items:center;gap:10px;font-weight:900;font-size:28px;letter-spacing:-.5px}
 .count{font-size:22px;font-weight:800;opacity:.6}
@@ -130,6 +133,19 @@ S['faq-3'] = qa(3, 'Where does the money go?', 'Straight to your own UPI ID. Nuk
 S['faq-4'] = qa(4, 'Can I sell in sizes?', 'Yes – S, M, L or any sizes you like, each with its own stock. Sold out? It stops by itself.', 'newsale-sizes')
 S['faq-5'] = qa(5, 'Does it work in Hindi?', 'Yes. One tap switches every screen between English and हिंदी – for you and your buyers.', 'home-hi')
 S['faq-6'] = end('orange', Q, 6, qn, 'More questions?', 'Message us – link in bio.')
+
+// ── Feature stories: "New: Discounts" (3) and "New in NukkadSale" (6, highlight "New")
+const D = 'New', dn = 3
+S['disc-1'] = cover('yellow', D, 'refresh', 'Item not moving?<br>Run a sale.', 'New in NukkadSale: discounts<br>in 10 seconds.', dn)
+S['disc-2'] = step('yellow', D, 2, dn, 1, 'Sale → Discount<br>→ 20% off', 'Pick a shortcut or type your price. Tap “Start discount”.', 'feat-discount-panel')
+S['disc-3'] = step('yellow', D, 3, dn, 2, 'Buyers see<br>the deal', 'Old price struck through – on the sale page and in your WhatsApp post.', 'feat-buyer-discount')
+const W = 'New', wn = 6
+S['new-1'] = cover('black', W, 'shop', '5 new things<br>in NukkadSale', 'Built for how you actually sell.', wn)
+S['new-2'] = step('yellow', W, 2, wn, 1, 'Discounts', 'Any item on sale in seconds. Orders already placed keep their price.', 'feat-buyer-discount')
+S['new-3'] = step('greyb', W, 3, wn, 2, 'Special price<br>for one buyer', 'Agreed a rate in the chat? A link only she can use – one order.', 'feat-buyer-offer')
+S['new-4'] = step('navy', W, 4, wn, 3, 'Restock waitlist', 'Sold out? Buyers tap “Notify me”. Message them when it’s back.', 'feat-home-waiting')
+S['new-5'] = step('receipt', W, 5, wn, 4, 'Profit, not just sales', 'Add your cost once – see profit per piece and this month.', 'feat-khata-profit')
+S['new-6'] = step('kraft', W, 6, wn, 5, 'Shipping labels', 'One tap on “To send” prints a label for every parcel.', 'feat-labels-btn')
 
 document.getElementById('root').innerHTML = S[location.hash.slice(1)] || ''
 window.IDS = Object.keys(S)

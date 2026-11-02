@@ -63,7 +63,7 @@ background:var(--card);color:var(--ink);font:inherit;font-size:.95rem;font-weigh
 .legal h2{margin-top:1.4em}.legal li{margin:.3em 0}
 footer.site{max-width:560px;margin:0 auto;padding:8px 16px 28px;text-align:center;font-size:.85rem;color:var(--muted)}footer.site a{color:var(--muted);display:inline-block;padding:10px 4px}
 .setup .meter{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 4px}.setup .meter i{display:block;height:100%;background:var(--brand);border-radius:99px}
-.tools{margin:4px 0 6px}.tool{padding:0}.tool>summary{display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer;list-style:none}.tool>summary::-webkit-details-marker{display:none}
+.saletools{margin:4px 0 6px}.tool{padding:0}.tool>summary{display:flex;gap:12px;align-items:center;padding:14px 16px;cursor:pointer;list-style:none}.tool>summary::-webkit-details-marker{display:none}
 .tool>summary .ic{width:36px;height:36px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;flex:none}
 .tool>summary small{display:block;color:var(--muted);font-weight:500;line-height:1.35}.tool>summary:after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none;margin-left:4px}
 .tool[open]>summary:after{transform:rotate(-135deg)}.tool>:not(summary){margin-left:16px;margin-right:16px}.tool[open]{padding-bottom:14px}
@@ -139,6 +139,25 @@ hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 .or{display:flex;align-items:center;gap:10px;margin:12px 0 10px;color:var(--muted);font-size:.8rem}.or::before,.or::after{content:'';flex:1;border-top:1px solid var(--line)}
 .chip.cod{background:var(--warn-soft);color:var(--warn)}.order.cod{border-left-color:var(--warn)}
 .hint{font-size:.84rem;color:var(--muted);margin-top:6px;font-weight:400}
+
+/* ---------- Computer: sidebar navigation, wider pages ---------- */
+.cols>div{min-width:0}
+@media (min-width:1000px){
+  body.hasnav{padding-left:240px}
+  body.hasnav nav.bottom{top:0;right:auto;width:240px;flex-direction:column;justify-content:flex-start;gap:4px;padding:84px 14px 24px;border-top:0;border-right:1px solid var(--line)}
+  body.hasnav nav.bottom a{flex:none;max-width:none;flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:12px;font-size:.95rem}
+  body.hasnav nav.bottom a.on{background:var(--brand-soft)}
+  body.hasnav nav.bottom a .badge{position:static;margin-left:auto}
+  body.hasnav header.top{max-width:1120px;padding-left:32px;padding-right:32px}
+  body.hasnav main{max-width:1120px;padding:8px 32px 56px}
+  body.hasnav main:not(.wide)>*{max-width:720px}   /* forms and lists: comfortable width, same left edge as the header */
+  body.hasnav .sticky-pay{bottom:0}
+  main.wide .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 32px;align-items:start}
+  main.wide .ordergrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+  main.wide .ordergrid>h2,main.wide .ordergrid>p{grid-column:1/-1}
+  .toast{left:calc(50% + 120px)}
+  body.hasnav .photo{aspect-ratio:auto;height:280px}
+}
 `
 
 // Tiny progressive-enhancement helpers shared by all pages. Everything still works without them.
@@ -250,6 +269,8 @@ type LayoutProps = {
   say?: string
   children: Child
   scripts?: string
+  /** On a computer: use the full width (two-column pages). */
+  wide?: boolean
 }
 
 export const Layout: FC<LayoutProps> = (p) => (
@@ -292,7 +313,7 @@ export const Layout: FC<LayoutProps> = (p) => (
           </a>
         </span>
       </header>
-      <main>{p.children}</main>
+      <main class={p.wide ? 'wide' : undefined}>{p.children}</main>
       {p.ok && <div class="toast" role="status" data-autohide>{p.ok}</div>}
       {!p.nav && (
         <footer class="site">
@@ -377,9 +398,9 @@ export const PhoneInput: FC<{ id: string; name: string; value?: string }> = (p) 
   </div>
 )
 
-export const PinInput: FC<{ id: string; t: Dict; autocomplete: string; name?: string }> = ({ id, t, autocomplete, name = 'pin' }) => (
+export const PinInput: FC<{ id: string; t: Dict; autocomplete: string; name?: string; autofocus?: boolean }> = ({ id, t, autocomplete, name = 'pin', autofocus }) => (
   <div class="row">
-    <input class="grow" id={id} name={name} type="password" inputmode="numeric" autocomplete={autocomplete} pattern="\d{4,6}" maxlength={6} placeholder="••••" required style="letter-spacing:.3em;font-size:1.3rem" />
+    <input class="grow" id={id} name={name} autofocus={autofocus} type="password" inputmode="numeric" autocomplete={autocomplete} pattern="\d{4,6}" maxlength={6} placeholder="••••" required style="letter-spacing:.3em;font-size:1.3rem" />
     <button type="button" class="btn sm" data-showpin={id}>{t.showPin}</button>
   </div>
 )
