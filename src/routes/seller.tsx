@@ -17,7 +17,7 @@ import { notifyBuyer } from '../lib/notify'
 import { upiAppLinks, upiLink } from '../lib/upi'
 import { cancelCod, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
 import { isValidVpa } from '../lib/upi'
-import { clip, displayPhone, istDay, istDayStart, normalizePhone, parsePaise, randomId, rupees, waLink } from '../lib/util'
+import { clip, displayPhone, istDay, istDayStart, liveWhen, normalizePhone, parsePaise, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled, waEnabled } from '../lib/whatsapp'
 import { ago, BASE_CSS, Empty, Flash, Icon, type IconName, InstallCard, Layout, PhoneInput, PinInput, ShipSteps, StatusChip, Stepper, StockBar, StockSummary, type Nav } from '../views/layout'
 import { here, OS_JS } from './public'
@@ -306,6 +306,7 @@ sizes.addEventListener('click',function(e){var rm=e.target.closest('[data-rm]');
 
 app.get('/drops/new', async (c) => {
   const t = tr(c)
+  const cats = (await c.env.DB.prepare(`SELECT DISTINCT category FROM drops WHERE seller_id = ? AND category <> '' ORDER BY category LIMIT 20`).bind(c.get('seller').id).all<{ category: string }>()).results.map((r) => r.category)
   const blocked = await salesBlocked(c)
   if (blocked) return page(c, 'home', t.newSaleTitle, (
     <>
@@ -347,6 +348,8 @@ app.get('/drops/new', async (c) => {
         <div class="stack">
           <div><label for="title">{t.productName}</label><input id="title" name="title" required maxlength={80} placeholder={t.productNamePh} value={pre?.drop.title} /></div>
           <div><label for="description">{t.details}</label><textarea id="description" name="description" maxlength={1000} placeholder={t.detailsPh}>{pre?.drop.description ?? ''}</textarea></div>
+          <div><label for="category">{t.categoryLabel}</label><input id="category" name="category" maxlength={30} list="cats" placeholder={t.categoryPh} value={pre?.drop.category || undefined} />
+            <datalist id="cats">{cats.map((x) => <option value={x} />)}</datalist></div>
         </div>
 
         <div class="sec"><span class="num">3</span>{t.stepPrice}</div>
@@ -413,6 +416,9 @@ app.get('/drops/new', async (c) => {
           <summary>{t.moreOptions}</summary>
           <label for="max">{t.maxPer}</label>
           <div style="max-width:260px"><Stepper id="max" name="max" value={pre?.drop.max_per_order ?? 5} min={1} max={20} /></div>
+          <label for="liveat" style="margin-top:14px">{t.goLiveLabel}</label>
+          <input id="liveat" name="live_at" type="datetime-local" style="max-width:260px" />
+          <small>{t.goLiveHint}</small>
         </details>
         <div class="sticky-pay">
           <button type="submit" class="btn primary block big">{t.publish}</button>
@@ -435,6 +441,10 @@ app.post('/drops/new', async (c) => {
   const description = one(f.description).slice(0, 1000)
   const price = parsePaise(one(f.price))
   const maxPer = Math.min(20, Math.max(1, Math.floor(Number(one(f.max)) || 5)))
+  const category = one(f.category).trim().replace(/\s+/g, ' ').slice(0, 30)
+  // The phone sends local time (India): '2026-11-05T21:00'. Only future times count.
+  const liveAtRaw = one(f.live_at) ? Date.parse(one(f.live_at) + ':00+05:30') : 0
+  const liveAt = liveAtRaw > Date.now() + 60_000 ? liveAtRaw : 0
   if (!title) return fail(t.needName)
   if (!price || price < 100) return fail(t.needPrice)
 
@@ -483,8 +493,8 @@ app.post('/drops/new', async (c) => {
 
   const now = Date.now()
   await c.env.DB.batch([
-    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost),
+    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt),
     ...imageKeys.map((k, i) => c.env.DB.prepare(`INSERT INTO drop_images (drop_id, image_key, position) VALUES (?, ?, ?)`).bind(id, k, i)),
     ...variants.map((v, i) =>
       c.env.DB.prepare(`INSERT INTO variants (drop_id, label, stock, available, position) VALUES (?, ?, ?, ?, ?)`).bind(id, v.label, v.qty, v.qty, i),
@@ -508,6 +518,7 @@ export function shareText(t: Dict, drop: Drop, variants: Variant[], seller: Sell
     sizes.length ? `📏 ${t.shareSizes}: ${sizes.join(', ')}` : null,
     drop.ship_fee_paise ? `🚚 ${drop.free_ship_above_paise ? t.shareShipFree(rupees(drop.ship_fee_paise), rupees(drop.free_ship_above_paise)) : t.shareShip(rupees(drop.ship_fee_paise))}` : null,
     drop.cod_enabled ? `💵 ${t.codBtn}` : null,
+    (drop.live_at ?? 0) > Date.now() ? `⏰ *${t.shareLiveAt(liveWhen(drop.live_at, t.lang))}*` : null,
     `📦 ${t.shareLimited}`,
     ``,
     `👉 ${link.includes('/w/') ? t.waOrderCta : t.shareCta}: ${link}`,
@@ -560,6 +571,7 @@ app.get('/drops/:id', async (c) => {
         </div>
         <SaleChip t={t} d={{ status: drop.status, available: counts.available }} />
       </div>
+      {(drop.live_at ?? 0) > Date.now() && <div class="alert info row" style="gap:8px;margin-top:10px"><Icon n="clock" s={18} />{t.dropSoon(liveWhen(drop.live_at, t.lang))}</div>}
       {data.images.length > 1 && <div class="photos">{data.images.map((k) => <img src={`/img/${k}`} alt="" />)}</div>}
       <p><small>{t.paymentsTo(drop.upi_vpa ?? s.upi_vpa ?? '')}</small></p>
       {/* Profit per piece – one quiet line; tap to add or change the cost. */}
@@ -788,6 +800,37 @@ app.post('/drops/:id/waitlist/:wid/done', async (c) => {
   if (!drop) return c.notFound()
   await c.env.DB.prepare(`UPDATE waitlist SET notified_at = ? WHERE id = ? AND drop_id = ?`).bind(Date.now(), Number(c.req.param('wid')), drop.id).run()
   return c.redirect(`/app/drops/${drop.id}#waiting`, 303)
+})
+
+// ---------- Shop link and cart offer ----------
+const RESERVED = new Set(['app', 'admin', 'login', 'seller', 'signup', 'logout', 'reset', 'privacy', 'terms', 'refunds', 'contact', 'help', 'data-request', 'lang',
+  'offline', 'thanks', 'get-started', 'manifest', 'img', 'site', 'webhooks', 'api', 'shop', 'nukkadsale', 'support', 'about', 'blog', 'www'])
+export const suggestSlug = (name: string) => (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'my-shop').padEnd(3, '0')
+
+app.post('/shoplink', async (c) => {
+  const t = tr(c)
+  const slug = String((await c.req.parseBody()).slug ?? '').trim().toLowerCase()
+  const back = (k: string, m: string) => c.redirect(`/app/settings?${k}=${encodeURIComponent(m)}#shoplink`, 303)
+  if (!/^[a-z0-9][a-z0-9-]{2,29}$/.test(slug) || RESERVED.has(slug)) return back('err', t.shopLinkBad)
+  const taken = await c.env.DB.prepare(`SELECT 1 FROM sellers WHERE slug = ? AND id <> ?`).bind(slug, c.get('seller').id).first()
+  if (taken) return back('err', t.shopLinkTaken)
+  await c.env.DB.prepare(`UPDATE sellers SET slug = ? WHERE id = ?`).bind(slug, c.get('seller').id).run()
+  return back('ok', t.shopLinkSaved)
+})
+
+app.post('/cartoffer', async (c) => {
+  const t = tr(c)
+  const f = await c.req.parseBody()
+  const back = (k: string, m: string) => c.redirect(`/app/settings?${k}=${encodeURIComponent(m)}#cartoffer`, 303)
+  const id = c.get('seller').id
+  if (f.clear) { await c.env.DB.prepare(`UPDATE sellers SET offer_min_paise = 0, offer_off_paise = 0, offer_pct = 0 WHERE id = ?`).bind(id).run(); return back('ok', t.cartOfferSaved) }
+  const min = parsePaise(String(f.min ?? '')) ?? 0
+  const off = parsePaise(String(f.off ?? '') || '0') ?? 0
+  const pct = Math.floor(Number(String(f.pct ?? '').replace(/\D/g, '')) || 0)
+  // Either a rupee amount (below the threshold) or a percentage (1–90), not both.
+  if (min < 100 || (off > 0) === (pct > 0) || off >= min || pct > 90) return back('err', t.cartOfferBad)
+  await c.env.DB.prepare(`UPDATE sellers SET offer_min_paise = ?, offer_off_paise = ?, offer_pct = ? WHERE id = ?`).bind(min, off, off ? 0 : pct, id).run()
+  return back('ok', t.cartOfferSaved)
 })
 
 app.post('/tools', async (c) => {
@@ -1353,6 +1396,31 @@ app.get('/settings', async (c) => {
         <div><label for="curpin">{t.currentPin}</label><PinInput id="curpin" name="current" t={t} autocomplete="current-password" /></div>
         <div><label for="newpin">{t.newPinLabel}</label><PinInput id="newpin" name="pin" t={t} autocomplete="new-password" /></div>
         <button class="btn block" type="submit">{t.changePinBtn}</button>
+      </form>
+
+      <h2 id="shoplink">{t.shopLinkTitle}</h2>
+      <p class="hint" style="margin-top:-4px">{t.shopLinkHint}</p>
+      <form method="post" action="/app/shoplink" class="card stack">
+        <div class="money" style="gap:0"><span style="white-space:nowrap;font-weight:600">nukkadsale.in/</span><input name="slug" value={s.slug ?? suggestSlug(s.shop_name)} pattern="[a-z0-9][a-z0-9-]{2,29}" maxlength={30} required aria-label={t.shopLinkTitle} autocapitalize="off" spellcheck={false} /></div>
+        <div class="row">
+          <button class="btn grow" type="submit">{t.shopLinkSave}</button>
+          {s.slug && <a class="btn wa grow" href={waLink(null, `${s.shop_name} – ${new URL(c.req.url).origin}/${s.slug}`)}><Icon n="share" s={18} />{t.shareShop}</a>}
+        </div>
+      </form>
+
+      <h2 id="cartoffer">{t.cartOfferTitle}</h2>
+      <p class="hint" style="margin-top:-4px">{t.cartOfferHint}</p>
+      <form method="post" action="/app/cartoffer" class="card stack">
+        <div><label for="omin">{t.cartOfferMin}</label><div class="money"><span>₹</span><input id="omin" name="min" inputmode="decimal" placeholder="1500" value={s.offer_min_paise ? String(s.offer_min_paise / 100) : ''} /></div></div>
+        <div class="duo">
+          <div><label for="ooff">{t.cartOfferAmt}</label><div class="money"><span>₹</span><input id="ooff" name="off" inputmode="decimal" placeholder="150" value={s.offer_off_paise ? String(s.offer_off_paise / 100) : ''} /></div></div>
+          <div><label for="opct">{t.cartOfferPct}</label><div class="money"><input id="opct" name="pct" inputmode="numeric" placeholder="10" value={s.offer_pct ? String(s.offer_pct) : ''} /><span>%</span></div></div>
+        </div>
+        {(s.offer_min_paise ?? 0) > 0 && <div class="alert ok" style="margin:0">{t.offerBanner(rupees(s.offer_min_paise!), s.offer_off_paise ? rupees(s.offer_off_paise) : `${s.offer_pct}%`)}</div>}
+        <div class="row">
+          <button class="btn grow" type="submit">{t.cartOfferSave}</button>
+          {(s.offer_min_paise ?? 0) > 0 && <button class="btn grow ghost" type="submit" name="clear" value="1">{t.cartOfferOff}</button>}
+        </div>
       </form>
 
       <h2 id="tools">{t.toolsTitle}</h2>

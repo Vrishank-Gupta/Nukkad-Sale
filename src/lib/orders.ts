@@ -41,7 +41,7 @@ export type ReserveInput = {
   /** The personal price link used, recorded on the order. */
   offerId?: string
 }
-export type ReserveFailure = 'closed' | 'qty' | 'device' | 'stock'
+export type ReserveFailure = 'closed' | 'qty' | 'device' | 'stock' | 'soon'
 export type ReserveResult = { ok: true; order: Order } | { ok: false; reason: ReserveFailure }
 
 /** Atomically take `qty` pieces from a variant. Returns false when not enough is left. */
@@ -92,21 +92,39 @@ export async function cartOrders(db: D1Database, o: Pick<Order, 'id' | 'cart_id'
 
 export const cartTotal = (lines: Pick<Order, 'amount_paise'>[]) => lines.reduce((n, l) => n + l.amount_paise, 0)
 
-/** Re-pick the cart's unique paise after an item joins (direct UPI only). */
-async function rebalanceCart(db: D1Database, sellerId: string, key: string) {
+/** The seller's "spend more, save more" discount for items worth `items` paise in one payment (0 if none). */
+export function cartOffer(seller: Pick<Seller, 'offer_min_paise' | 'offer_off_paise' | 'offer_pct'>, items: number): number {
+  const min = seller.offer_min_paise ?? 0
+  if (!min || items < min) return 0
+  const off = (seller.offer_off_paise ?? 0) > 0 ? seller.offer_off_paise! : Math.floor((items * Math.min(90, seller.offer_pct ?? 0)) / 100)
+  return Math.max(0, Math.min(off, items - 100))
+}
+
+/**
+ * Price a payment (one order, or a cart of them): each line at the price it was ordered at, delivery once,
+ * minus the cart offer; direct-UPI payments then get their unique paise taken off the total.
+ * Runs whenever an order is created or joins a cart, so the offer kicks in as soon as the cart qualifies.
+ */
+export async function repriceCart(db: D1Database, seller: Pick<Seller, 'id' | 'pay_mode' | 'offer_min_paise' | 'offer_off_paise' | 'offer_pct'>, key: string, mode: string) {
   const { results } = await db
-    // Each line at the price it was ordered at – never a price changed later (discounts, personal prices).
-    .prepare(`SELECT o.id, COALESCE(o.unit_paise, d.price_paise) * o.qty + o.ship_paise AS base FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.id = ?1 OR o.cart_id = ?1`)
+    .prepare(`SELECT o.id, COALESCE(o.unit_paise, d.price_paise) * o.qty AS items, o.ship_paise AS ship FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.id = ?1 OR o.cart_id = ?1`)
     .bind(key)
-    .all<{ id: string; base: number }>()
-  const baseTotal = results.reduce((n, r) => n + r.base, 0)
-  const offset = (await uniqueAmount(db, sellerId, baseTotal, key)) - baseTotal
-  await db.batch(results.map((r) => db.prepare(`UPDATE orders SET amount_paise = ? WHERE id = ?`).bind(r.base + (r.id === key ? offset : 0), r.id)))
+    .all<{ id: string; items: number; ship: number }>()
+  const items = results.reduce((n, r) => n + r.items, 0)
+  const disc = cartOffer(seller, items)
+  const base = items + results.reduce((n, r) => n + r.ship, 0) - disc
+  const total = mode === 'direct' ? await uniqueAmount(db, seller.id, base, key) : base
+  await db.batch(results.map((r) =>
+    db.prepare(`UPDATE orders SET amount_paise = ?, disc_paise = ? WHERE id = ?`)
+      // Lines add up to the total: the first line carries the discount and the unique-paise adjustment.
+      .bind(r.items + r.ship + (r.id === key ? total - base - disc : 0), r.id === key ? disc : 0, r.id)))
 }
 
 export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, input: ReserveInput): Promise<ReserveResult> {
   const db = env.DB
   if (drop.status !== 'live') return { ok: false, reason: 'closed' }
+  // Scheduled drop: visible, but nobody can order before it goes live.
+  if ((drop.live_at ?? 0) > Date.now()) return { ok: false, reason: 'soon' }
   if (input.qty < 1 || (!input.assisted && input.qty > drop.max_per_order)) return { ok: false, reason: 'qty' }
 
   if (!input.assisted) {
@@ -144,11 +162,11 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
       const order = await db
         .prepare(
           `INSERT INTO orders (id, drop_id, seller_id, variant_id, qty, amount_paise, buyer_name, buyer_phone, address,
-                               pay_mode, ip_hash, hold_until, created_at, channel, assisted, ship_paise, unit_paise, cost_paise, offer_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cod', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+                               pay_mode, ip_hash, hold_until, created_at, channel, assisted, ship_paise, unit_paise, cost_paise, offer_id, disc_paise)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cod', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         )
-        .bind(randomId(14), drop.id, seller.id, input.variantId, input.qty, base + ship + (drop.cod_fee_paise || 0), input.name, input.phone, input.address,
-          input.ipHash, COD_HOLD, now, input.channel ?? 'web', input.assisted ? 1 : 0, ship, unit, cost, input.offerId ?? null)
+        .bind(randomId(14), drop.id, seller.id, input.variantId, input.qty, base + ship + (drop.cod_fee_paise || 0) - cartOffer(seller, base), input.name, input.phone, input.address,
+          input.ipHash, COD_HOLD, now, input.channel ?? 'web', input.assisted ? 1 : 0, ship, unit, cost, input.offerId ?? null, cartOffer(seller, base))
         .first<Order>()
       if (!order) throw new Error('insert failed')
       return { ok: true, order }
@@ -181,7 +199,7 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
       const paid = await db.prepare(`SELECT COALESCE(SUM(ship_paise), 0) AS s FROM orders WHERE id = ?1 OR cart_id = ?1`).bind(key).first<{ s: number }>()
       if ((paid?.s ?? 0) > 0) ship = 0
     }
-    const amount = key || mode !== 'direct' ? base + ship : await uniqueAmount(db, seller.id, base + ship)
+    const amount = base + ship   // final amount (offer, unique paise) is set by repriceCart below
     const order = await db
       .prepare(
         `INSERT INTO orders (id, drop_id, seller_id, variant_id, qty, amount_paise, buyer_name, buyer_phone, address,
@@ -195,10 +213,11 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
     if (key) {
       // The whole cart now lives as long as its newest item; any old gateway link no longer matches the total.
       await db.prepare(`UPDATE orders SET cart_id = ?1, hold_until = ?2, pay_url = NULL, gateway_ref = NULL WHERE id = ?1 OR cart_id = ?1`).bind(key, holdUntil).run()
-      if (mode === 'direct') await rebalanceCart(db, seller.id, key)
+      await repriceCart(db, seller, key, mode)
       return { ok: true, order: (await db.prepare(`SELECT * FROM orders WHERE id = ?`).bind(order.id).first<Order>())! }
     }
-    return { ok: true, order }
+    await repriceCart(db, seller, order.id, mode)
+    return { ok: true, order: (await db.prepare(`SELECT * FROM orders WHERE id = ?`).bind(order.id).first<Order>())! }
   } catch (e) {
     await giveBackStock(db, input.variantId, input.qty)
     throw e

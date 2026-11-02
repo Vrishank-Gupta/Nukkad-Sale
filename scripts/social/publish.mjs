@@ -296,6 +296,15 @@ async function main() {
     log[id] = { ...r, at: new Date().toISOString() }
     fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
     console.log(`Posted ✓ ${r.permalink ?? 'media ' + r.media_id}`)
+    // Every reel that goes to Instagram also goes to YouTube Shorts (skip with --no-youtube).
+    if (item.type === 'reel' && !flags.has('--no-youtube') && !log['yt:' + id]) {
+      try {
+        const y = await youtubeUpload(path.join(SOCIAL, item.file), caption)
+        log['yt:' + id] = { ...y, at: new Date().toISOString() }
+        fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
+        console.log(`YouTube ✓ ${y.url} (${y.privacy})`)
+      } catch (e) { console.log(`✗ YouTube upload failed (Instagram post is fine): ${e.message} – retry with: publish.mjs youtube ${id}`) }
+    }
     return
   }
   if (cmd === 'youtube-login') return youtubeLogin()

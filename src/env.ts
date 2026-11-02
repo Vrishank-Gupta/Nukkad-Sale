@@ -48,6 +48,11 @@ export type Seller = {
   id: string
   /** Selling tools switched off by the seller, comma list (see lib/tools.ts). */
   tools_off?: string
+  slug?: string | null
+  /** Cart offer: items worth at least offer_min_paise in one payment get offer_off_paise (or offer_pct %) off. */
+  offer_min_paise?: number
+  offer_off_paise?: number
+  offer_pct?: number
   phone: string
   name: string
   shop_name: string
@@ -78,6 +83,10 @@ export type Drop = {
   cod_fee_paise: number
   ship_fee_paise: number
   free_ship_above_paise: number
+  /** Storefront filter ('' = none). */
+  category: string
+  /** Scheduled drop: ordering opens at this time (ms). 0 = live now. */
+  live_at: number
   /** "Was" price while a discount runs (price_paise is the discounted price). 0 = no discount. */
   compare_paise: number
   /** Seller's own cost per piece, for profit. 0 = not set. */
@@ -139,6 +148,8 @@ export type Order = {
   ship_paise: number
   /** Price per piece this order was sold at; null on orders from before discounts (= the sale price then). */
   unit_paise: number | null
+  /** Cart-offer discount taken off this order (on the cart's first line). */
+  disc_paise: number
   cost_paise: number
   offer_id: string | null
 }

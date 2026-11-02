@@ -143,6 +143,24 @@ hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 .chip.cod{background:var(--warn-soft);color:var(--warn)}.order.cod{border-left-color:var(--warn)}
 .hint{font-size:.84rem;color:var(--muted);margin-top:6px;font-weight:400}
 
+/* ---------- Storefront & cart ---------- */
+.sfhead{display:flex;gap:14px;align-items:center;margin:8px 0 4px}.sfhead .av{width:56px;height:56px;border-radius:16px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.sfhead h1{margin:0;font-size:1.35rem}.offerband{display:flex;gap:8px;align-items:center;background:var(--ok-soft);color:var(--ok);border-radius:12px;padding:10px 12px;font-weight:700;font-size:.92rem;margin:10px 0}
+.sfsearch{position:relative;margin:10px 0}.sfsearch input{padding-left:40px}.sfsearch svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:4px 0 12px}.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.sfgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (min-width:700px){.sfgrid{grid-template-columns:repeat(3,1fr)}}
+.sfcard{display:flex;flex-direction:column;gap:6px;min-width:0}.sfcard a{text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:6px}
+.sfimg{position:relative}.sfimg img,.sfimg .ph{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;display:block;background:var(--line)}.sfimg .ph{display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.badge2{position:absolute;left:8px;top:8px;background:var(--ink);color:var(--bg);font-size:.72rem;font-weight:800;padding:4px 8px;border-radius:8px}.badge2.off{left:auto;right:8px;background:var(--ok);color:#fff}.badge2.soon{background:var(--info);color:#fff}
+.sfcard b{font-size:.95rem;line-height:1.3}.sfprice{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.sfprice s{color:var(--muted);font-size:.85rem}
+.sfcard .btn{min-height:40px}.sfcard.out{opacity:.55}
+.cartbar{position:sticky;top:0;z-index:7;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;margin:6px 0 10px;text-decoration:none;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+.cartbar .go{margin-left:auto;flex:none;white-space:nowrap;background:var(--brand);color:#fff;border-radius:10px;padding:6px 12px}.cartbar small{display:block;font-weight:600;opacity:.8;font-size:.78rem}
+dialog.sheet{border:0;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));width:100%;max-width:560px;margin:auto auto 0;background:var(--card);color:var(--ink)}
+dialog.sheet::backdrop{background:rgba(0,0,0,.45)}
+.cartline{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.cartline:first-child{border-top:0}.cartline img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex:none;background:var(--line)}
 /* ---------- Computer: sidebar navigation, wider pages ---------- */
 .cols>div{min-width:0}
 @media (min-width:1000px){

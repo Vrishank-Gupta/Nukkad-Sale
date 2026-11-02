@@ -6,7 +6,7 @@ import { billingCron } from './lib/billing'
 import { reconcileGateways } from './lib/gateway'
 import { expireHolds } from './lib/orders'
 import { auth } from './routes/auth'
-import { here, pub } from './routes/public'
+import { here, pub, storefrontBySlug } from './routes/public'
 import { admin } from './routes/admin'
 import { legal } from './routes/legal'
 import { site } from './routes/site'
@@ -135,6 +135,8 @@ app.route('/', pub)
 app.route('/app', sellerApp)
 app.route('/admin', admin)
 app.route('/', legal)
+// A seller's storefront at nukkadsale.in/<slug> – last, so every real page above wins.
+app.get('/:slug{[a-z0-9][a-z0-9-]{2,29}}', (c) => storefrontBySlug(c))
 
 app.notFound((c) => {
   const t = tr(c)

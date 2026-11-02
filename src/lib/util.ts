@@ -40,3 +40,13 @@ export const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).
 /** wa.me click-to-chat link – free, opens WhatsApp with the text prefilled. */
 export const waLink = (phone: string | null, text: string) =>
   `https://wa.me/${phone ?? ''}?text=${encodeURIComponent(text)}`
+
+/** "today, 9:00 pm" / "tomorrow, 9:00 pm" / "5 Nov, 9:00 pm" in India time – for scheduled drops. */
+export function liveWhen(ms: number, lang: 'en' | 'hi' = 'en') {
+  const loc = lang === 'hi' ? 'hi-IN' : 'en-IN'
+  const time = new Date(ms).toLocaleTimeString(loc, { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+  const day = (x: number) => new Date(x).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+  const d = day(ms) === day(Date.now()) ? (lang === 'hi' ? 'आज' : 'today') : day(ms) === day(Date.now() + 86_400_000) ? (lang === 'hi' ? 'कल' : 'tomorrow')
+    : new Date(ms).toLocaleDateString(loc, { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
+  return `${d}, ${time}`
+}

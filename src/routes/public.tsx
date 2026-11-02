@@ -10,7 +10,7 @@ import { verifyCallback } from '../lib/razorpay'
 import { shopOpen } from '../lib/billing'
 import { alertSeller } from '../lib/push'
 import { isValidUtr, qrSvg, upiAppLinks, upiLink } from '../lib/upi'
-import { clip, normalizePhone, randomId, rupees, waLink } from '../lib/util'
+import { clip, liveWhen, normalizePhone, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
 import { checkOffer, pctOff } from '../lib/offers'
 import { toolOn } from '../lib/tools'
@@ -18,7 +18,7 @@ import { Flash, Icon, Layout, PhoneInput, ShipSteps, StatusChip, Stepper } from 
 
 export const pub = new Hono<AppEnv>()
 
-const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off`
+const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off, slug, offer_min_paise, offer_off_paise, offer_pct`
 const getSeller = (db: D1Database, id: string) => db.prepare(`SELECT ${SELLER_COLS} FROM sellers WHERE id = ?`).bind(id).first<Seller>()
 
 export const imageUrl = (origin: string, key: string | null) => (key ? `${origin}/img/${key}` : undefined)
@@ -71,29 +71,204 @@ const ItemRow = ({ t, items }: { t: Dict; items: ShopItem[] }) => (
 
 // ---------- Shop page: everything a seller is selling ----------
 
+// "Add to cart" on a sale page: the size and quantity picked in the form.
+const ADD_SALE_JS = `(function(){var b=document.querySelector('[data-addsale]');if(!b)return;b.onclick=function(){var f=document.getElementById('buy'),it=JSON.parse(b.dataset.addsale),v=f.querySelector('[name=variant]:checked')||f.querySelector('[name=variant]');
+if(!v||!v.value){toast(document.querySelector('.sec')?document.querySelector('.sec').textContent:'');return}var q=f.querySelector('[name=qty]');kkCart.add({d:it.d,v:+v.value,q:q?Math.max(1,+q.value||1):1,t:it.t,l:it.labels[v.value]||'',p:it.p,img:it.img,max:it.max});window.scrollTo({top:0,behavior:'smooth'})}})();`
+// Scheduled drop: count down to go-live, then reload into the normal sale page.
+const SOON_JS = `(function(){var e=document.getElementById('soon');if(!e)return;var at=+e.dataset.at;function f(){var s=Math.max(0,Math.round((at-Date.now())/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+e.textContent=(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');if(s>0)setTimeout(f,1000);else setTimeout(function(){location.reload()},800)}f()})();`
+
+// ---------- Storefront: the seller's whole shop at nukkadsale.in/<slug> (or /s/<id>) ----------
+
+type SfItem = { id: string; title: string; price_paise: number; compare_paise: number; image_key: string | null; category: string; live_at: number; created_at: number; max_per_order: number; stock: number; available: number }
+type SfVariant = { id: number; drop_id: string; label: string; available: number }
+
+// The cart lives in the buyer's browser (per shop) until checkout; the server re-checks everything on order.
+export const cartJs = (sid: string, t: Dict, offer: { min: number; off: number; pct: number }) => `(function(){
+var K='kk_cart_${sid}',OF=${JSON.stringify(offer)};
+function rs(p){return '₹'+(p%100?(p/100).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}):(p/100).toLocaleString('en-IN'))}
+function get(){try{return JSON.parse(localStorage.getItem(K)||'[]')}catch(e){return[]}}
+function save(c){try{localStorage.setItem(K,JSON.stringify(c))}catch(e){}render()}
+function items(c){return c.reduce(function(n,x){return n+x.p*x.q},0)}
+function disc(n){if(!OF.min||n<OF.min)return 0;var d=OF.off>0?OF.off:Math.floor(n*OF.pct/100);return Math.max(0,Math.min(d,n-100))}
+window.kkCart={get:get,save:save,items:items,disc:disc,rs:rs,
+  add:function(it){var c=get(),e=c.find(function(x){return x.v==it.v});if(e)e.q=Math.min(e.q+it.q,it.max||e.max||5);else c.push(it);save(c);toast(${JSON.stringify(t.addedToCart)})}};
+function render(){var c=get(),b=document.getElementById('cartbar');if(!b)return;var n=c.reduce(function(a,x){return a+x.q},0),tot=items(c);b.hidden=!n;if(!n)return;
+  b.querySelector('[data-c]').textContent=(n===1?${JSON.stringify(t.cartBar(1, '{a}'))}:${JSON.stringify(t.cartBar(2, '{a}').replace('2', '{n}'))}).replace('{n}',n).replace('{a}',rs(tot-disc(tot)));
+  var h=b.querySelector('small');if(h){var more=OF.min-tot;h.textContent=OF.min?(more>0?${JSON.stringify(t.offerMore('{m}', '{o}'))}.replace('{m}',rs(more)).replace('{o}',OF.off?rs(OF.off):OF.pct+'%'):${JSON.stringify(t.offerGot('{o}'))}.replace('{o}',rs(disc(tot)))):'';h.hidden=!OF.min}}
+document.addEventListener('click',function(e){var a=e.target.closest('[data-add]');if(!a)return;e.preventDefault();var it=JSON.parse(a.dataset.add);
+  if(it.sizes){var d=document.getElementById('sizesheet');d.querySelector('[data-t]').textContent=it.t;var box=d.querySelector('[data-sz]');box.innerHTML='';
+    it.sizes.forEach(function(z,i){var l=document.createElement('button');l.type='button';l.className='btn sm';l.textContent=z.l;l.disabled=!z.a;l.onclick=function(){d.close();kkCart.add({d:it.d,v:z.id,q:1,t:it.t,l:z.l,p:it.p,img:it.img,max:it.max})};box.appendChild(l)});d.showModal()}
+  else kkCart.add(it)});
+render()})();`
+
+const CartBar = ({ t, sid }: { t: Dict; sid: string }) => (
+  <a id="cartbar" class="cartbar" href={`/s/${sid}/cart`} hidden>
+    <Icon n="bag" s={20} /><span><span data-c /><small hidden /></span><span class="go">{t.checkout} →</span>
+  </a>
+)
+const SizeSheet = ({ t }: { t: Dict }) => (
+  <dialog id="sizesheet" class="sheet"><b data-t style="display:block;margin-bottom:4px" /><small>{t.pickSizeFirst}</small><div data-sz class="row wrap" style="gap:8px;margin-top:12px" /></dialog>
+)
+
+async function storefront(c: Context<AppEnv>, seller: Seller) {
+  const t = tr(c)
+  const open = await shopOpen(c.env, seller)
+  const { results: items } = open ? await c.env.DB.prepare(
+    `SELECT d.id, d.title, d.price_paise, d.compare_paise, d.image_key, d.category, d.live_at, d.created_at, d.max_per_order,
+            (SELECT COALESCE(SUM(stock), 0) FROM variants WHERE drop_id = d.id) AS stock, (SELECT COALESCE(SUM(available), 0) FROM variants WHERE drop_id = d.id) AS available
+     FROM drops d WHERE d.seller_id = ? AND d.status = 'live' ORDER BY d.created_at DESC LIMIT 120`).bind(seller.id).all<SfItem>() : { results: [] as SfItem[] }
+  const { results: vars } = items.length ? await c.env.DB.prepare(`SELECT v.id, v.drop_id, v.label, v.available FROM variants v JOIN drops d ON d.id = v.drop_id WHERE d.seller_id = ? AND d.status = 'live' ORDER BY v.position`).bind(seller.id).all<SfVariant>() : { results: [] as SfVariant[] }
+  const now = Date.now()
+  // In stock first, then coming soon, then sold out.
+  items.sort((a, b) => (Number(b.available > 0 && b.live_at <= now) * 2 + Number(b.live_at > now)) - (Number(a.available > 0 && a.live_at <= now) * 2 + Number(a.live_at > now)))
+  const cats = [...new Set(items.map((x) => x.category).filter(Boolean))]
+  const origin = new URL(c.req.url).origin
+  const link = seller.slug ? `${origin}/${seller.slug}` : `${origin}/s/${seller.id}`
+  const offer = { min: seller.offer_min_paise ?? 0, off: seller.offer_off_paise ?? 0, pct: seller.offer_pct ?? 0 }
+  const filterJs = `(function(){var q=document.getElementById('q'),cs=document.querySelectorAll('.chips button'),cat='';function f(){var s=(q.value||'').toLowerCase();document.querySelectorAll('.sfcard').forEach(function(e){e.hidden=!((!cat||e.dataset.cat===cat)&&e.dataset.s.indexOf(s)>-1)})}
+q&&q.addEventListener('input',f);cs.forEach(function(b){b.onclick=function(){cs.forEach(function(x){x.classList.remove('on')});b.classList.add('on');cat=b.dataset.cat;f()}})})();`
+  return c.html(
+    <Layout t={t} path={here(c)} brand={seller.shop_name} title={t.shopItems(seller.shop_name)} scripts={cartJs(seller.id, t, offer) + filterJs}
+      og={{ title: seller.shop_name, description: t.shopItems(seller.shop_name), image: imageUrl(origin, items[0]?.image_key ?? null), url: link }}>
+      <div class="sfhead"><span class="av"><Icon n="shop" s={28} /></span><div><h1>{seller.shop_name}</h1><small>{t.shopCount(items.length)}</small></div></div>
+      {offer.min > 0 && <div class="offerband"><Icon n="receipt" s={18} />{t.offerBanner(rupees(offer.min), offer.off ? rupees(offer.off) : `${offer.pct}%`)}</div>}
+      <CartBar t={t} sid={seller.id} />
+      {items.length > 6 && <label class="sfsearch"><Icon n="search" s={18} /><input id="q" type="search" placeholder={t.searchPh} aria-label={t.searchPh} /></label>}
+      {cats.length > 0 && <div class="chips"><button type="button" class="on" data-cat="">{t.catAll}</button>{cats.map((x) => <button type="button" data-cat={x}>{x}</button>)}</div>}
+      {items.length === 0 && <p class="muted">{t.shopEmpty}</p>}
+      <div class="sfgrid">
+        {items.map((o) => {
+          const vs = vars.filter((v) => v.drop_id === o.id)
+          const soon = o.live_at > now, out = o.available < 1, fresh = now - o.created_at < 7 * 86_400_000
+          const sized = vs.length > 1 || Boolean(vs[0]?.label)
+          const add = { d: o.id, t: o.title, p: o.price_paise, img: o.image_key, max: o.max_per_order, ...(sized ? { sizes: vs.map((v) => ({ id: v.id, l: v.label, a: v.available > 0 })) } : { v: vs[0]?.id, q: 1, l: '' }) }
+          return (
+            <div class={`sfcard${out && !soon ? ' out' : ''}`} data-cat={o.category} data-s={o.title.toLowerCase()}>
+              <a href={`/d/${o.id}`}>
+                <div class="sfimg">
+                  {o.image_key ? <img src={`/img/${o.image_key}`} alt="" loading="lazy" /> : <div class="ph"><Icon n="bag" s={28} /></div>}
+                  {soon ? <span class="badge2 soon">{t.comingSoon}</span> : out ? <span class="badge2">{t.soldOutBtn}</span> : fresh ? <span class="badge2">{t.newTag}</span> : null}
+                  {!out && o.compare_paise > o.price_paise && <span class="badge2 off">{t.pctOff(pctOff(o.compare_paise, o.price_paise))}</span>}
+                </div>
+                <b>{clip(o.title, 48)}</b>
+                <span class="sfprice"><b>{rupees(o.price_paise)}</b>{o.compare_paise > o.price_paise && <s>{rupees(o.compare_paise)}</s>}</span>
+                {soon && <small style="color:var(--info);font-weight:700">{t.dropSoon(liveWhen(o.live_at, t.lang))}</small>}
+              </a>
+              {!soon && !out && <button type="button" class="btn sm" data-add={JSON.stringify(add)}><Icon n="bag" s={16} />{t.addToCart}</button>}
+            </div>
+          )
+        })}
+      </div>
+      <SizeSheet t={t} />
+      <div class="stack" style="margin-top:18px">
+        <a class="btn wa block" href={waLink(seller.phone, '')}>{t.msgSeller(seller.shop_name)}</a>
+        <a class="btn block sm" href={waLink(null, `${seller.shop_name} – ${link}`)}><Icon n="share" s={16} />{t.shareShop}</a>
+      </div>
+    </Layout>,
+  )
+}
+
 pub.get('/s/:id', async (c) => {
+  const seller = await getSeller(c.env.DB, c.req.param('id'))
+  if (!seller) return c.notFound()
+  return storefront(c, seller)
+})
+
+/** nukkadsale.in/<slug> – registered last in index.tsx so it never shadows a real page. */
+export async function storefrontBySlug(c: Context<AppEnv>) {
+  const slug = (c.req.param('slug') ?? '').toLowerCase()
+  const seller = await c.env.DB.prepare(`SELECT ${SELLER_COLS} FROM sellers WHERE slug = ?`).bind(slug).first<Seller>()
+  if (!seller) return c.notFound()
+  return storefront(c, seller)
+}
+
+// ---------- Cart & checkout: several items, one payment ----------
+
+pub.get('/s/:id/cart', async (c) => {
   const t = tr(c)
   const seller = await getSeller(c.env.DB, c.req.param('id'))
   if (!seller) return c.notFound()
-  const items = (await shopOpen(c.env, seller)) ? await shopItems(c.env.DB, seller.id, null, 60) : []
-  // Available items first, sold-out ones after.
-  items.sort((a, b) => Number(b.available > 0) - Number(a.available > 0))
-  const origin = new URL(c.req.url).origin
+  const offer = { min: seller.offer_min_paise ?? 0, off: seller.offer_off_paise ?? 0, pct: seller.offer_pct ?? 0 }
+  const page = `(function(){var C=kkCart,L=document.getElementById('lines'),f=document.getElementById('co');
+function draw(){var c=C.get();if(!c.length){document.getElementById('empty').hidden=false;f.hidden=true;L.innerHTML='';return}
+  L.innerHTML=c.map(function(x,i){return '<div class="cartline">'+(x.img?'<img src="/img/'+x.img+'" alt="">':'<span class="thumb"></span>')+'<div class="grow"><b>'+x.t.replace(/</g,'&lt;')+'</b><div class="muted">'+(x.l?x.l+' · ':'')+C.rs(x.p)+'</div></div>'+
+   '<div class="stepper compact"><button type="button" data-i="'+i+'" data-d="-1" aria-label="Less">−</button><input value="'+x.q+'" readonly aria-label="qty"><button type="button" data-i="'+i+'" data-d="1" aria-label="More">+</button></div></div>'}).join('');
+  var n=C.items(c),d=C.disc(n);document.getElementById('it').textContent=C.rs(n);var dr=document.getElementById('dr');dr.hidden=!d;dr.querySelector('span:last-child').textContent='−'+C.rs(d);
+  document.getElementById('tp').textContent=C.rs(n-d);f.querySelector('[name=lines]').value=JSON.stringify(c.map(function(x){return{d:x.d,v:x.v,q:x.q}}))}
+L.addEventListener('click',function(e){var b=e.target.closest('[data-i]');if(!b)return;var c=C.get(),x=c[+b.dataset.i];x.q+=+b.dataset.d;if(x.q<1)c.splice(+b.dataset.i,1);else x.q=Math.min(x.q,x.max||5);C.save(c);draw()});
+var K='kk_buyer',sv={};try{sv=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}['name','phone','address','pincode'].forEach(function(k){if(sv[k]&&!f[k].value)f[k].value=sv[k]});
+f.addEventListener('submit',function(){try{localStorage.setItem(K,JSON.stringify({name:f.name.value,phone:f.phone.value,address:f.address.value,pincode:f.pincode.value}))}catch(e){}});
+draw()})();`
   return c.html(
-    <Layout t={t} path={here(c)} brand={seller.shop_name} title={t.shopItems(seller.shop_name)}
-      og={{ title: t.shopItems(seller.shop_name), description: t.shopItems(seller.shop_name), image: imageUrl(origin, items[0]?.image_key ?? null), url: `${origin}/s/${seller.id}` }}>
-      <h1>{t.shopItems(seller.shop_name)}</h1>
-      {items.length === 0 && <p class="muted">{t.shopEmpty}</p>}
-      <div class="shopgrid">
-        {items.map((o) => (
-          <a class="moreitem" href={`/d/${o.id}`} style={o.available < 1 ? 'opacity:.55' : ''}>
-            {o.image_key ? <img src={`/img/${o.image_key}`} alt="" loading="lazy" /> : <div class="thumb" style="width:100%;aspect-ratio:1"><Icon n="bag" s={28} /></div>}
-            <b>{clip(o.title, 44)}</b>
-            <small>{rupees(o.price_paise)}{o.available < 1 ? ` · ${t.soldOutBtn}` : sellingFast(o) ? ` · ${t.sellingFast}` : ''}</small>
-          </a>
-        ))}
-      </div>
-      <a class="btn wa block" style="margin-top:18px" href={waLink(seller.phone, '')}>{t.msgSeller(seller.shop_name)}</a>
+    <Layout t={t} path={here(c)} brand={seller.shop_name} title={`${t.cartTitle} – ${seller.shop_name}`} scripts={cartJs(seller.id, t, offer) + page}>
+      <a class="back" href={seller.slug ? `/${seller.slug}` : `/s/${seller.id}`}>← {t.keepShopping}</a>
+      <h1>{t.cartTitle}</h1>
+      <Flash msg={c.req.query('err')} />
+      <div id="empty" class="empty" hidden><span class="ic"><Icon n="bag" s={26} /></span><b>{t.cartEmpty}</b></div>
+      <form id="co" method="post" action={`/s/${seller.id}/cart`} class="stack">
+        <div class="card" style="padding:4px 16px"><div id="lines" /></div>
+        <div class="card">
+          <div class="row between"><span class="muted">{t.itemsTotal}</span><span id="it" /></div>
+          <div class="row between" id="dr" hidden style="color:var(--ok);margin-top:6px"><span>{t.offerLine}</span><span /></div>
+          <div class="row between" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><b>{t.toPay}</b><b id="tp" /></div>
+          <small>{t.heldWhilePay}</small>
+        </div>
+        <input type="hidden" name="lines" />
+        <div class="sec">{t.yourDetails}</div>
+        <div><label for="name">{t.yourName}</label><input id="name" name="name" autocomplete="name" required maxlength={60} /></div>
+        <div><label for="phone">{t.phone}</label><PhoneInput id="phone" name="phone" /></div>
+        <div><label for="address">{t.fullAddress}</label><textarea id="address" name="address" autocomplete="street-address" required minlength={10} maxlength={400} placeholder={t.addressPh} /></div>
+        <div style="max-width:200px"><label for="pincode">{t.pincode}</label><input id="pincode" name="pincode" inputmode="numeric" autocomplete="postal-code" pattern="[1-9][0-9]{5}" maxlength={6} placeholder="411045" required /></div>
+        <div class="sticky-pay"><button type="submit" class="btn primary block big">{t.checkout} →</button><small style="display:block;text-align:center;margin-top:6px">{t.upiApps}</small></div>
+      </form>
+    </Layout>,
+  )
+})
+
+pub.post('/s/:id/cart', async (c) => {
+  const t = tr(c)
+  const seller = await getSeller(c.env.DB, c.req.param('id'))
+  if (!seller) return c.notFound()
+  const back = (msg: string) => c.redirect(`/s/${seller.id}/cart?err=${encodeURIComponent(msg)}`, 303)
+  const f = await c.req.parseBody()
+  let lines: { d: string; v: number; q: number }[] = []
+  try { lines = JSON.parse(String(f.lines ?? '[]')) } catch { lines = [] }
+  lines = lines.filter((l) => typeof l?.d === 'string' && Number.isInteger(+l.v) && +l.q >= 1).slice(0, 20)
+  const phone = normalizePhone(String(f.phone ?? ''))
+  const name = String(f.name ?? '').trim().slice(0, 60)
+  const pincode = String(f.pincode ?? '').replace(/\D/g, '')
+  const rawAddress = String(f.address ?? '').trim().slice(0, 400)
+  const address = rawAddress.includes(pincode) ? rawAddress : `${rawAddress} – ${pincode}`
+  if (!lines.length) return back(t.cartEmpty)
+  if (!phone) return back(t.bErrPhone)
+  if (!name || rawAddress.length < 10) return back(t.bErrDetails)
+  if (!/^[1-9]\d{5}$/.test(pincode)) return back(t.bErrPincode)
+  if (!(await shopOpen(c.env, seller))) return back(seller.account_status === 'active' ? t.shopPaused : t.bErrClosed)
+  const ipHash = (await sha256((c.req.header('cf-connecting-ip') ?? '') + c.env.SECRET_KEY)).slice(0, 16)
+  // One by one: the first item opens the payment, each next one joins it (same buyer, same UPI ID).
+  const orders: Order[] = [], skipped: string[] = []
+  for (const l of lines) {
+    const data = await loadDrop(c.env.DB, l.d)
+    if (!data || data.drop.seller_id !== seller.id || !data.variants.some((v) => v.id === +l.v)) continue
+    const res = await reserveOrder(c.env, seller, data.drop, { variantId: +l.v, qty: Math.min(+l.q, data.drop.max_per_order), name, phone, address, ipHash })
+    if (res.ok) orders.push(res.order); else skipped.push(failText(t, res.reason, data.drop.max_per_order) + ' – ' + data.drop.title)
+  }
+  if (!orders.length) return back(skipped[0] ?? t.bErrStock)
+  c.executionCtx.waitUntil(alertSeller(c.env, orders[orders.length - 1].id, 'order'))
+  const keys = [...new Set((await Promise.all(orders.map((o) => c.env.DB.prepare(`SELECT COALESCE(cart_id, id) AS k FROM orders WHERE id = ?`).bind(o.id).first<{ k: string }>()))).map((r) => r!.k))]
+  const first = (await c.env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(keys[0]).first<Order>())!
+  const note = skipped.length ? `&err=${encodeURIComponent(skipped.join(' · '))}` : ''
+  if (keys.length === 1 && first.pay_mode === 'razorpay' && first.status === 'pending') {
+    try { return c.redirect(await startGatewayPayment(c.env, seller, first, `${orders.length} items – ${seller.shop_name}`, new URL(c.req.url).origin), 303) }
+    catch (e) { console.error('payment link failed', e) }
+  }
+  if (keys.length === 1) return c.redirect(`/o/${keys[0]}?cart=done${note}`, 303)
+  // Items paying into different UPI IDs can't share one payment – list the payments.
+  return c.html(
+    <Layout t={t} path={here(c)} brand={seller.shop_name} title={t.cartTitle} scripts={`try{localStorage.removeItem('kk_cart_${seller.id}')}catch(e){}`}>
+      <h1>{t.cartTitle}</h1><p>{t.cartSplit}</p>
+      <div class="stack">{keys.map((k, i) => <a class="btn block" href={`/o/${k}`}>{i + 1}. {t.orderNo(shortNo(k))}</a>)}</div>
     </Layout>,
   )
 })
@@ -166,7 +341,9 @@ pub.get('/d/:id', async (c) => {
   const origin = new URL(c.req.url).origin
   const hasSizes = variants.length > 1 || variants[0]?.label
   const shopIsOpen = await shopOpen(c.env, seller)
-  const open = drop.status === 'live' && shopIsOpen && counts.available > 0
+  const soon = drop.status === 'live' && (drop.live_at ?? 0) > Date.now()
+  const open = drop.status === 'live' && shopIsOpen && counts.available > 0 && !soon
+  const offerCart = { min: seller.offer_min_paise ?? 0, off: seller.offer_off_paise ?? 0, pct: seller.offer_pct ?? 0 }
   const firstOpen = variants.find((v) => v.available > 0)
   // Other things this shop is selling, so a buyer who came for one item can browse the rest.
   const others = await shopItems(c.env.DB, seller.id, drop.id, 6)
@@ -189,11 +366,12 @@ pub.get('/d/:id', async (c) => {
       brand={seller.shop_name}
       title={`${drop.title} – ${seller.shop_name}`}
       og={{ title: `${drop.title} · ${rupees(drop.price_paise)}`, description: clip(drop.description || t.flashBy(seller.shop_name), 150), image: imageUrl(origin, drop.image_key), url: `${origin}/d/${drop.id}` }}
-      scripts={open ? BUYER_JS : undefined}
+      scripts={(open ? BUYER_JS : '') + cartJs(seller.id, t, offerCart) + (open ? ADD_SALE_JS : '') + (soon ? SOON_JS : '')}
       say={open ? t.sayBuyerSale : undefined}
       ok={c.req.query('ok')}
     >
       <a id="myorder" class="alert info" style="display:block;text-decoration:none" href="#" hidden>{t.yourOrder}</a>
+      <CartBar t={t} sid={seller.id} />
       {data.images.length > 0 && <Gallery images={data.images} alt={drop.title} />}
       {offer && (
         <div class="alert ok" style="margin-top:12px"><b style="display:flex;gap:8px;align-items:center"><Icon n="key" s={18} />{t.offerFor(offer.buyer_name)}</b>
@@ -213,11 +391,18 @@ pub.get('/d/:id', async (c) => {
           {drop.free_ship_above_paise ? t.deliveryFreeAbove(rupees(drop.ship_fee_paise), rupees(drop.free_ship_above_paise)) : t.deliveryFee(rupees(drop.ship_fee_paise))}
         </p>
       )}
+      {offerCart.min > 0 && !offer && <div class="offerband"><Icon n="receipt" s={18} />{t.offerBanner(rupees(offerCart.min), offerCart.off ? rupees(offerCart.off) : `${offerCart.pct}%`)}</div>}
       {drop.description && <p style="white-space:pre-line;margin-top:12px">{drop.description}</p>}
 
       <Flash msg={c.req.query('err')} />
 
-      {drop.status === 'live' && !shopIsOpen ? (
+      {soon ? (
+        <div class="card" style="text-align:center">
+          <small>{t.dropSoon(liveWhen(drop.live_at, t.lang))}</small>
+          <div class="countdown" id="soon" data-at={drop.live_at} style="margin:6px 0" />
+          <small>{t.liveIn}</small>
+        </div>
+      ) : drop.status === 'live' && !shopIsOpen ? (
         <div class="alert info">{t.shopPaused}</div>
       ) : drop.status !== 'live' || counts.available < 1 ? (
         <>
@@ -280,6 +465,7 @@ pub.get('/d/:id', async (c) => {
           </div>
           <div class="sticky-pay">
             <button id="paybtn" type="submit" class="btn primary block big">{t.payBtn(rupees(price))}</button>
+            {!offer && <button type="button" class="btn block" style="margin-top:8px" data-addsale={JSON.stringify({ d: drop.id, t: drop.title, p: drop.price_paise, img: drop.image_key, max: drop.max_per_order, labels: Object.fromEntries(variants.map((v) => [v.id, v.label])) })}><Icon n="bag" s={18} />{t.addToCart}</button>}
             <small style="display:block;text-align:center;margin-top:6px">{t.upiApps}</small>
             <small style="display:block;text-align:center">{t.heldWhilePay} {seller.pay_mode === 'direct' ? t.payTo(seller.shop_name) : ''}</small>
             {drop.cod_enabled ? (
@@ -299,7 +485,7 @@ pub.get('/d/:id', async (c) => {
         <>
           <h2>{t.moreFrom(seller.shop_name)}</h2>
           <ItemRow t={t} items={others} />
-          <a class="btn block" href={`/s/${seller.id}`} style="margin-top:10px">{t.seeAllItems}</a>
+          <a class="btn block" href={seller.slug ? `/${seller.slug}` : `/s/${seller.id}`} style="margin-top:10px">{t.seeAllItems}</a>
         </>
       )}
       {open && (
@@ -323,7 +509,7 @@ pub.get('/d/:id/stock.json', async (c) => {
 })
 
 const failText = (t: Dict, r: ReserveFailure, max: number) =>
-  ({ closed: t.bErrClosed, qty: t.bErrQty(max), device: t.bErrDevice, stock: t.bErrStock })[r]
+  ({ closed: t.bErrClosed, qty: t.bErrQty(max), device: t.bErrDevice, stock: t.bErrStock, soon: t.dropSoonErr })[r]
 
 pub.post('/d/:id', async (c) => {
   const t = tr(c)
@@ -433,6 +619,7 @@ pub.get('/o/:id', async (c) => {
   const upi = payVpa ? upiLink(payVpa, seller.shop_name, total, note) : null
   const amt = rupees(total)
   const shipTotal = lines.reduce((n, l) => n + (l.ship_paise || 0), 0)
+  const discTotal = lines.reduce((n, l) => n + (l.disc_paise || 0), 0)
   const codFee = order.pay_mode === 'cod' ? data.drop.cod_fee_paise || 0 : 0
   // Quick orders made by the seller may not have the address yet – ask for it here.
   const needDetails = !lines[0].address && ['pending', 'verifying', 'expired'].includes(status)
@@ -440,7 +627,8 @@ pub.get('/o/:id', async (c) => {
   return c.html(
     <Layout t={t} path={here(c)} brand={seller.shop_name} title={`${t.orderNo(shortNo(order.id))} – ${seller.shop_name}`}
       scripts={OS_JS + RETURN_JS + (['pending', 'verifying'].includes(status) ? ORDER_POLL_JS : '') +
-        `try{var m=JSON.parse(localStorage.getItem('kk_orders')||'{}');m['${order.drop_id}']=location.pathname;localStorage.setItem('kk_orders',JSON.stringify(m))}catch(e){}`}
+        `try{var m=JSON.parse(localStorage.getItem('kk_orders')||'{}');m['${order.drop_id}']=location.pathname;localStorage.setItem('kk_orders',JSON.stringify(m))}catch(e){}` +
+        (c.req.query('cart') ? `try{localStorage.removeItem('kk_cart_${seller.id}')}catch(e){}` : '')}
       say={status === 'pending' && order.pay_mode === 'direct' ? t.sayBuyerPay : undefined}>
       <div class="row between" style="margin-top:8px">
         <h1 style="font-size:1rem;margin:0;font-weight:700">{t.orderNo(shortNo(order.id))}</h1>
@@ -454,12 +642,13 @@ pub.get('/o/:id', async (c) => {
               <b>{l.title}</b>
               <div class="muted">{l.label ? `${l.label} · ` : ''}{t.qty} {l.qty}</div>
             </div>
-            <span>{rupees(l.price_paise * l.qty)}</span>
+            <span>{rupees((l.unit_paise ?? l.price_paise) * l.qty)}</span>
           </div>
         ))}
         {shipTotal > 0 && <div class="row between" style="padding:10px 0;border-top:1px solid var(--line)"><span class="muted">{t.deliveryLine}</span><span>{rupees(shipTotal)}</span></div>}
         {codFee > 0 && <div class="row between" style="padding:10px 0;border-top:1px solid var(--line)"><span class="muted">{t.codChargeLine}</span><span>{rupees(codFee)}</span></div>}
-        {lines.length > 1 || shipTotal > 0 || codFee > 0
+        {discTotal > 0 && <div class="row between" style="padding:10px 0;border-top:1px solid var(--line);color:var(--ok)"><span>{t.offerLine}</span><span>−{rupees(discTotal)}</span></div>}
+        {lines.length > 1 || shipTotal > 0 || codFee > 0 || discTotal > 0
           ? <div class="row between" style="padding:12px 0;border-top:2px solid var(--line)"><b>{t.total}</b><b>{amt}</b></div>
           : <div class="row between" style="padding:0 0 12px"><span /><b>{amt}</b></div>}
       </div>
