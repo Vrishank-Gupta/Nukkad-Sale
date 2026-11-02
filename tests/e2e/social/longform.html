@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NukkadSale long-form</title>
+<!--
+  Landscape (16:9) explainer videos. longform.html#<n> loads out/long-<n>.js (written by longform.mjs: scenes +
+  measured voiceover durations). Every animation runs on one clock; render seeks frame by frame.
+  Phone and desktop screens are real screenshots of the app (img/).
+-->
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:1280px;height:720px;overflow:hidden;font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;background:#faf7f2;color:#1d1a16}
+.scene{position:absolute;inset:0;opacity:0;overflow:hidden;background:radial-gradient(circle at 85% 10%,#fff1e8,#faf7f2 50%,#f3e7d8)}
+.scene.dark{background:radial-gradient(circle at 70% 20%,#2a2620,#0e0d0b 70%);color:#fff}
+.scene.orange{background:linear-gradient(150deg,#f76707,#d9480f 60%,#a83a0c);color:#fff}
+@keyframes vis{from,to{opacity:1}}
+@keyframes in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes zoom{from{transform:scale(1)}to{transform:scale(var(--zs,1.4))}}
+@keyframes tap{0%{opacity:0;transform:scale(.4)}25%{opacity:1}100%{opacity:0;transform:scale(2.2)}}
+[data-a]{opacity:0}
+.brand{position:absolute;left:48px;top:34px;display:flex;align-items:center;gap:10px;font-weight:900;font-size:22px}
+.brand i{width:34px;height:34px;border-radius:10px;background:#d9480f;display:inline-flex;align-items:center;justify-content:center}
+.dark .brand i,.orange .brand i{background:#fff}
+.chap{position:absolute;right:48px;top:40px;font-size:15px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#d9480f}
+.dark .chap,.orange .chap{color:#ffd8bf}
+.left{position:absolute;left:96px;top:150px;width:560px}
+.kick{font-size:17px;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;color:#d9480f;margin-bottom:14px}
+.dark .kick{color:#ff9a62}
+.h{font-size:48px;font-weight:900;line-height:1.06;letter-spacing:-1px}
+.pts{margin-top:30px;display:grid;gap:16px}
+.pt{display:flex;gap:14px;align-items:flex-start;font-size:23px;font-weight:600;line-height:1.35}
+.pt b{flex:none;width:30px;height:30px;border-radius:50%;background:#d9480f;color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.phone{position:absolute;width:300px;height:650px;border-radius:44px;background:#1d1a16;padding:10px;box-shadow:0 40px 90px rgba(80,40,10,.3)}
+.phone .scr{width:100%;height:100%;border-radius:35px;overflow:hidden;background:#fff}
+.phone img{width:100%;display:block;transform-origin:var(--ox,50%) var(--oy,30%)}
+.lap{position:absolute;left:600px;top:150px;width:620px}
+.lap .scr{height:390px;border:10px solid #1d1a16;border-bottom-width:14px;border-radius:18px 18px 6px 6px;overflow:hidden;background:#fff;box-shadow:0 30px 70px rgba(80,40,10,.3)}
+.lap .scr img{width:100%;display:block;object-fit:cover;object-position:top;transform-origin:var(--ox,30%) var(--oy,20%)}
+.lap .base{height:16px;margin:0 -50px;background:linear-gradient(#cfc6b8,#a8a092);border-radius:0 0 18px 18px}
+.label{position:absolute;font-size:18px;font-weight:900;letter-spacing:1px;text-transform:uppercase;text-align:center;width:300px}
+.ripple{position:absolute;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(217,72,15,.35);border:3px solid rgba(217,72,15,.9)}
+.big{position:absolute;left:0;right:0;text-align:center}
+.big .h{font-size:76px}
+.big .s{font-size:28px;font-weight:600;opacity:.9;margin-top:18px}
+.sub{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);max-width:1060px;}
+.sub.side{left:96px;transform:none;max-width:600px;text-align:left;bottom:44px}
+.sub.x{background:rgba(20,18,15,.82);color:#fff;font-size:22px;font-weight:600;line-height:1.35;padding:10px 20px;border-radius:12px;text-align:center}
+.pill{display:inline-block;background:#fff;color:#d9480f;font-weight:900;font-size:30px;padding:16px 30px;border-radius:18px}
+.stat{display:inline-block;background:#fff;border:2px solid #ecdccc;border-radius:18px;padding:16px 22px;margin:0 10px 12px 0;font-size:20px;font-weight:800}
+.dark .stat{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const n = location.hash.slice(1) || '1'
+const s = document.createElement('script'); s.src = `out/long-${n}.js`
+s.onload = () => build(window.VIDEO); document.head.appendChild(s)
+const SHOP = (w, c = '#fff') => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
+const esc = (x) => String(x ?? '')
+function phone(img, left, top, z, w = 300, extra = '') {
+  const zs = Math.min(z?.[2] ?? 1, 1.1)   // gentle push-in only – whole screen stays readable
+  return `<div class="phone" data-a="in" data-d=".6" style="left:${left}px;top:${top}px;width:${w}px;height:${w * 2.167}px"><div class="scr" style="position:relative">
+    <img src="img/${img}.png" style="--ox:${z?.[0] ?? 50}%;--oy:${z?.[1] ?? 30}%;--zs:${zs}" ${zs !== 1 ? `data-a="zoom" data-t="${z?.[3] ?? 1.2}" data-d="${z?.[4] ?? 5}" data-e="ease-in-out" data-keep` : ''}>${extra}</div></div>`
+}
+function layout(sc) {
+  const brand = `<div class="brand"><i>${SHOP(20, sc.cls === 'dark' || sc.cls === 'orange' ? '#d9480f' : '#fff')}</i>NukkadSale</div>${sc.ch ? `<div class="chap">${sc.ch}</div>` : ''}`
+  const pts = (sc.pts || []).map((p, i) => `<div class="pt" data-a="in" data-t="${(sc.d * (i + 1)) / ((sc.pts.length + 1) * 1.15)}"><b>${sc.num ? i + 1 : '✓'}</b><span>${p}</span></div>`).join('')
+  const left = `<div class="left">${sc.kick ? `<div class="kick" data-a="in">${sc.kick}</div>` : ''}<div class="h" data-a="in" data-t=".15">${esc(sc.h)}</div><div class="pts">${pts}</div></div>`
+  const tap = sc.tap ? `<div class="ripple" style="left:${sc.tap[0]}%;top:${sc.tap[1]}%" data-a="tap" data-t="${sc.tap[2] ?? sc.d * .6}" data-d=".9"></div>` : ''
+  if (sc.lay === 'title') return brand + `<div class="big" style="top:${sc.top ?? 230}px">${sc.kick ? `<div class="kick" data-a="in" style="color:inherit;opacity:.8">${sc.kick}</div>` : ''}<div class="h" data-a="in" data-t=".2">${sc.h}</div>${sc.s ? `<div class="s" data-a="in" data-t=".8">${sc.s}</div>` : ''}${sc.stats ? `<div style="margin-top:34px" data-a="in" data-t="1.4">${sc.stats.map((x) => `<span class="stat">${x}</span>`).join('')}</div>` : ''}</div>`
+  if (sc.lay === 'phone') return brand + left + phone(sc.img, 760, 40, sc.zoom, 300, tap)
+  if (sc.lay === 'two') return brand + `<div class="big" style="top:110px"><div class="h" data-a="in" style="font-size:42px">${sc.h}</div></div>` +
+    phone(sc.img[0], 360, 175, sc.zoom?.[0], 200) + `<div class="label" style="left:310px;top:${175 + 200 * 2.167 + 12}px">${sc.lbl[0]}</div>` +
+    phone(sc.img[1], 720, 175, sc.zoom?.[1], 200) + `<div class="label" style="left:670px;top:${175 + 200 * 2.167 + 12}px">${sc.lbl[1]}</div>`
+  if (sc.lay === 'desk') return brand + `<div class="left" style="width:440px">${sc.kick ? `<div class="kick" data-a="in">${sc.kick}</div>` : ''}<div class="h" data-a="in" style="font-size:42px">${sc.h}</div><div class="pts">${pts}</div></div>` +
+    `<div class="lap" data-a="in" data-d=".6"><div class="scr"><img src="img/${sc.img}.png" style="--ox:${sc.zoom?.[0] ?? 30}%;--oy:${sc.zoom?.[1] ?? 20}%;--zs:${Math.min(sc.zoom?.[2] ?? 1.08, 1.08)}" data-a="zoom" data-t="1" data-d="${Math.max(3, sc.d - 2)}" data-e="ease-in-out" data-keep></div><div class="base"></div></div>`
+  if (sc.lay === 'end') return brand + `<div class="big" style="top:200px"><div style="display:inline-flex;align-items:center;gap:16px;font-size:64px;font-weight:900" data-a="in">${SHOP(64)}NukkadSale</div>
+    <div class="h" data-a="in" data-t=".5" style="font-size:44px;margin-top:20px">${sc.h}</div><div style="margin-top:40px" data-a="in" data-t="1"><span class="pill">${sc.cta ?? 'Get started · nukkadsale.in'}</span></div>${sc.s ? `<div class="s" data-a="in" data-t="1.4" style="font-size:22px">${sc.s}</div>` : ''}</div>`
+  return brand
+}
+// Subtitles: the spoken line, split into sentences, each shown for its share of the scene.
+function subs(sc) {
+  const parts = sc.say.match(/[^.!?]+[.!?]*/g).map((x) => x.trim()).filter(Boolean)
+  const total = parts.reduce((a, p) => a + p.length, 0); let t = 0.15
+  const side = sc.lay === 'phone' ? ' side' : ''
+  return parts.map((p) => { const d = (sc.vo * p.length) / total; const h = `<div class="sub x${side}" data-a="vis" data-t="${t.toFixed(2)}" data-d="${d.toFixed(2)}" data-f="none">${p.replace(/Nukkad Sale/g, 'NukkadSale').replace(/khaata/g, 'khata').replace(/U P I/g, 'UPI').replace(/G Pay/g, 'GPay').replace(/nukkadsale dot in/g, 'nukkadsale.in').replace(/C O D/g, 'COD')}</div>`; t += d; return h }).join('')
+}
+const show = (x) => typeof x === 'string' ? x.replace(/Nukkad Sale/g, 'NukkadSale').replace(/khaata/g, 'khata').replace(/U P I/g, 'UPI').replace(/G Pay/g, 'GPay').replace(/C O D/g, 'COD').replace(/nukkadsale dot in/g, 'nukkadsale.in') : Array.isArray(x) ? x.map(show) : x
+function build(V) {
+  let t = 0, html = ''
+  for (const sc of V.scenes) for (const k of ['kick', 'h', 's', 'pts', 'stats', 'lbl']) if (sc[k]) sc[k] = show(sc[k])
+  for (const sc of V.scenes) {
+    html += `<section class="scene ${sc.cls || ''}" style="animation:vis ${sc.d}s linear ${t}s none" data-s="${t}">${layout(sc)}${subs(sc)}</section>`
+    sc.t = t; t += sc.d
+  }
+  document.getElementById('root').innerHTML = html
+  for (const sec of document.querySelectorAll('.scene')) {
+    const st = Number(sec.dataset.s)
+    for (const el of sec.querySelectorAll('[data-a]')) {
+      const a = el.dataset.a, d = Number(el.dataset.d || .5), at = st + Number(el.dataset.t || 0)
+      el.style.animation = `${a} ${d}s ${el.dataset.e || 'cubic-bezier(.2,.9,.3,1)'} ${at}s ${el.dataset.f || 'both'}`
+      if (el.dataset.keep !== undefined) el.style.opacity = 1
+    }
+  }
+  window.DURATION = t
+  window.seek = (sec) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = sec * 1000 } }
+  window.seek(0); window.READY = true
+}
+</script>
+</body>
+</html>

@@ -123,7 +123,7 @@ Caption:
 
 ### Reel 7 – This screenshot is FAKE (15 s) · `reel-7-fake-screenshot.mp4`
 **Hook (frame 0):** "This payment screenshot is…" over a "Payment successful ₹799.00" card → red **FAKE** stamp slams at 0.75 s → "Would you have caught it?"
-**Flow:** screenshots are easy to fake – shipped it anyway, money never came → "Don't check the screenshot. Check your UPI app." → ₹798.38 = Priya's order → the real Orders screen: did ₹798.38 arrive? tap once, then ship → "Trust the amount, not the screenshot."
+**Flow:** screenshots are easy to fake – shipped it anyway, money never came → "Don't check the screenshot. Check your UPI app." → ₹798.50 = Priya's order → the real Orders screen: did ₹798.50 arrive? tap once, then ship → "Trust the amount, not the screenshot."
 (The card is a generic illustration of a screenshot, not any UPI app's design.)
 
 Caption:
@@ -131,7 +131,7 @@ Caption:
 > Would you have shipped the order?
 >
 > Screenshots are easy to fake. Your UPI app isn't.
-> On NukkadSale every order gets its own exact amount – ₹798.38 means Priya's order. If it arrived in your UPI app, she paid. If not, she didn't. One tap to confirm, then ship.
+> On NukkadSale every order gets its own exact amount – ₹798.50 means Priya's order. If it arrived in your UPI app, she paid. If not, she didn't. One tap to confirm, then ship.
 >
 > Trust the amount, not the screenshot. Link in bio.
 >

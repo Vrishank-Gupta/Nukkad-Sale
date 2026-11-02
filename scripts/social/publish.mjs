@@ -22,7 +22,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { youtubeChannel, youtubeLogin, youtubeUpload } from './youtube.mjs'
+import { youtubeChannel, youtubeLogin, youtubeUpload, youtubeUploadVideo } from './youtube.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..')
 const SOCIAL = path.join(ROOT, 'docs/social')
@@ -300,6 +300,19 @@ async function main() {
   }
   if (cmd === 'youtube-login') return youtubeLogin()
   if (cmd === 'youtube-whoami') { const ch = await youtubeChannel(); console.log(`YouTube channel: ${ch.title} ${ch.handle ?? ''} · id ${ch.id}`); return }
+  if (cmd === 'youtube-long') {
+    // Long-form explainers from tests/e2e/social/longform.mjs, kept in docs/youtube/long-<n>.mp4 + .meta.json.
+    const file = path.join(ROOT, `docs/youtube/long-${id}.mp4`), metaFile = file.replace(/\.mp4$/, '.meta.json')
+    if (!fs.existsSync(file) || !fs.existsSync(metaFile)) throw new Error(`Missing docs/youtube/long-${id}.mp4 or its .meta.json`)
+    const meta = JSON.parse(fs.readFileSync(metaFile, 'utf8')); if (fs.existsSync(file.replace(/\.mp4$/, '.jpg'))) meta.thumbnail = file.replace(/\.mp4$/, '.jpg')
+    const log = readLog(), key = 'yt:long-' + id
+    if (log[key] && !flags.has('--again')) throw new Error(`long-${id} is already on YouTube (${log[key].url}).`)
+    if (flags.has('--dry-run')) { console.log(`Would upload long-${id}: ${meta.title}\n\n${meta.description}\n\ntags: ${meta.tags.join(', ')}`); return }
+    const ch = await youtubeChannel(); console.log(`Uploading long-${id} to YouTube "${ch.title}"…`)
+    const r = await youtubeUploadVideo(file, meta, { privacy: flags.has('--unlisted') ? 'unlisted' : 'public' })
+    log[key] = { ...r, at: new Date().toISOString() }; fs.writeFileSync(LOG, JSON.stringify(log, null, 1) + '\n')
+    console.log(`Uploaded ✓ ${r.url} (${r.privacy})`); return
+  }
   if (cmd === 'youtube') {
     // Reels go up as YouTube Shorts (vertical, under 3 minutes). Logged as "yt:<id>".
     const item = ITEMS[id]

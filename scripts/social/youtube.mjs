@@ -94,3 +94,26 @@ export async function youtubeUpload(file, caption, { privacy = 'public' } = {}) 
   if (!v.id) throw new Error('YouTube upload failed: ' + JSON.stringify(v.error ?? v).slice(0, 300))
   return { video_id: v.id, url: `https://youtube.com/shorts/${v.id}`, privacy: v.status?.privacyStatus, title }
 }
+
+/** Uploads a long-form video with its own title, description (chapters included) and tags. */
+export async function youtubeUploadVideo(file, meta, { privacy = 'public' } = {}) {
+  const token = await accessToken()
+  const body = {
+    snippet: { title: meta.title.slice(0, 100), description: meta.description.slice(0, 4900), tags: ['NukkadSale', ...(meta.tags ?? [])].slice(0, 20), categoryId: '26', defaultLanguage: 'en', defaultAudioLanguage: 'en' },
+    status: { privacyStatus: privacy, selfDeclaredMadeForKids: false },
+  }
+  const bytes = fs.readFileSync(file)
+  const start = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'video/mp4', 'X-Upload-Content-Length': String(bytes.length) }, body: JSON.stringify(body),
+  })
+  if (!start.ok) throw new Error('YouTube upload start failed: ' + (await start.text()).slice(0, 300))
+  const put = await fetch(start.headers.get('location'), { method: 'PUT', headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(bytes.length) }, body: bytes })
+  const v = await put.json()
+  if (!v.id) throw new Error('YouTube upload failed: ' + JSON.stringify(v.error ?? v).slice(0, 300))
+  // Custom thumbnail (needs a phone-verified channel – skipped quietly if not allowed yet).
+  if (meta.thumbnail && fs.existsSync(meta.thumbnail)) {
+    const r = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${v.id}`, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'image/jpeg' }, body: fs.readFileSync(meta.thumbnail) })
+    if (!r.ok) console.log('  (custom thumbnail not set: ' + ((await r.json()).error?.message ?? r.status) + ')')
+  }
+  return { video_id: v.id, url: `https://youtu.be/${v.id}`, privacy: v.status?.privacyStatus, title: body.snippet.title }
+}

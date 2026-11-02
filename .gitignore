@@ -13,3 +13,6 @@ tests/e2e/social/frames-*/
 tests/e2e/promo/frames/
 # Old-brand videos kept locally only
 docs/old-khatakhat/
+# Long-form videos are large – kept locally, published to YouTube
+docs/youtube/*.mp4
+tests/e2e/social/out/
