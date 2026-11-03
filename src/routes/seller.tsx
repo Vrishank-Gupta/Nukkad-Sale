@@ -239,7 +239,7 @@ app.get('/', async (c) => {
     db.prepare(`SELECT COUNT(*) AS anyo, COALESCE(SUM(status = 'paid'), 0) AS paid FROM orders WHERE seller_id = ?`).bind(s.id).first<{ anyo: number; paid: number }>(),
     // Buyers who asked to be told – shown only once the sale has stock again.
     db.prepare(`SELECT w.drop_id, COUNT(*) AS n FROM waitlist w JOIN drops d ON d.id = w.drop_id
-                WHERE w.seller_id = ? AND w.notified_at IS NULL AND d.status = 'live' AND (SELECT SUM(available) FROM variants WHERE drop_id = d.id) > 0
+                WHERE w.seller_id = ? AND w.notified_at IS NULL AND w.kind = 'restock' AND d.status = 'live' AND (SELECT SUM(available) FROM variants WHERE drop_id = d.id) > 0
                 GROUP BY w.drop_id ORDER BY n DESC`).bind(s.id).all<{ drop_id: string; n: number }>(),
     // Shiprocket parcels the seller must act on: failed delivery, or returned and not yet restocked.
     s.sr_email ? db.prepare(`SELECT COUNT(*) AS n FROM shipments WHERE seller_id = ? AND (status = 'failed' OR (status = 'returned' AND status_text <> 'restocked'))`).bind(s.id).first<{ n: number }>() : Promise.resolve({ n: 0 }),
@@ -250,8 +250,15 @@ app.get('/', async (c) => {
   const peak = Math.max(1, ...perDay)
   const dayLabel = (ms: number) => new Date(ms + 6 * 3600_000).toLocaleDateString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'narrow', timeZone: 'Asia/Kolkata' })
   const backInN = toolOn(s, 'waitlist') ? backIn.reduce((a, b) => a + b.n, 0) : 0
+  // Live drops that have started, with buyers who asked to be reminded; and reserve payments to check.
+  const [starting, askCheck] = await Promise.all([
+    db.prepare(`SELECT w.drop_id, COUNT(*) AS n FROM waitlist w JOIN drops d ON d.id = w.drop_id WHERE w.seller_id = ? AND w.kind = 'start' AND w.notified_at IS NULL
+                AND d.status = 'live' AND d.live_at <= ? GROUP BY w.drop_id ORDER BY n DESC LIMIT 1`).bind(s.id, Date.now()).first<{ drop_id: string; n: number }>(),
+    db.prepare(`SELECT r.ask_id, COUNT(*) AS n FROM ask_reserves r WHERE r.seller_id = ? AND r.status = 'claimed' GROUP BY r.ask_id ORDER BY n DESC`).bind(s.id).all<{ ask_id: string; n: number }>(),
+  ])
+  const askN = askCheck.results.reduce((a, b) => a + b.n, 0)
   const shipN = shipAttn?.n ?? 0
-  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN + shipN > 0
+  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN + shipN + (starting?.n ?? 0) + askN > 0
   // Getting started: shown until the first confirmed payment, then the money card takes over.
   const setup: { done: boolean; label: string; href?: string }[] = [
     { done: true, label: t.gsShop },
@@ -308,11 +315,14 @@ app.get('/', async (c) => {
           {n.toSend > 0 && <Task href="/app/orders?tab=send" kind="warn" icon="box" title={t.toSend(n.toSend)} sub={t.toSendSub} />}
           {n.paying > 0 && <Task href="/app/orders?tab=check" kind="" icon="clock" title={t.notPaid(n.paying)} sub={t.notPaidSub} />}
           {shipN > 0 && <Task href="/app/orders?tab=done" kind="bad" icon="box" title={t.shipAttn(shipN)} sub={t.shipAttnSub} />}
+          {starting && <Task href={`/app/drops/${starting.drop_id}#remind`} kind="bad" icon="bell" title={t.startTask(starting.n)} sub={t.startTaskSub} />}
+          {askN > 0 && <Task href={`/app/asks/${askCheck.results[0].ask_id}#reserves`} kind="info" icon="search" title={t.askTask(askN)} sub={t.askTaskSub} />}
           {backInN > 0 && <Task href={`/app/drops/${backIn[0].drop_id}#waiting`} kind="warn" icon="users" title={t.taskWaiting(backInN)} sub={t.taskWaitingSub} />}
           {!anyTask && <p class="muted">{t.allDone}</p>}
 
           <a class="btn primary block big" href="/app/drops/new" style="margin:18px 0 6px">{t.newSale}</a>
           <a class="btn block" href="/app/quick-order" style="margin-bottom:6px">{t.qoBtn}</a>
+          <a class="btn block" href="/app/asks" style="margin-bottom:6px"><Icon n="users" s={18} />{t.askHomeBtn}</a>
 
           <a class="card" href="/app/khata" style="display:block;text-decoration:none;color:inherit">
             <div class="row between"><b>{t.weekTitle}</b><b style="font-size:1.3rem">{rupees(weekTotal)}</b></div>
@@ -391,6 +401,9 @@ app.get('/drops/new', async (c) => {
   const from = c.req.query('from') ? await loadDrop(c.env.DB, c.req.query('from')!) : null
   const pre = from && from.drop.seller_id === c.get('seller').id ? from : null
   const preSizes = pre && (pre.variants.length > 1 || pre.variants[0].label) ? pre.variants.map((v) => ({ l: v.label, q: v.stock })) : null
+  // From "Ask your buyers": the design's photo, name and price; stock starts at how many buyers want it.
+  const askItem = c.req.query('ask_item') ? await c.env.DB.prepare(`SELECT i.id, i.title, i.price_paise, i.image_key, (SELECT COUNT(*) FROM ask_votes v WHERE v.item_id = i.id) AS votes
+      FROM ask_items i JOIN asks a ON a.id = i.ask_id WHERE i.id = ? AND a.seller_id = ? AND i.drop_id IS NULL`).bind(Number(c.req.query('ask_item')), c.get('seller').id).first<{ id: number; title: string; price_paise: number; image_key: string | null; votes: number }>() : null
   const upis = await sellerUpis(c.env.DB, c.get('seller').id)
   return page(c, 'home', t.newSaleTitle, (
     <>
@@ -399,9 +412,10 @@ app.get('/drops/new', async (c) => {
       <Flash msg={c.req.query('err')} />
       <form method="post" enctype="multipart/form-data" data-sizes={preSizes ? JSON.stringify(preSizes) : undefined}>
         {pre?.images.map((k) => <input type="hidden" name="reuse_image" value={k} />)}
+        {askItem && <><input type="hidden" name="ask_item" value={String(askItem.id)} />{askItem.image_key && <input type="hidden" name="reuse_image" value={askItem.image_key} />}</>}
         <div class="sec"><span class="num">1</span>{t.stepPhoto}</div>
-        <label class={`photo${pre?.images.length ? ' has' : ''}`} id="photo" for="image">
-          <img id="prev" alt="" src={pre?.images[0] ? `/img/${pre.images[0]}` : undefined} />
+        <label class={`photo${pre?.images.length || askItem?.image_key ? ' has' : ''}`} id="photo" for="image">
+          <img id="prev" alt="" src={pre?.images[0] ? `/img/${pre.images[0]}` : askItem?.image_key ? `/img/${askItem.image_key}` : undefined} />
           <span class="ph ic"><Icon n="camera" s={34} /></span>
           <span class="ph">{t.tapPhoto}</span>
           <span class="chg">{t.changePhoto}</span>
@@ -418,14 +432,14 @@ app.get('/drops/new', async (c) => {
 
         <div class="sec"><span class="num">2</span>{t.stepWhat}</div>
         <div class="stack">
-          <div><label for="title">{t.productName}</label><input id="title" name="title" required maxlength={80} placeholder={t.productNamePh} value={pre?.drop.title} /></div>
+          <div><label for="title">{t.productName}</label><input id="title" name="title" required maxlength={80} placeholder={t.productNamePh} value={pre?.drop.title ?? askItem?.title} /></div>
           <div><label for="description">{t.details}</label><textarea id="description" name="description" maxlength={1000} placeholder={t.detailsPh}>{pre?.drop.description ?? ''}</textarea></div>
           <div><label for="category">{t.categoryLabel}</label><input id="category" name="category" maxlength={30} list="cats" placeholder={t.categoryPh} value={pre?.drop.category || undefined} />
             <datalist id="cats">{cats.map((x) => <option value={x} />)}</datalist></div>
         </div>
 
         <div class="sec"><span class="num">3</span>{t.stepPrice}</div>
-        <div class="money"><span>₹</span><input id="price" name="price" inputmode="decimal" pattern="[0-9,]+(\.[0-9]{1,2})?" required placeholder="799" value={pre ? String((pre.drop.compare_paise > pre.drop.price_paise ? pre.drop.compare_paise : pre.drop.price_paise) / 100) : undefined} aria-label={t.stepPrice} /></div>
+        <div class="money"><span>₹</span><input id="price" name="price" inputmode="decimal" pattern="[0-9,]+(\.[0-9]{1,2})?" required placeholder="799" value={pre ? String((pre.drop.compare_paise > pre.drop.price_paise ? pre.drop.compare_paise : pre.drop.price_paise) / 100) : askItem ? String(askItem.price_paise / 100) : undefined} aria-label={t.stepPrice} /></div>
         {toolOn(c.get('seller'), 'profit') && <details class="quiet" style="margin-top:8px" open={Boolean(pre?.drop.cost_paise)}>
           <summary><u>{t.addCostLink}</u></summary>
           <label for="cost">{t.costLabel}</label>
@@ -438,7 +452,7 @@ app.get('/drops/new', async (c) => {
           <input type="radio" name="has_sizes" id="hs0" value="" checked /><label for="hs0">{t.oneType}</label>
           <input type="radio" name="has_sizes" id="hs1" value="1" /><label for="hs1">{t.manySizes}</label>
         </div>
-        <div id="stockbox" style="max-width:260px"><Stepper id="stock" name="stock" value={pre && !preSizes ? pre.variants[0].stock : 10} min={1} max={10000} label={t.quantity} /></div>
+        <div id="stockbox" style="max-width:260px"><Stepper id="stock" name="stock" value={pre && !preSizes ? pre.variants[0].stock : askItem ? Math.max(1, askItem.votes) : 10} min={1} max={10000} label={t.quantity} /></div>
         <div id="sizes" hidden class="card">
           <div class="row wrap" style="margin-bottom:12px">
             <small>{t.quickFill}</small>
@@ -483,15 +497,22 @@ app.get('/drops/new', async (c) => {
             </span>
           </span>
         </label>
+        <label class="choice" style="margin-top:12px">
+          <input type="checkbox" name="live_drop" value="1" checked={Boolean(pre?.drop.live_drop)} />
+          <span class="grow">
+            <b style="display:flex;gap:8px;align-items:center"><span class="livedot">{t.liveBadge}</span>{t.liveDropLabel}</b>
+            <small style="display:block;margin-top:2px">{t.liveDropHint}</small>
+          </span>
+        </label>
+        <label for="liveat" style="margin-top:14px">{t.goLiveLabel}</label>
+        <input id="liveat" name="live_at" type="datetime-local" style="max-width:260px" />
+        <small>{t.goLiveHint}</small>
         <script>{raw(`document.querySelectorAll('[data-codtoggle]').forEach(function(c){c.addEventListener('change',function(){c.closest('label').querySelector('[data-codfee]').hidden=!c.checked})})`)}</script>
         <details style="margin-top:12px">
           <summary>{t.moreOptions}</summary>
           <label for="max">{t.maxPer}</label>
           <div style="max-width:260px"><Stepper id="max" name="max" value={pre?.drop.max_per_order ?? 5} min={1} max={20} /></div>
           {c.get('seller').sr_email && <><label for="wg" style="margin-top:14px">{t.shipWeight}</label><input id="wg" name="weight_g" inputmode="numeric" placeholder="500" style="max-width:200px" value={pre?.drop.weight_g ? String(pre.drop.weight_g) : undefined} /></>}
-          <label for="liveat" style="margin-top:14px">{t.goLiveLabel}</label>
-          <input id="liveat" name="live_at" type="datetime-local" style="max-width:260px" />
-          <small>{t.goLiveHint}</small>
         </details>
         <div class="sticky-pay">
           <button type="submit" class="btn primary block big">{t.publish}</button>
@@ -548,7 +569,8 @@ app.post('/drops/new', async (c) => {
     const reuse = many(f.reuse_image).slice(0, 5)
     if (reuse.length) {
       // Only the seller's own earlier photos can be reused.
-      const { results } = await c.env.DB.prepare(`SELECT DISTINCT i.image_key FROM drop_images i JOIN drops d ON d.id = i.drop_id WHERE d.seller_id = ? AND i.image_key IN (${reuse.map(() => '?').join(',')})`)
+      const { results } = await c.env.DB.prepare(`SELECT DISTINCT i.image_key FROM drop_images i JOIN drops d ON d.id = i.drop_id WHERE d.seller_id = ?1 AND i.image_key IN (${reuse.map((_, n) => `?${n + 2}`).join(',')})
+          UNION SELECT k.image_key FROM ask_items k JOIN asks a ON a.id = k.ask_id WHERE a.seller_id = ?1 AND k.image_key IN (${reuse.map((_, n) => `?${n + 2}`).join(',')})`)
         .bind(s.id, ...reuse).all<{ image_key: string }>()
       const ok = new Set(results.map((r) => r.image_key))
       imageKeys = reuse.filter((k) => ok.has(k))
@@ -564,16 +586,36 @@ app.post('/drops/new', async (c) => {
   const freeShipAbove = shipFee ? Math.min(100_000_000, parsePaise(one(f.free_ship_above) || '0') ?? 0) : 0
   const cost = Math.max(0, parsePaise(one(f.cost) || '0') ?? 0)
   const weightG = Math.max(0, Math.min(30000, Math.floor(Number(one(f.weight_g)) || 0)))
+  const liveDrop = one(f.live_drop) === '1' ? 1 : 0
 
   const now = Date.now()
   await c.env.DB.batch([
-    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at, weight_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt, weightG),
+    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at, weight_g, live_drop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt, weightG, liveDrop),
     ...imageKeys.map((k, i) => c.env.DB.prepare(`INSERT INTO drop_images (drop_id, image_key, position) VALUES (?, ?, ?)`).bind(id, k, i)),
     ...variants.map((v, i) =>
       c.env.DB.prepare(`INSERT INTO variants (drop_id, label, stock, available, position) VALUES (?, ?, ?, ?, ?)`).bind(id, v.label, v.qty, v.qty, i),
     ),
   ])
+  const askItemId = Number(one(f.ask_item)) || 0
+  if (askItemId) {
+    const it = await c.env.DB.prepare(`SELECT i.id, i.ask_id FROM ask_items i JOIN asks a ON a.id = i.ask_id WHERE i.id = ? AND a.seller_id = ? AND i.drop_id IS NULL`).bind(askItemId, s.id).first<{ id: number; ask_id: string }>()
+    if (it) {
+      await c.env.DB.prepare(`UPDATE ask_items SET drop_id = ? WHERE id = ?`).bind(id, it.id).run()
+      // Buyers who paid a reserve and picked this design: a personal price link, reserve taken off, for 3 days.
+      const { results: held } = await c.env.DB.prepare(`SELECT r.id, r.name, r.phone, r.amount_paise FROM ask_reserves r JOIN ask_votes v ON v.ask_id = r.ask_id AND v.phone = r.phone
+          WHERE r.ask_id = ? AND v.item_id = ? AND r.status = 'paid'`).bind(it.ask_id, it.id).all<{ id: number; name: string; phone: string; amount_paise: number }>()
+      for (const r of held) {
+        const oid = randomId(10)
+        await c.env.DB.batch([
+          c.env.DB.prepare(`INSERT INTO offers (id, drop_id, seller_id, price_paise, buyer_name, buyer_phone, max_qty, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`)
+            .bind(oid, id, s.id, Math.max(100, price - (r.amount_paise - (r.amount_paise % 100) + 100)), r.name, r.phone, now + 3 * 86_400_000, now),
+          c.env.DB.prepare(`UPDATE ask_reserves SET status = 'used', offer_id = ?, updated_at = ? WHERE id = ? AND status = 'paid'`).bind(oid, now, r.id),
+        ])
+      }
+      return c.redirect(`/app/asks/${it.ask_id}?ok=${enc(t.askOnSale)}`, 303)
+    }
+  }
   return c.redirect(`/app/drops/${id}?new=1`, 303)
 })
 
@@ -592,7 +634,8 @@ export function shareText(t: Dict, drop: Drop, variants: Variant[], seller: Sell
     sizes.length ? `📏 ${t.shareSizes}: ${sizes.join(', ')}` : null,
     drop.ship_fee_paise ? `🚚 ${drop.free_ship_above_paise ? t.shareShipFree(rupees(drop.ship_fee_paise), rupees(drop.free_ship_above_paise)) : t.shareShip(rupees(drop.ship_fee_paise))}` : null,
     drop.cod_enabled ? `💵 ${t.codBtn}` : null,
-    (drop.live_at ?? 0) > Date.now() ? `⏰ *${t.shareLiveAt(liveWhen(drop.live_at, t.lang))}*` : null,
+    drop.live_drop && (drop.live_at ?? 0) > Date.now() ? `*${t.shareLiveDrop(liveWhen(drop.live_at, t.lang))}*`
+      : (drop.live_at ?? 0) > Date.now() ? `⏰ *${t.shareLiveAt(liveWhen(drop.live_at, t.lang))}*` : drop.live_drop ? `*${t.shareLiveNow}*` : null,
     `📦 ${t.shareLimited}`,
     ``,
     `👉 ${link.includes('/w/') ? t.waOrderCta : t.shareCta}: ${link}`,
@@ -621,7 +664,7 @@ app.get('/drops/:id', async (c) => {
   const [{ results: offers }, { results: waiting }] = await Promise.all([
     c.env.DB.prepare(`SELECT f.*, o.status AS order_status FROM offers f LEFT JOIN orders o ON o.id = f.used_order_id WHERE f.drop_id = ? ORDER BY f.created_at DESC LIMIT 20`)
       .bind(drop.id).all<Offer & { order_status: string | null }>(),
-    c.env.DB.prepare(`SELECT * FROM waitlist WHERE drop_id = ? ORDER BY notified_at IS NOT NULL, created_at DESC LIMIT 100`).bind(drop.id).all<{ id: number; name: string; phone: string; notified_at: number | null }>(),
+    c.env.DB.prepare(`SELECT * FROM waitlist WHERE drop_id = ? ORDER BY notified_at IS NOT NULL, created_at DESC LIMIT 100`).bind(drop.id).all<{ id: number; name: string; phone: string; notified_at: number | null; kind: string }>(),
   ])
   const regular = drop.compare_paise > drop.price_paise ? drop.compare_paise : drop.price_paise
   const offerState = (f: Offer & { order_status: string | null }) =>
@@ -629,7 +672,10 @@ app.get('/drops/:id', async (c) => {
   const fresh = c.req.query('offer') ? offers.find((f) => f.id === c.req.query('offer')) : undefined
   const tillOf = (ms: number) => new Date(ms).toLocaleString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })
   const offerLink = (f: Offer) => `${origin}/d/${drop.id}?o=${f.id}`
-  const toTell = waiting.filter((w) => !w.notified_at)
+  const toTell = waiting.filter((w) => !w.notified_at && w.kind !== 'start')
+  // "Remind me when it starts" – shown once the drop has opened.
+  const started = drop.status === 'live' && (drop.live_at ?? 0) <= Date.now()
+  const toRemind = started ? waiting.filter((w) => !w.notified_at && w.kind === 'start') : []
 
   return page(c, 'home', drop.title, (
     <>
@@ -658,6 +704,25 @@ app.get('/drops/:id', async (c) => {
         <small>{t.costHint}</small>
       </details>}
 
+      <form method="post" action={`/app/drops/${drop.id}/live`} class="card row between" style={`gap:10px;${drop.live_drop ? 'border:1.5px solid var(--bad)' : ''}`}>
+        <span class="grow"><span class="livedot" style="margin-right:8px">{t.liveBadge}</span>{drop.live_drop ? <small>{t.liveIsOn}</small> : <small>{t.liveDropHint}</small>}</span>
+        <button class="btn sm" type="submit" name="on" value={drop.live_drop ? '' : '1'} style="flex:none">{drop.live_drop ? t.liveTurnOff : t.liveTurnOn}</button>
+      </form>
+      {toRemind.length > 0 && (
+        <div class="card" style="border:1.5px solid var(--bad)" id="remind">
+          <b>{t.startListTitle(toRemind.length)}</b>
+          <small style="display:block;margin:2px 0 8px">{t.startListHint}</small>
+          {toRemind.map((w) => (
+            <div class="row between" style="padding:8px 0;border-top:1px solid var(--line)">
+              <span><b>{w.name}</b><br /><small>{displayPhone(w.phone)}</small></span>
+              <span class="row" style="gap:6px">
+                <a class="btn wa sm" href={waLink(w.phone, t.startMsg(w.name.split(' ')[0], drop.title, s.shop_name, `${origin}/d/${drop.id}`))} aria-label={t.offerSend}><Icon n="chat" s={16} /></a>
+                <form method="post" action={`/app/drops/${drop.id}/waitlist/${w.id}/done`}><button class="btn sm" type="submit" aria-label={t.waitlistMark} title={t.waitlistMark}><Icon n="check" s={16} />{t.waitlistDoneShort}</button></form>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       {toolOn(s, 'waitlist') && toTell.length > 0 && (
         <div class="card" style="border:1.5px solid var(--brand)" id="waiting">
           <b>{t.waitlistTitle(toTell.length)}</b>
@@ -867,6 +932,14 @@ app.post('/drops/:id/offers/:oid/delete', async (c) => {
   // Ending it now keeps the history (and any order that used it) intact.
   await c.env.DB.prepare(`UPDATE offers SET expires_at = ? WHERE id = ? AND drop_id = ?`).bind(Date.now() - 1, c.req.param('oid'), drop.id).run()
   return c.redirect(`/app/drops/${drop.id}?offers=1#offers`, 303)
+})
+
+app.post('/drops/:id/live', async (c) => {
+  const drop = await c.env.DB.prepare(`SELECT id FROM drops WHERE id = ? AND seller_id = ?`).bind(c.req.param('id'), c.get('seller').id).first<{ id: string }>()
+  if (!drop) return c.notFound()
+  const on = String((await c.req.parseBody()).on ?? '') === '1' ? 1 : 0
+  await c.env.DB.prepare(`UPDATE drops SET live_drop = ? WHERE id = ?`).bind(on, drop.id).run()
+  return backWith(c, `/app/drops/${drop.id}`, tr(c).liveSaved)
 })
 
 app.post('/drops/:id/waitlist/:wid/done', async (c) => {
@@ -2318,4 +2391,222 @@ app.get('/quick-order/done/:id', async (c) => {
       <a class="btn block" href="/app/quick-order">{t.qoAnother}</a>
     </>
   ), '')
+})
+
+// ---------- Ask your buyers (before buying stock) ----------
+// The seller shows up to 6 designs; buyers pick what they want and can pay a small reserve. The seller turns
+// the most-wanted designs into sales, and every buyer who picked one gets the link (reserves come off the price).
+
+type AskRow = { id: string; title: string; note: string; reserve_paise: number; closes_at: number; status: string; created_at: number }
+type AskItemRow = { id: number; title: string; price_paise: number; image_key: string | null; drop_id: string | null; votes: number; reserved: number }
+const ownAsk = (c: Context<AppEnv>, id: string) => c.env.DB.prepare(`SELECT * FROM asks WHERE id = ? AND seller_id = ?`).bind(id, c.get('seller').id).first<AskRow>()
+const askOpen = (a: AskRow) => a.status === 'open' && a.closes_at > Date.now()
+
+app.get('/asks', async (c) => {
+  const t = tr(c)
+  const { results } = await c.env.DB.prepare(
+    `SELECT a.*, (SELECT COUNT(DISTINCT phone) FROM ask_votes v WHERE v.ask_id = a.id) AS people FROM asks a WHERE a.seller_id = ? ORDER BY a.created_at DESC LIMIT 50`,
+  ).bind(c.get('seller').id).all<AskRow & { people: number }>()
+  return page(c, 'home', t.asksTitle, (
+    <>
+      <a class="back" href="/app">{t.backHome}</a>
+      <h1>{t.asksTitle}</h1>
+      <p class="muted" style="margin-top:-6px">{t.asksSub}</p>
+      <a class="btn primary block big" href="/app/asks/new">{t.askNewBtn}</a>
+      {results.length === 0 ? <Empty icon="users" title={t.asksTitle} sub={t.askNone} /> : results.map((a) => (
+        <a class="card" href={`/app/asks/${a.id}`} style="display:block;text-decoration:none;color:inherit;margin-top:10px">
+          <div class="row between"><b>{a.title}</b><span class={`chip ${askOpen(a) ? 'pending' : 'closed'}`}>{askOpen(a) ? t.askOpenTill(fmtDate(a.closes_at)) : t.askClosed}</span></div>
+          <small>{t.askPeople(a.people)}</small>
+        </a>
+      ))}
+    </>
+  ))
+})
+
+app.get('/asks/new', async (c) => {
+  const t = tr(c)
+  const rows = [0, 1, 2, 3, 4, 5]
+  return page(c, 'home', t.asksTitle, (
+    <>
+      <a class="back" href="/app/asks">← {t.asksTitle}</a>
+      <h1>{t.asksTitle}</h1>
+      <p class="muted" style="margin-top:-6px">{t.asksSub}</p>
+      <Flash msg={c.req.query('err')} />
+      <form method="post" enctype="multipart/form-data" class="stack">
+        <div><label for="q">{t.askQ}</label><input id="q" name="title" required maxlength={100} placeholder={t.askQPh} /></div>
+        <div><label for="note">{t.askNote}</label><textarea id="note" name="note" maxlength={400} placeholder={t.askNotePh} /></div>
+        <div class="sec">{t.askItems}</div>
+        {rows.map((i) => (
+          <div class="card stack askrow" data-row={i} hidden={i > 2} style="margin:0">
+            <div class="row" style="gap:12px;align-items:center">
+              <label class="askpic" for={`img${i}`}><img alt="" hidden /><span><Icon n="camera" s={24} /></span><input id={`img${i}`} name={`image${i}`} type="file" accept="image/*" /></label>
+              <div class="grow stack" style="gap:8px">
+                <input name={`name${i}`} maxlength={60} placeholder={i ? t.askDesignN(i + 1) : t.askItemNamePh} aria-label={`${t.askItemName} ${i + 1}`} />
+                <span class="money"><span>₹</span><input name={`price${i}`} inputmode="decimal" placeholder={i ? t.askItemPrice : '799'} aria-label={`${t.askItemPrice} ${i + 1}`} /></span>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button type="button" class="btn block" id="addrow">{t.askAddItem}</button>
+        <div><label for="reserve">{t.askReserve}</label><span class="money" style="max-width:200px"><span>₹</span><input id="reserve" name="reserve" inputmode="decimal" placeholder="0" /></span><small>{t.askReserveHint}</small></div>
+        <div><label for="days">{t.askCloses}</label>
+          <select id="days" name="days" style="max-width:200px">{[1, 2, 3, 5, 7, 14].map((d) => <option value={d} selected={d === 3}>{t.askDays(d)}</option>)}</select></div>
+        <div class="sticky-pay"><button class="btn primary block big" type="submit">{t.askCreate}</button></div>
+      </form>
+      <script>{raw(`(function(){document.querySelectorAll('.askpic input').forEach(function(inp){inp.addEventListener('change',function(){var f=inp.files[0],im=inp.parentNode.querySelector('img');if(f){im.src=URL.createObjectURL(f);im.hidden=false}})});
+var b=document.getElementById('addrow');b.onclick=function(){var h=document.querySelector('.askrow[hidden]');if(h)h.hidden=false;if(!document.querySelector('.askrow[hidden]'))b.hidden=true}})()`)}</script>
+    </>
+  ), '')
+})
+
+app.post('/asks/new', async (c) => {
+  const t = tr(c)
+  const s = c.get('seller')
+  const f = await c.req.parseBody()
+  const fail = (m: string) => c.redirect('/app/asks/new?err=' + enc(m), 303)
+  const title = String(f.title ?? '').trim().slice(0, 100)
+  if (!title) return fail(t.askErrTitle)
+  const items: { title: string; price: number; file: File }[] = []
+  for (let i = 0; i < 6; i++) {
+    const name = String(f[`name${i}`] ?? '').trim().slice(0, 60), price = parsePaise(String(f[`price${i}`] ?? '')), file = f[`image${i}`]
+    if (!name && !(file instanceof File && file.size)) continue
+    if (!name || !price || price < 100 || !(file instanceof File) || !file.size || !file.type.startsWith('image/')) return fail(t.askErrItems)
+    if (file.size > MAX_IMAGE_BYTES) return fail(t.photoTooBig)
+    items.push({ title: name, price, file })
+  }
+  if (items.length < 2) return fail(t.askErrItems)
+  const reserve = Math.min(100_000, parsePaise(String(f.reserve ?? '') || '0') ?? 0)
+  const days = [1, 2, 3, 5, 7, 14].includes(Number(f.days)) ? Number(f.days) : 3
+  const id = randomId(8), now = Date.now()
+  const keys = items.map(() => `a/${id}-${randomId(6)}`)
+  await Promise.all(items.map((x, i) => c.env.IMAGES.put(keys[i], x.file.stream(), { httpMetadata: { contentType: x.file.type } })))
+  await c.env.DB.batch([
+    c.env.DB.prepare(`INSERT INTO asks (id, seller_id, title, note, reserve_paise, closes_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, s.id, title, String(f.note ?? '').trim().slice(0, 400), reserve >= 100 ? reserve : 0, now + days * 86_400_000, now),
+    ...items.map((x, i) => c.env.DB.prepare(`INSERT INTO ask_items (ask_id, title, price_paise, image_key, position) VALUES (?, ?, ?, ?, ?)`).bind(id, x.title, x.price, keys[i], i)),
+  ])
+  return c.redirect(`/app/asks/${id}?new=1`, 303)
+})
+
+app.get('/asks/:id', async (c) => {
+  const t = tr(c)
+  const s = c.get('seller')
+  const ask = await ownAsk(c, c.req.param('id'))
+  if (!ask) return c.notFound()
+  const origin = new URL(c.req.url).origin
+  const link = `${origin}/a/${ask.id}`
+  const db = c.env.DB
+  const [{ results: items }, { results: votes }, { results: reserves }] = await Promise.all([
+    db.prepare(`SELECT i.*, (SELECT COUNT(*) FROM ask_votes v WHERE v.item_id = i.id) AS votes,
+                  (SELECT COUNT(*) FROM ask_votes v JOIN ask_reserves r ON r.ask_id = v.ask_id AND r.phone = v.phone WHERE v.item_id = i.id AND r.status IN ('paid', 'used')) AS reserved
+                FROM ask_items i WHERE i.ask_id = ? ORDER BY votes DESC, i.position`).bind(ask.id).all<AskItemRow>(),
+    db.prepare(`SELECT id, item_id, name, phone, size, told_at FROM ask_votes WHERE ask_id = ? ORDER BY created_at`).bind(ask.id).all<{ id: number; item_id: number; name: string; phone: string; size: string; told_at: number | null }>(),
+    db.prepare(`SELECT * FROM ask_reserves WHERE ask_id = ? ORDER BY status = 'claimed' DESC, created_at DESC`).bind(ask.id).all<{ id: number; name: string; phone: string; amount_paise: number; status: string; offer_id: string | null }>(),
+  ])
+  const people = new Set(votes.map((v) => v.phone)).size
+  const top = Math.max(1, ...items.map((i) => i.votes))
+  const resByPhone = new Map(reserves.map((r) => [r.phone, r]))
+  const open = askOpen(ask)
+  const msg = t.askShareMsg(ask.title, s.shop_name, link)
+  return page(c, 'home', ask.title, (
+    <>
+      <a class="back" href="/app/asks">← {t.asksTitle}</a>
+      <Flash msg={c.req.query('err')} />
+      <div class="row between" style="margin-top:10px"><h1 style="margin:0;font-size:1.3rem">{ask.title}</h1><span class={`chip ${open ? 'pending' : 'closed'}`}>{open ? t.askOpenTill(fmtDate(ask.closes_at)) : t.askClosed}</span></div>
+      <p class="muted" style="margin:4px 0 12px">{t.askPeople(people)}{ask.reserve_paise ? ` · ${t.askReserve}: ${rupees(ask.reserve_paise)}` : ''}</p>
+      {open && (
+        <div class="card stack" id="share" style={c.req.query('new') ? 'border:1.5px solid var(--brand)' : ''}>
+          <b>{t.askShareTitle}</b>
+          <pre class="bubble" id="askmsg">{msg}</pre>
+          <a class="btn wa block big" href={waLink(null, msg)}><Icon n="share" s={18} />{t.shareWa}</a>
+          <div class="row"><button type="button" class="btn grow sm" data-copy="#askmsg" data-done={t.copiedMsg}>{t.copyMsg}</button><a class="btn grow sm" href={link} target="_blank">{t.askSeePage}</a></div>
+        </div>
+      )}
+      <h2>{t.askTop}</h2>
+      {items.map((it, i) => {
+        const vs = votes.filter((v) => v.item_id === it.id), untold = vs.filter((v) => !v.told_at)
+        return (
+          <div class="card" style={i === 0 && it.votes > 0 ? 'border:1.5px solid var(--ok)' : ''}>
+            <div class="row" style="gap:12px">
+              {it.image_key ? <img class="thumb" src={`/img/${it.image_key}`} alt="" /> : <div class="thumb"><Icon n="bag" s={22} /></div>}
+              <div class="grow"><b>{it.title}</b><br /><small>{rupees(it.price_paise)}</small>
+                <div style="height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0 4px"><div style={`height:100%;width:${Math.round((it.votes / top) * 100)}%;background:var(--ok)`} /></div>
+                <small><b>{t.askWant(it.votes)}</b>{it.reserved ? ` · ${t.askReservedN(it.reserved)}` : ''}{vs.some((v) => v.size) ? ` · ${[...new Set(vs.map((v) => v.size).filter(Boolean))].slice(0, 6).join(', ')}` : ''}</small>
+              </div>
+            </div>
+            {it.drop_id ? (
+              <>
+                <div class="row between" style="margin-top:10px"><span class="chip paid">{t.askOnSale}</span><a class="btn sm" href={`/app/drops/${it.drop_id}`}>{t.askOnSale} →</a></div>
+                {untold.length > 0 && (
+                  <div style="margin-top:10px">
+                    <small style="display:block;font-weight:700;margin-bottom:4px">{t.askTellTitle(untold.length)}</small>
+                    {untold.map((v) => {
+                      const r = resByPhone.get(v.phone), first = v.name.split(' ')[0]
+                      const href = r?.offer_id ? `${origin}/d/${it.drop_id}?o=${r.offer_id}` : `${origin}/d/${it.drop_id}`
+                      const text = r?.offer_id ? t.askTellReserveMsg(first, it.title, s.shop_name, href, rupees(r.amount_paise)) : t.askTellMsg(first, it.title, s.shop_name, href)
+                      return (
+                        <div class="row between" style="padding:6px 0;border-top:1px solid var(--line)">
+                          <span><b>{v.name}</b>{v.size ? ` · ${v.size}` : ''}<br /><small>{displayPhone(v.phone)}{r?.offer_id ? ` · ${t.askResStatus.used}` : ''}</small></span>
+                          <span class="row" style="gap:6px">
+                            <a class="btn wa sm" href={waLink(v.phone, text)} aria-label={t.offerSend}><Icon n="chat" s={16} /></a>
+                            <form method="post" action={`/app/asks/${ask.id}/told/${v.id}`}><button class="btn sm" type="submit"><Icon n="check" s={16} />{t.waitlistDoneShort}</button></form>
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
+            ) : it.votes > 0 ? (
+              <a class="btn primary block" href={`/app/drops/new?ask_item=${it.id}`} style="margin-top:10px">{t.askMakeSale}</a>
+            ) : null}
+          </div>
+        )
+      })}
+      {reserves.length > 0 && (
+        <>
+          <h2 id="reserves">{t.askReservesTitle}</h2>
+          {reserves.map((r) => (
+            <div class="card" style={r.status === 'claimed' ? 'border:1.5px solid var(--info)' : ''}>
+              <div class="row between"><span><b>{r.name}</b><br /><small>{displayPhone(r.phone)}</small></span><span><b>{rupees(r.amount_paise)}</b><br /><small>{t.askResStatus[!open && r.status === 'paid' ? 'refund_due' : r.status]}</small></span></div>
+              {r.status === 'claimed' && (
+                <>
+                  <p style="margin:8px 0 6px;font-weight:700;color:var(--info)">{t.askCheckPay(rupees(r.amount_paise))}</p>
+                  <div class="row">
+                    <form method="post" action={`/app/asks/${ask.id}/reserve/${r.id}/yes`} class="grow"><button class="btn ok block" type="submit">✓ {t.askYes}</button></form>
+                    <form method="post" action={`/app/asks/${ask.id}/reserve/${r.id}/no`}><button class="btn" type="submit">✗ {t.askNo}</button></form>
+                  </div>
+                </>
+              )}
+              {!open && r.status === 'paid' && <form method="post" action={`/app/asks/${ask.id}/reserve/${r.id}/refunded`} style="margin-top:8px"><button class="btn sm block" type="submit">{t.askRefundBtn}</button></form>}
+            </div>
+          ))}
+        </>
+      )}
+      {open && <form method="post" action={`/app/asks/${ask.id}/close`} style="margin-top:16px"><button class="btn block" type="submit">{t.askClose}</button></form>}
+    </>
+  ))
+})
+
+app.post('/asks/:id/close', async (c) => {
+  const ask = await ownAsk(c, c.req.param('id'))
+  if (!ask) return c.notFound()
+  await c.env.DB.prepare(`UPDATE asks SET status = 'closed' WHERE id = ?`).bind(ask.id).run()
+  return backWith(c, `/app/asks/${ask.id}`, tr(c).askClosed)
+})
+
+app.post('/asks/:id/told/:vid', async (c) => {
+  const ask = await ownAsk(c, c.req.param('id'))
+  if (!ask) return c.notFound()
+  await c.env.DB.prepare(`UPDATE ask_votes SET told_at = ? WHERE id = ? AND ask_id = ?`).bind(Date.now(), Number(c.req.param('vid')), ask.id).run()
+  return backWith(c, `/app/asks/${ask.id}`, tr(c).liveSaved)
+})
+
+app.post('/asks/:id/reserve/:rid/:act{yes|no|refunded}', async (c) => {
+  const ask = await ownAsk(c, c.req.param('id'))
+  if (!ask) return c.notFound()
+  const act = c.req.param('act')
+  const [to, from] = act === 'yes' ? ['paid', 'claimed'] : act === 'no' ? ['due', 'claimed'] : ['refunded', 'paid']
+  await c.env.DB.prepare(`UPDATE ask_reserves SET status = ?, updated_at = ? WHERE id = ? AND ask_id = ? AND status = ?`).bind(to, Date.now(), Number(c.req.param('rid')), ask.id, from).run()
+  return backWith(c, `/app/asks/${ask.id}#reserves`, tr(c).liveSaved)
 })

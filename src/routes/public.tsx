@@ -2,13 +2,13 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import { raw } from 'hono/html'
 import type { AppEnv, Order, Seller } from '../env'
-import { courierDate, tr, type Dict } from '../i18n'
+import { courierDate, dictFor, tr, type Dict } from '../i18n'
 import { decrypt, sha256 } from '../lib/crypto'
 import { shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
 import { confirmGateway, confirmRazorpay, startGatewayPayment } from '../lib/gateway'
 import { verifyCallback } from '../lib/razorpay'
 import { shopOpen } from '../lib/billing'
-import { alertSeller } from '../lib/push'
+import { alertSeller, pushToSeller } from '../lib/push'
 import { isValidUtr, qrSvg, upiAppLinks, upiLink } from '../lib/upi'
 import { clip, liveWhen, normalizePhone, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
@@ -78,6 +78,40 @@ if(!v||!v.value){toast(document.querySelector('.sec')?document.querySelector('.s
 // Scheduled drop: count down to go-live, then reload into the normal sale page.
 const SOON_JS = `(function(){var e=document.getElementById('soon');if(!e)return;var at=+e.dataset.at;function f(){var s=Math.max(0,Math.round((at-Date.now())/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
 e.textContent=(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');if(s>0)setTimeout(f,1000);else setTimeout(function(){location.reload()},800)}f()})();`
+
+// ---------- Live drop: pieces left, how many just sold, who just bought ----------
+type LiveStats = { left: number; total: number; recent: number; feed: { n: string; l: string; at: number }[]; soldOutMin: number | null; waiting: number }
+async function liveStats(db: D1Database, drop: { id: string; live_at?: number; created_at: number }): Promise<LiveStats> {
+  const since = Date.now() - 10 * 60_000
+  const [st, rec, { results: feed }, last, wait] = await Promise.all([
+    db.prepare(`SELECT COALESCE(SUM(available), 0) AS left, COALESCE(SUM(stock), 0) AS total FROM variants WHERE drop_id = ?`).bind(drop.id).first<{ left: number; total: number }>(),
+    db.prepare(`SELECT COUNT(*) AS n FROM orders WHERE drop_id = ? AND status IN ('pending', 'verifying', 'paid') AND created_at >= ?`).bind(drop.id, since).first<{ n: number }>(),
+    db.prepare(`SELECT o.buyer_name AS name, v.label, o.created_at AS at FROM orders o JOIN variants v ON v.id = o.variant_id
+                WHERE o.drop_id = ? AND o.status IN ('pending', 'verifying', 'paid') ORDER BY o.created_at DESC LIMIT 5`).bind(drop.id).all<{ name: string; label: string; at: number }>(),
+    db.prepare(`SELECT MAX(created_at) AS at FROM orders WHERE drop_id = ? AND status IN ('pending', 'verifying', 'paid')`).bind(drop.id).first<{ at: number | null }>(),
+    db.prepare(`SELECT COUNT(*) AS n FROM waitlist WHERE drop_id = ? AND kind = 'start'`).bind(drop.id).first<{ n: number }>(),
+  ])
+  const left = st?.left ?? 0, start = Math.max(drop.live_at || 0, drop.created_at)
+  // First names only, never the full name or number. Quick orders made by the seller have no real name.
+  const first = (x: string) => (x.trim().split(/\s+/)[0] ?? '').slice(0, 14)
+  return {
+    left, total: st?.total ?? 0, recent: rec?.n ?? 0, waiting: wait?.n ?? 0,
+    feed: feed.filter((r) => r.name && r.name !== 'Customer').map((r) => ({ n: first(r.name), l: r.label, at: r.at })),
+    soldOutMin: left < 1 && last?.at ? Math.max(1, Math.round((last.at - start) / 60_000)) : null,
+  }
+}
+// Updates the live panel every 4 s from /d/<id>/stock.json.
+const LIVE_JS = `(function(){var b=document.getElementById('live');if(!b)return;var id=b.dataset.drop,T=JSON.parse(b.dataset.t);
+function esc(x){return String(x).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ago(at){var m=Math.floor((Date.now()-at)/60000);return m<1?T.now:T.min.replace('{n}',m)}
+function draw(d){if(!d.live)return;var L=d.live,sold=Math.max(0,L.total-L.left);
+b.querySelector('[data-left]').textContent=L.left<1?T.out:(L.left<=5?T.only:T.left).replace('{n}',L.left);
+b.querySelector('[data-bar]').style.width=(L.total?Math.round(sold/L.total*100):0)+'%';
+b.querySelector('[data-sold]').textContent=T.sold.replace('{n}',sold).replace('{t}',L.total);
+var r=b.querySelector('[data-recent]');r.hidden=!L.recent;r.textContent=T.recent.replace('{n}',L.recent);
+b.querySelector('[data-feed]').innerHTML=L.feed.map(function(f,i){return '<li'+(i===0&&Date.now()-f.at<90000?' class="new"':'')+'><b>'+esc((f.l?T.just:T.one).replace('{name}',f.n).replace('{size}',f.l))+'</b><small>'+ago(f.at)+'</small></li>'}).join('')}
+function tick(){fetch('/d/'+id+'/stock.json',{cache:'no-store'}).then(function(r){return r.json()}).then(draw).catch(function(){})}
+draw(JSON.parse(b.dataset.init));setInterval(function(){if(!document.hidden)tick()},4000)})();`
 
 // ---------- Storefront: the seller's whole shop at nukkadsale.in/<slug> (or /s/<id>) ----------
 
@@ -358,6 +392,9 @@ pub.get('/d/:id', async (c) => {
   const was = offer ? Math.max(drop.price_paise, drop.compare_paise || 0) : drop.compare_paise > drop.price_paise ? drop.compare_paise : 0
   const maxQty = offer ? Math.min(drop.max_per_order, offer.max_qty) : drop.max_per_order
   const fast = sellingFast(counts)
+  const live = drop.live_drop ? await liveStats(c.env.DB, drop) : null
+  const liveT = live ? JSON.stringify({ left: t.liveLeft(0).replace('0', '{n}'), only: t.liveOnlyLeft(0).replace('0', '{n}'), out: t.soldOutBtn, sold: t.liveSoldOf(0, 1).replace('0', '{n}').replace('1', '{t}'),
+    recent: t.liveRecent(2).replace('2', '{n}'), just: t.liveJust, one: t.liveJustOne, now: t.liveJustNow, min: t.liveMin }) : ''
   const till = offer ? new Date(offer.expires_at).toLocaleString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : ''
 
   return c.html(
@@ -367,7 +404,7 @@ pub.get('/d/:id', async (c) => {
       brand={seller.shop_name}
       title={`${drop.title} – ${seller.shop_name}`}
       og={{ title: `${drop.title} · ${rupees(drop.price_paise)}`, description: clip(drop.description || t.flashBy(seller.shop_name), 150), image: imageUrl(origin, drop.image_key), url: `${origin}/d/${drop.id}` }}
-      scripts={(open ? BUYER_JS : '') + cartJs(seller.id, t, offerCart) + (open ? ADD_SALE_JS : '') + (soon ? SOON_JS : '')}
+      scripts={(open ? BUYER_JS : '') + cartJs(seller.id, t, offerCart) + (open ? ADD_SALE_JS : '') + (soon ? SOON_JS : '') + (live && open ? LIVE_JS : '')}
       say={open ? t.sayBuyerSale : undefined}
       ok={c.req.query('ok')}
     >
@@ -398,16 +435,26 @@ pub.get('/d/:id', async (c) => {
       <Flash msg={c.req.query('err')} />
 
       {soon ? (
-        <div class="card" style="text-align:center">
-          <small>{t.dropSoon(liveWhen(drop.live_at, t.lang))}</small>
-          <div class="countdown" id="soon" data-at={drop.live_at} style="margin:6px 0" />
-          <small>{t.liveIn}</small>
-        </div>
+        <>
+          <div class={`card${live ? ' livesoon' : ''}`} style="text-align:center">
+            {live && <span class="livedot">{t.liveSoonBadge}</span>}
+            <small style="display:block">{t.dropSoon(liveWhen(drop.live_at, t.lang))}</small>
+            <div class="countdown" id="soon" data-at={drop.live_at} style="margin:6px 0" />
+            <small>{t.liveIn}</small>
+            {live && live.waiting > 0 && <small style="display:block;margin-top:6px;font-weight:700">{t.liveWaiting(live.waiting)}</small>}
+          </div>
+          {live && <form method="post" action={`/d/${drop.id}/remind`} class="card stack" id="remind">
+            <div><b style="display:block">{t.remindTitle}</b><small>{t.remindSub(seller.shop_name)}</small></div>
+            <div><label for="rname">{t.yourName}</label><input id="rname" name="name" autocomplete="name" required maxlength={60} /></div>
+            <div><label for="rphone">{t.phone}</label><PhoneInput id="rphone" name="phone" /></div>
+            <button class="btn primary block" type="submit"><Icon n="bell" s={18} />{t.remindBtn}</button>
+          </form>}
+        </>
       ) : drop.status === 'live' && !shopIsOpen ? (
         <div class="alert info">{t.shopPaused}</div>
       ) : drop.status !== 'live' || counts.available < 1 ? (
         <>
-          <div class="alert info">{drop.status !== 'live' ? t.saleClosed : counts.held > 0 ? t.allHeld : t.allSold}</div>
+          <div class="alert info">{drop.status !== 'live' ? t.saleClosed : counts.held > 0 ? t.allHeld : t.allSold}{live?.soldOutMin && counts.held < 1 ? <b style="display:block;margin-top:4px">{t.liveSoldOutIn(live.soldOutMin)}</b> : null}</div>
           {toolOn(seller, 'waitlist') && <form method="post" action={`/d/${drop.id}/waitlist`} class="card stack" id="notify">
             <div><b style="display:block">{t.waitTitle}</b><small>{t.waitSub(seller.shop_name)}</small></div>
             <div><label for="wname">{t.yourName}</label><input id="wname" name="name" autocomplete="name" required maxlength={60} /></div>
@@ -416,6 +463,15 @@ pub.get('/d/:id', async (c) => {
           </form>}
         </>
       ) : (
+        <>
+        {live && (
+          <div class="livebox" id="live" data-drop={drop.id} data-t={liveT} data-init={JSON.stringify({ live })}>
+            <div class="row between"><span class="livedot">{t.liveBadge}</span><b data-left /></div>
+            <div class="livebar"><i data-bar /></div>
+            <small data-sold style="display:block" /><small data-recent hidden style="display:block;color:var(--bad);font-weight:700" />
+            <ul data-feed />
+          </div>
+        )}
         <form id="buy" method="post" action={`/d/${drop.id}`} class="stack" data-drop={drop.id} data-price={price} data-ship={drop.ship_fee_paise || 0} data-freeabove={drop.free_ship_above_paise || 0}
           data-paytpl={t.payBtn('{amt}')} data-heldtxt={t.allReservedBtn} data-soldtxt={t.soldOutBtn}>
           {offer && <input type="hidden" name="offer" value={offer.id} />}
@@ -480,6 +536,7 @@ pub.get('/d/:id', async (c) => {
             ) : null}
           </div>
         </form>
+        </>
       )}
       <div class="stack" style="margin-top:16px">
         <a class="btn wa block sm" href={waLink(seller.phone, `${drop.title} – ${origin}/d/${drop.id}`)}>{t.askSeller(seller.shop_name)}</a>
@@ -504,12 +561,14 @@ pub.get('/d/:id', async (c) => {
 
 pub.get('/d/:id/stock.json', async (c) => {
   const id = c.req.param('id')
+  const d = await c.env.DB.prepare(`SELECT id, live_drop, live_at, created_at FROM drops WHERE id = ?`).bind(id).first<{ id: string; live_drop: number; live_at: number; created_at: number }>()
   const [counts, { results }] = await Promise.all([
     dropCounts(c.env.DB, id),
     c.env.DB.prepare(`SELECT id, available FROM variants WHERE drop_id = ?`).bind(id).all<{ id: number; available: number }>(),
   ])
   // Public endpoint: availability only, no numbers.
-  return c.json({ open: counts.available > 0, held: counts.held > 0, fast: sellingFast(counts), variants: results.map((v) => ({ id: v.id, open: v.available > 0 })) }, 200, { 'Cache-Control': 'no-store' })
+  const live = d?.live_drop ? await liveStats(c.env.DB, d) : undefined
+  return c.json({ open: counts.available > 0, held: counts.held > 0, fast: sellingFast(counts), variants: results.map((v) => ({ id: v.id, open: v.available > 0 })), live }, 200, { 'Cache-Control': 'no-store' })
 })
 
 const failText = (t: Dict, r: ReserveFailure, max: number) =>
@@ -587,9 +646,29 @@ pub.post('/d/:id/waitlist', async (c) => {
   // Joining again just refreshes the request (and asks to be told again).
   await c.env.DB.prepare(
     `INSERT INTO waitlist (drop_id, seller_id, name, phone, created_at) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT (drop_id, phone) DO UPDATE SET name = excluded.name, notified_at = NULL, created_at = excluded.created_at`,
+     ON CONFLICT (drop_id, phone) DO UPDATE SET name = excluded.name, notified_at = NULL, created_at = excluded.created_at, kind = 'restock'`,
   ).bind(id, drop.seller_id, name, phone, Date.now()).run()
   return c.redirect(`/d/${id}?ok=${encodeURIComponent(t.waitDone(seller.shop_name))}`, 303)
+})
+
+// Live drop not started yet: "remind me when it starts".
+pub.post('/d/:id/remind', async (c) => {
+  const t = tr(c)
+  const id = c.req.param('id')
+  const drop = await c.env.DB.prepare(`SELECT id, seller_id, live_drop FROM drops WHERE id = ?`).bind(id).first<{ id: string; seller_id: string; live_drop: number }>()
+  if (!drop?.live_drop) return c.notFound()
+  const seller = await getSeller(c.env.DB, drop.seller_id)
+  if (!seller) return c.notFound()
+  const f = await c.req.parseBody()
+  const phone = normalizePhone(String(f.phone ?? ''))
+  const name = String(f.name ?? '').trim().slice(0, 60)
+  if (!phone) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.bErrPhone)}#remind`, 303)
+  if (!name) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.bErrDetails)}#remind`, 303)
+  await c.env.DB.prepare(
+    `INSERT INTO waitlist (drop_id, seller_id, name, phone, created_at, kind) VALUES (?, ?, ?, ?, ?, 'start')
+     ON CONFLICT (drop_id, phone) DO UPDATE SET name = excluded.name, notified_at = NULL, created_at = excluded.created_at, kind = 'start'`,
+  ).bind(id, drop.seller_id, name, phone, Date.now()).run()
+  return c.redirect(`/d/${id}?ok=${encodeURIComponent(t.remindDone(seller.shop_name))}`, 303)
 })
 
 // ---------- Buyer order page ----------
@@ -878,4 +957,134 @@ pub.get('/img/:key{.+}', async (c) => {
       ETag: obj.httpEtag,
     },
   })
+})
+
+// ---------- Ask your buyers: /a/<id> ----------
+type PubAsk = { id: string; seller_id: string; title: string; note: string; reserve_paise: number; closes_at: number; status: string }
+const ASK_JS = `(function(){var f=document.getElementById('askf');if(!f)return;var K='kk_buyer',s={};try{s=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}
+['name','phone'].forEach(function(n){if(s[n]&&f[n]&&!f[n].value)f[n].value=s[n]});
+var c=f.querySelector('[data-count]'),tpl=c.dataset.tpl;function u(){var n=f.querySelectorAll('input[name=item]:checked').length;c.textContent=tpl.replace('{n}',n);c.hidden=!n}
+f.addEventListener('change',u);u();f.addEventListener('submit',function(e){if(!f.querySelector('input[name=item]:checked')){e.preventDefault();alert(f.dataset.need);return}
+try{var o=JSON.parse(localStorage.getItem(K)||'{}');o.name=f.name.value;o.phone=f.phone.value;localStorage.setItem(K,JSON.stringify(o))}catch(e){}})})();`
+
+pub.get('/a/:id', async (c) => {
+  const t = tr(c)
+  const ask = await c.env.DB.prepare(`SELECT * FROM asks WHERE id = ?`).bind(c.req.param('id')).first<PubAsk>()
+  if (!ask) return c.notFound()
+  const seller = await getSeller(c.env.DB, ask.seller_id)
+  if (!seller) return c.notFound()
+  const { results: items } = await c.env.DB.prepare(`SELECT i.id, i.title, i.price_paise, i.image_key, i.drop_id, (SELECT COUNT(*) FROM ask_votes v WHERE v.item_id = i.id) AS votes FROM ask_items i WHERE i.ask_id = ? ORDER BY i.position`)
+    .bind(ask.id).all<{ id: number; title: string; price_paise: number; image_key: string | null; drop_id: string | null; votes: number }>()
+  const origin = new URL(c.req.url).origin
+  const open = ask.status === 'open' && ask.closes_at > Date.now() && seller.account_status === 'active'
+  const done = c.req.query('done') === '1'
+  return c.html(
+    <Layout t={t} path={here(c)} brand={seller.shop_name} title={`${ask.title} – ${seller.shop_name}`} scripts={open && !done ? ASK_JS : ''} ok={c.req.query('ok')}
+      og={{ title: ask.title, description: t.askBy(seller.shop_name), image: imageUrl(origin, items[0]?.image_key ?? null), url: `${origin}/a/${ask.id}` }}>
+      <small class="muted" style="display:block;margin-top:12px">{t.askBy(seller.shop_name)}</small>
+      <h1 style="margin-top:4px">{ask.title}</h1>
+      {ask.note && <p style="white-space:pre-line">{ask.note}</p>}
+      <Flash msg={c.req.query('err')} />
+      {done && <div class="alert ok">{t.askThanks(seller.shop_name)}</div>}
+      {!open && <div class="alert info">{t.askClosedPub}</div>}
+      <form id="askf" method="post" action={`/a/${ask.id}`} data-need={t.askErrPick}>
+        {open && !done && <div class="sec">{t.askPick}</div>}
+        <div class="askgrid">
+          {items.map((it) => (
+            <label class="askitem">
+              {open && !done && <input type="checkbox" name="item" value={String(it.id)} />}
+              {it.image_key ? <img src={`/img/${it.image_key}`} alt={it.title} loading="lazy" /> : <span class="ph"><Icon n="bag" s={28} /></span>}
+              <span class="tick"><Icon n="check" s={18} /></span>
+              <b>{it.title}</b>
+              <small>{rupees(it.price_paise)}{it.votes > 0 ? ` · ${t.askWant(it.votes)}` : ''}</small>
+              {it.drop_id && <a class="btn primary sm block" href={`/d/${it.drop_id}`} style="margin-top:6px">{t.buyNow} →</a>}
+            </label>
+          ))}
+        </div>
+        {open && !done && (
+          <div class="stack" style="margin-top:16px">
+            <b data-count data-tpl={t.askSelected(0).replace('0', '{n}')} hidden style="color:var(--brand)" />
+            <div><label for="aname">{t.yourName}</label><input id="aname" name="name" autocomplete="name" required maxlength={60} /></div>
+            <div><label for="aphone">{t.phone}</label><PhoneInput id="aphone" name="phone" /></div>
+            <div><label for="asize">{t.askSize}</label><input id="asize" name="size" maxlength={20} placeholder={t.askSizePh} style="max-width:220px" /></div>
+            <button class="btn primary block big" type="submit">{ask.reserve_paise ? t.askSubmitReserve(rupees(ask.reserve_paise)) : t.askSubmit}</button>
+            <small style="text-align:center">{ask.reserve_paise ? t.askReserveNote(rupees(ask.reserve_paise)) : t.askVotesOnly}</small>
+          </div>
+        )}
+      </form>
+      <a class="btn wa block sm" href={waLink(seller.phone, `${ask.title} – ${origin}/a/${ask.id}`)} style="margin-top:16px">{t.askSeller(seller.shop_name)}</a>
+    </Layout>,
+  )
+})
+
+pub.post('/a/:id', async (c) => {
+  const t = tr(c)
+  const ask = await c.env.DB.prepare(`SELECT * FROM asks WHERE id = ?`).bind(c.req.param('id')).first<PubAsk>()
+  if (!ask) return c.notFound()
+  const back = (m: string) => c.redirect(`/a/${ask.id}?err=${encodeURIComponent(m)}`, 303)
+  if (ask.status !== 'open' || ask.closes_at < Date.now()) return back(t.askClosedPub)
+  const f = await c.req.parseBody({ all: true })
+  const picks = (Array.isArray(f.item) ? f.item : f.item === undefined ? [] : [f.item]).map((x) => Number(x)).filter((x) => x > 0).slice(0, 6)
+  const phone = normalizePhone(String(f.phone ?? ''))
+  const name = String(f.name ?? '').trim().slice(0, 60)
+  const size = String(f.size ?? '').trim().slice(0, 20)
+  if (!picks.length) return back(t.askErrPick)
+  if (!phone) return back(t.bErrPhone)
+  if (!name) return back(t.bErrDetails)
+  const { results: valid } = await c.env.DB.prepare(`SELECT id FROM ask_items WHERE ask_id = ? AND id IN (${picks.map(() => '?').join(',')})`).bind(ask.id, ...picks).all<{ id: number }>()
+  if (!valid.length) return back(t.askErrPick)
+  const now = Date.now()
+  await c.env.DB.batch(valid.map((v) => c.env.DB.prepare(`INSERT INTO ask_votes (ask_id, item_id, name, phone, size, created_at) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT (item_id, phone) DO UPDATE SET name = excluded.name, size = excluded.size`).bind(ask.id, v.id, name, phone, size, now)))
+  if (!ask.reserve_paise) return c.redirect(`/a/${ask.id}?done=1`, 303)
+  // One reserve per buyer per ask: its own amount a few paise under the reserve, so the seller can spot it.
+  let r = await c.env.DB.prepare(`SELECT key FROM ask_reserves WHERE ask_id = ? AND phone = ?`).bind(ask.id, phone).first<{ key: string }>()
+  if (!r) {
+    const { results: taken } = await c.env.DB.prepare(`SELECT amount_paise FROM ask_reserves WHERE seller_id = ? AND status IN ('due', 'claimed') AND amount_paise BETWEEN ? AND ?`)
+      .bind(ask.seller_id, ask.reserve_paise - 99, ask.reserve_paise).all<{ amount_paise: number }>()
+    const used = new Set(taken.map((x) => ask.reserve_paise - x.amount_paise))
+    const free = Array.from({ length: 99 }, (_, i) => i + 1).filter((k) => !used.has(k))
+    const amount = ask.reserve_paise - (free.length ? free[Math.floor(Math.random() * free.length)] : 0)
+    r = { key: randomId(12) }
+    await c.env.DB.prepare(`INSERT INTO ask_reserves (key, ask_id, seller_id, name, phone, amount_paise, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(r.key, ask.id, ask.seller_id, name, phone, amount, now, now).run()
+  }
+  return c.redirect(`/a/${ask.id}/r/${r.key}`, 303)
+})
+
+pub.get('/a/:id/r/:key', async (c) => {
+  const t = tr(c)
+  const r = await c.env.DB.prepare(`SELECT r.*, a.title, a.seller_id AS sid FROM ask_reserves r JOIN asks a ON a.id = r.ask_id WHERE r.key = ? AND r.ask_id = ?`)
+    .bind(c.req.param('key'), c.req.param('id')).first<{ key: string; name: string; phone: string; amount_paise: number; status: string; title: string; sid: string; ask_id: string }>()
+  if (!r) return c.notFound()
+  const seller = await getSeller(c.env.DB, r.sid)
+  if (!seller?.upi_vpa) return c.notFound()
+  const { results: picks } = await c.env.DB.prepare(`SELECT i.title FROM ask_votes v JOIN ask_items i ON i.id = v.item_id WHERE v.ask_id = ? AND v.phone = ?`).bind(r.ask_id, r.phone).all<{ title: string }>()
+  const note = `Reserve ${r.title}`.slice(0, 50)
+  const upi = upiLink(seller.upi_vpa, seller.shop_name, r.amount_paise, note)
+  return c.html(
+    <Layout t={t} path={here(c)} brand={seller.shop_name} title={t.askReserveTitle} scripts={OS_JS}>
+      <h1 style="margin-top:12px">{t.askReserveTitle}</h1>
+      <div class="card"><small>{t.askYourPicks}</small><b style="display:block">{picks.map((p) => p.title).join(' · ')}</b></div>
+      {r.status === 'due' ? (
+        <div class="card stack" style="text-align:center">
+          <p style="margin:0">{t.askReservePay(rupees(r.amount_paise))}</p>
+          <div class="price" style="font-size:2rem">{rupees(r.amount_paise)}</div>
+          <div data-os="android"><a class="btn primary block big" href={upi}>{t.payBtn(rupees(r.amount_paise))}</a></div>
+          <div data-os="ios" hidden><div class="appgrid">{upiAppLinks(seller.upi_vpa, seller.shop_name, r.amount_paise, note).map((a) => <a class="btn" href={a.href}>{a.name}</a>)}</div></div>
+          <details id="qr"><summary>{t.scanQr}</summary><div class="qr">{raw(qrSvg(upi))}</div><p><small>UPI ID: <b>{seller.upi_vpa}</b></small></p></details>
+          <form method="post" action={`/a/${r.ask_id}/r/${r.key}`}><button class="btn ok block big" type="submit">✓ {t.askPaid}</button></form>
+        </div>
+      ) : <div class={`alert ${r.status === 'claimed' ? 'info' : 'ok'}`}>{r.status === 'claimed' ? t.askClaimed : t.askReserveOk}</div>}
+      <a class="btn block" href={`/a/${r.ask_id}`} style="margin-top:12px">← {r.title}</a>
+    </Layout>,
+  )
+})
+
+pub.post('/a/:id/r/:key', async (c) => {
+  const r = await c.env.DB.prepare(`SELECT r.id, r.seller_id, r.name, r.amount_paise FROM ask_reserves r WHERE r.key = ? AND r.ask_id = ?`).bind(c.req.param('key'), c.req.param('id')).first<{ id: number; seller_id: string; name: string; amount_paise: number }>()
+  if (!r) return c.notFound()
+  const u = await c.env.DB.prepare(`UPDATE ask_reserves SET status = 'claimed', updated_at = ? WHERE id = ? AND status = 'due'`).bind(Date.now(), r.id).run()
+  if (u.meta.changes) c.executionCtx.waitUntil(pushToSeller(c.env, r.seller_id, (lang) => ({ title: dictFor(lang).askCheckPay(rupees(r.amount_paise)), body: `${r.name} · ${dictFor(lang).askTaskSub}`, url: `/app/asks/${c.req.param('id')}#reserves` })).then(() => {}, () => {}))
+  return c.redirect(`/a/${c.req.param('id')}/r/${c.req.param('key')}`, 303)
 })

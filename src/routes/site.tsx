@@ -52,6 +52,15 @@ const C = {
       ['accounts', 'book', 'Accounts', 'Instead of an Excel sheet at month end', ['A khata that fills itself', 'Profit per piece and for the month', 'Your buyers list, repeat buyers marked', 'Excel download for your CA'], 'How accounts work'],
     ],
     grow: ['tag', 'Plus: tools to sell more', 'Discounts, a special price for one buyer, a back-in-stock list, launch countdowns and “spend more, save more”.', 'See the selling tools'],
+    newPill: 'New: Live drops and Ask your buyers',
+    newEyebrow: 'Only on NukkadSale', newH: 'Two things no other selling app does',
+    newP: 'Made for how WhatsApp sellers really sell: big launches in the group, and buying stock from suppliers.',
+    newCards: [
+      ['live', 'Live drops', 'Make every sale an event.', 'Announce a time. Buyers get a countdown and a reminder, then watch the pieces run out live – “Only 4 left!”, “Pooja just bought one”. The whole group turns up, and the stock is gone in minutes.',
+        ['Countdown and “Remind me when it starts”', 'Pieces left and who just bought – live', '“Sold out in 12 minutes” on the page'], 'How live drops work'],
+      ['ask', 'Ask your buyers', 'Know what sells before you buy stock.', 'Got new designs from your supplier? Show them to your buyers first. They tap the ones they want and can pay a small reserve. Order only what will sell – then one tap tells every buyer it has arrived.',
+        ['Votes on each design, with sizes', 'A reserve that comes off the price later', 'Most-wanted design to a live sale in one tap'], 'How asking works'],
+    ],
     dayEyebrow: 'Your day', dayH: 'Before and after NukkadSale', dayCols: ['Job', 'Today', 'With NukkadSale'],
     day: [
       ['Taking orders', '“Price?” “Size?” in 50 DMs', 'Buyers order from your link'],
@@ -166,6 +175,15 @@ const C = {
       ['accounts', 'book', 'हिसाब', 'महीने के आख़िर में Excel की जगह', ['अपने आप भरने वाला खाता', 'हर पीस और महीने का मुनाफ़ा', 'ग्राहकों की लिस्ट, बार-बार आने वाले अलग', 'CA के लिए Excel डाउनलोड'], 'हिसाब कैसे रहता है'],
     ],
     grow: ['tag', 'साथ में: ज़्यादा बेचने के टूल', 'छूट, एक ग्राहक के लिए ख़ास दाम, स्टॉक वापसी की लिस्ट, लॉन्च काउंटडाउन और “ज़्यादा ख़रीदें, ज़्यादा बचाएं”।', 'बेचने के टूल देखें'],
+    newPill: 'नया: लाइव ड्रॉप और ग्राहकों से पूछें',
+    newEyebrow: 'सिर्फ़ NukkadSale पर', newH: 'दो चीज़ें जो कोई और सेलिंग ऐप नहीं करता',
+    newP: 'WhatsApp सेलर असल में जैसे बेचते हैं, उसी हिसाब से: ग्रुप में बड़े लॉन्च, और सप्लायर से स्टॉक ख़रीदना।',
+    newCards: [
+      ['live', 'लाइव ड्रॉप', 'हर सेल को इवेंट बनाएं।', 'समय बताएं। ग्राहकों को काउंटडाउन और याद दिलाने का मैसेज मिले, फिर वो लाइव देखें पीस ख़त्म होते – “सिर्फ़ 4 बचे!”, “पूजा ने अभी एक लिया”। पूरा ग्रुप आ जाता है, और स्टॉक मिनटों में ख़त्म।',
+        ['काउंटडाउन और “शुरू होने पर याद दिलाएं”', 'कितने बचे और किसने अभी लिया – लाइव', 'पेज पर “12 मिनट में सब बिक गया”'], 'लाइव ड्रॉप कैसे चलता है'],
+      ['ask', 'ग्राहकों से पूछें', 'स्टॉक लेने से पहले जानें क्या बिकेगा।', 'सप्लायर से नए डिज़ाइन आए? पहले ग्राहकों को दिखाएं। जो चाहिए उन पर टैप करें, और चाहें तो थोड़ी होल्ड रकम दें। वही मंगाएं जो बिकेगा – फिर एक टैप में सबको बताएं कि आ गया।',
+        ['हर डिज़ाइन पर वोट, साइज़ के साथ', 'होल्ड रकम जो बाद में दाम से घटे', 'सबसे पसंद डिज़ाइन एक टैप में सेल पर'], 'पूछना कैसे काम करता है'],
+    ],
     dayEyebrow: 'आपका दिन', dayH: 'NukkadSale से पहले और बाद', dayCols: ['काम', 'आज', 'NukkadSale के साथ'],
     day: [
       ['ऑर्डर लेना', '50 DM में “Price?” “Size?”', 'ग्राहक आपके लिंक से ऑर्डर करें'],
@@ -279,6 +297,20 @@ const FEATURES = {
       steps: ['Sell as usual – every paid order lands in the khata.', 'Add cash sales and expenses with one tap.', 'See today, this month and your profit at a glance.'] },
     hi: { name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
       steps: ['आम तरह बेचें – हर पेड ऑर्डर खाते में।', 'कैश बिक्री और ख़र्च एक टैप में जोड़ें।', 'आज, इस महीने और मुनाफ़ा एक नज़र में।'] } },
+  live: { icon: 'bell', group: 2, clip: '', imgs: ['live', 'soon'],
+    en: { name: 'Live drops', h1: 'Make every sale an event.', sub: 'Announce a time in your groups. Buyers get a countdown and can ask to be reminded. When it opens, everyone sees the pieces running out and who just bought – and you see the whole group turn up.',
+      steps: ['Add a product, tick “Live drop” and pick a start time.', 'Share it – buyers see a countdown and tap “Remind me”. When it opens, you message them in one tap.', 'Buyers watch stock fall live: “Only 4 left!”, “Pooja just bought one”, then “Sold out in 12 minutes”.'],
+      items: [['Countdown to the start', 'The sale page counts down and opens on the minute.'], ['“Remind me when it starts”', 'Buyers leave their number; when it opens, your app lists them with a ready WhatsApp message.'], ['Pieces left, live', '“Only 4 left!” and a bar that fills as it sells – updated every few seconds.'], ['Who just bought', 'First name and size only – never surnames or numbers.'], ['“Sold out in 12 minutes”', 'Shown on the page once it is gone – proof for the next drop.'], ['Your choice', 'Turn it on or off for any sale. Other sales still never show stock numbers.']] },
+    hi: { name: 'लाइव ड्रॉप', h1: 'हर सेल को इवेंट बनाएं।', sub: 'ग्रुप में समय बताएं। ग्राहकों को काउंटडाउन दिखे और वो याद दिलाने को कह सकें। खुलते ही सब देखें पीस ख़त्म होते और किसने अभी लिया – और आप देखें पूरा ग्रुप आ गया।',
+      steps: ['प्रोडक्ट डालें, “लाइव ड्रॉप” चुनें और शुरू होने का समय डालें।', 'शेयर करें – ग्राहक काउंटडाउन देखें और “याद दिलाएं” दबाएं। खुलते ही एक टैप में मैसेज करें।', 'ग्राहक लाइव देखें स्टॉक घटते: “सिर्फ़ 4 बचे!”, “पूजा ने अभी एक लिया”, फिर “12 मिनट में सब बिक गया”।'],
+      items: [['शुरू होने तक काउंटडाउन', 'सेल पेज पर उल्टी गिनती, ठीक समय पर खुलता है।'], ['“शुरू होने पर याद दिलाएं”', 'ग्राहक नंबर छोड़ें; खुलते ही आपके ऐप में तैयार WhatsApp मैसेज के साथ लिस्ट।'], ['कितने बचे, लाइव', '“सिर्फ़ 4 बचे!” और बिकने के साथ भरती पट्टी – हर कुछ सेकंड में अपडेट।'], ['किसने अभी लिया', 'सिर्फ़ पहला नाम और साइज़ – कभी सरनेम या नंबर नहीं।'], ['“12 मिनट में सब बिक गया”', 'ख़त्म होने पर पेज पर दिखे – अगले ड्रॉप के लिए सबूत।'], ['आपकी मर्ज़ी', 'किसी भी सेल पर चालू या बंद करें। बाकी सेल में स्टॉक की गिनती कभी नहीं दिखती।']] } },
+  ask: { icon: 'users', group: 2, clip: '', imgs: ['ask', 'askres'],
+    en: { name: 'Ask your buyers', h1: 'Know what sells before you buy stock.', sub: 'Show buyers the designs from your supplier first. They tap the ones they want – with their size – and can pay a small reserve to hold their pick. You order only what will sell.',
+      steps: ['Add 2 to 6 designs with a photo and price, and an optional reserve like ₹50.', 'Share the link in your groups. Buyers pick, and reserve if they really want it.', 'See the most wanted, tap “Make it a sale”, and tell every buyer in one tap – reserves come off their price.'],
+      items: [['Votes on each design', 'See exactly how many want each one, and which sizes.'], ['A reserve that holds the pick', 'Buyers pay it to your UPI with an exact amount, so you know who paid.'], ['Comes off the price', 'When the design goes on sale, each reserve becomes that buyer’s own price link.'], ['One tap to a sale', 'Photo, name and price are filled in – stock starts at how many want it.'], ['Tell every buyer', 'A ready WhatsApp message for each buyer who picked it.'], ['Close any time', 'Voting closes on the day you choose, or when you say.']] },
+    hi: { name: 'ग्राहकों से पूछें', h1: 'स्टॉक लेने से पहले जानें क्या बिकेगा।', sub: 'सप्लायर के डिज़ाइन पहले ग्राहकों को दिखाएं। जो चाहिए उन पर टैप करें – साइज़ के साथ – और पसंद होल्ड करने के लिए थोड़ी रकम दें। आप वही मंगाएं जो बिकेगा।',
+      steps: ['फ़ोटो और दाम के साथ 2 से 6 डिज़ाइन डालें, चाहें तो ₹50 जैसी होल्ड रकम।', 'लिंक ग्रुप में शेयर करें। ग्राहक चुनें, और सच में चाहिए तो होल्ड करें।', 'सबसे पसंद देखें, “इसकी सेल बनाएं” दबाएं, और एक टैप में सबको बताएं – होल्ड रकम उनके दाम से घटती है।'],
+      items: [['हर डिज़ाइन पर वोट', 'देखें हर एक को कितने लोग चाहते हैं, और कौन से साइज़।'], ['पसंद होल्ड करने की रकम', 'ग्राहक सही रकम आपकी UPI पर भेजें, तो पता रहे किसने भेजा।'], ['दाम से घटती है', 'डिज़ाइन सेल पर आते ही हर होल्ड उस ग्राहक का अपना दाम वाला लिंक बन जाती है।'], ['एक टैप में सेल', 'फ़ोटो, नाम और दाम पहले से भरे – स्टॉक उतना जितने लोग चाहते हैं।'], ['सबको बताएं', 'चुनने वाले हर ग्राहक के लिए तैयार WhatsApp मैसेज।'], ['कभी भी बंद करें', 'वोटिंग आपके चुने दिन बंद हो, या जब आप कहें।']] } },
   grow: { icon: 'tag', group: 2, clip: '', imgs: ['discount', 'waitlist'],
     en: { name: 'Selling tools', h1: 'Tools that bring buyers back.', sub: 'Run a discount, give one buyer a special price, tell buyers when stock is back, count down to a launch and reward bigger carts – all built in, all optional.',
       steps: ['Open any sale and pick a tool.', 'NukkadSale makes the WhatsApp message for it.', 'Buyers see it on your shop and order.'] },
@@ -286,6 +318,8 @@ const FEATURES = {
       steps: ['कोई भी सेल खोलें और टूल चुनें।', 'NukkadSale उसका WhatsApp मैसेज बना देता है।', 'ग्राहक आपकी दुकान पर देखें और ऑर्डर करें।'] } },
 } as const
 type Slug = keyof typeof FEATURES
+// Screens captured in both languages (public/site/<name>-en.webp, -hi.webp).
+const LANG_IMGS = new Set(['live', 'soon', 'ask', 'askres'])
 const SLUGS = Object.keys(FEATURES) as Slug[]
 
 const CSS = `
@@ -437,6 +471,19 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 .fgroup ul{list-style:none;padding:0;display:grid;gap:12px}
 .fgroup li{padding-left:16px;border-left:2px solid var(--line)}
 .fgroup li b{display:block;font-size:.98rem;margin-bottom:1px}.fgroup li span{color:var(--muted);font-size:.9rem;line-height:1.45}
+.newpill{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#1d1a16;color:#fff;border-radius:99px;padding:8px 14px 8px 8px;font-weight:700;font-size:.88rem;text-decoration:none;min-height:40px}
+.newpill span{background:var(--brand);border-radius:99px;padding:3px 9px;font-size:.75rem;font-weight:900;letter-spacing:.06em}
+.newsec{background:#16130f;color:#fff}.newsec .lead{color:#c9bfb3}
+.new2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:36px}
+.newcard{display:grid;grid-template-columns:200px 1fr;gap:20px;background:#221d18;border:1px solid #3a322a;border-radius:26px;padding:20px;text-decoration:none;color:#fff;transition:border-color .15s}
+.newcard:hover{border-color:#ffb07a}
+.newcard .nimg{border-radius:22px;overflow:hidden;border:6px solid #000;align-self:start}.newcard .nimg img{width:100%;display:block}
+.newcard h3{font-size:1.3rem;margin:12px 0 6px}.newcard p{color:#c9bfb3;font-size:.95rem}
+.newcard ul{list-style:none;padding:0;margin:12px 0 14px;display:grid;gap:6px}.newcard li{padding-left:20px;position:relative;font-size:.93rem}
+.newcard li:before{content:"";position:absolute;left:2px;top:.55em;width:10px;height:6px;border-left:2.5px solid #69db7c;border-bottom:2.5px solid #69db7c;transform:rotate(-45deg)}
+.newcard .go{font-weight:800;color:#ffb07a}
+@media (max-width:1000px){.new2{grid-template-columns:1fr}}
+@media (max-width:560px){.newcard{grid-template-columns:1fr}.newcard .nimg{max-width:240px;margin:0 auto}}
 .pricing{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px;align-items:stretch}
 .plan{background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:26px 24px;display:flex;flex-direction:column}
@@ -492,7 +539,7 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 }@media (max-width:430px){
   header .wrap{gap:8px;padding-left:14px;padding-right:14px}.logo{font-size:1.08rem;gap:6px}header .btn.sm{padding:0 12px}header .btn .long{display:none}header .btn .short{display:inline}
 }
-@media (max-width:350px){
+@media (max-width:380px){
   header .logo>:not(i){display:none}
 }
 
@@ -559,9 +606,10 @@ nav.links a{display:inline-flex;align-items:center;min-height:44px}
 .ctabox{background:linear-gradient(160deg,var(--brand2),var(--brand) 60%,var(--deep));color:#fff;border-radius:26px;padding:30px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ctabox p{color:#ffe8d9}.ctabox .btn{background:#fff;color:var(--deep)}
 @media (max-width:1000px){.flow4,.who4{grid-template-columns:repeat(2,minmax(0,1fr))}.whot h3{overflow-wrap:anywhere}}
+@media (max-width:430px){.menu .mt{display:none}.menu>summary{padding:0 10px;min-width:44px;justify-content:center}}
 @media (max-width:980px){.menu{display:block}header .login{display:none}.stickycta{display:flex}}
 @media (max-width:900px){.hero2 .wrap{display:flex;flex-direction:column;gap:0}.hero2 .htext{display:contents}
-  .hero2 .badge2{order:1;align-self:flex-start}.hero2 h1{order:2}.hero2 .lead{order:3}.hero2 .hvid{order:4;margin:0 0 20px}.hero2 .jobchips{order:5}.hero2 .ctas{order:6}.hero2 .heronote{order:7}.hero2 .notshop{order:8}
+  .hero2 .badge2{order:1;align-self:flex-start}.hero2 h1{order:2}.hero2 .lead{order:3}.hero2 .hvid{order:4;margin:0 0 20px}.hero2 .jobchips{order:5}.hero2 .ctas{order:6}.hero2 .heronote{order:7}.hero2 .notshop{order:8}.hero2 .newpill{order:9;align-self:flex-start}
   .hero2 .hvid .vphone{width:210px;border-radius:32px;padding:7px}.hero2 .hvid .vphone video{border-radius:26px}
   .feathero .wrap{grid-template-columns:1fr;gap:28px}.jobs4,.fitems{grid-template-columns:1fr}.vphone{width:240px}}
 @media (max-width:700px){
@@ -629,7 +677,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
             <details class="menu">
-              <summary aria-label={p.k.menu}>{raw('<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>')}{p.k.menu}</summary>
+              <summary aria-label={p.k.menu}>{raw('<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>')}<span class="mt">{p.k.menu}</span></summary>
               <div class="panel">
                 {['how', 'jobs', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}
                 <small>{p.k.featNav}</small>
@@ -745,6 +793,7 @@ site.get('/', async (c) => {
             <div class="ctas"><a class="btn primary" href="#get-started">{k.heroCta}</a><a class="btn ghost" href="#how">{k.heroCta2}</a></div>
             <p class="heronote">{k.heroNote}</p>
             <p class="notshop">{k.notShop}</p>
+            <a class="newpill" href="#new" data-track="Hero · new features"><span>NEW</span>{k.newPill} →</a>
           </div>
           <div class="hvid">
             <div class="vphone"><Clip name="flow" lang={lang} alt={k.videoAlt} eager /></div>
@@ -779,6 +828,25 @@ site.get('/', async (c) => {
             ))}
           </div>
           <a class="growrow" href="/features/grow" data-track="Job · grow"><span class="ic">{svgIcon(k.grow[0], 24)}</span><div><b>{k.grow[1]}</b><p>{k.grow[2]}</p></div><span class="go">{k.grow[3]} →</span></a>
+        </div>
+      </section>
+
+      <section id="new" class="newsec" data-sec="new">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow" style="color:#ffb07a">{k.newEyebrow}</span><h2>{k.newH}</h2><p class="lead">{k.newP}</p></div>
+          <div class="new2">
+            {k.newCards.map(([slug, name, h, p, pts, go]) => (
+              <a class="newcard" href={`/features/${slug}`} data-track={`New · ${slug}`}>
+                <div class="nimg"><img src={`/site/${slug}-${lang}.webp`} alt={name as string} loading="lazy" width="540" height="1169" /></div>
+                <div class="ntext">
+                  <span class="badge2" style="background:#2a241e;border-color:#3a322a;color:#ffb07a">{svgIcon(slug === 'live' ? 'bell' : 'users', 16)}{name}</span>
+                  <h3>{h}</h3><p>{p}</p>
+                  <ul>{(pts as string[]).map((x) => <li>{x}</li>)}</ul>
+                  <span class="go">{go} →</span>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -821,7 +889,7 @@ site.get('/features/:slug', (c) => {
   const f = FEATURES[slug]
   if (!f) return c.notFound()
   const lang = getLang(c), k = C[lang], bot = waBotEnabled(c.env), x = f[lang]
-  const items = k.all(bot)[f.group][2]
+  const items: [string, string][] = 'items' in x ? (x.items as unknown as [string, string][]) : k.all(bot)[f.group][2]
   return c.html('<!doctype html>' + (
     <Page c={c} k={k} lang={lang} back={`/features/${slug}`} title={`${x.name} – NukkadSale`} desc={x.sub}>
       <section class="feathero hero2" data-sec={`f-${slug}-hero`}>
@@ -836,7 +904,7 @@ site.get('/features/:slug', (c) => {
             <div class="ctas" style="margin-top:24px"><a class="btn primary" href="/#get-started">{k.cta}</a></div>
           </div>
           <div>
-            <div class="vphone">{f.clip ? <Clip name={f.clip} lang={lang} alt={x.name} eager /> : <img src={`/site/${f.imgs[0]}.webp`} alt={x.name} width="540" height="1169" />}</div>
+            <div class="vphone">{f.clip ? <Clip name={f.clip} lang={lang} alt={x.name} eager /> : <img src={`/site/${f.imgs[0]}${LANG_IMGS.has(f.imgs[0]) ? `-${lang}` : ''}.webp`} alt={x.name} width="540" height="1169" />}</div>
           </div>
         </div>
       </section>
@@ -844,7 +912,7 @@ site.get('/features/:slug', (c) => {
         <div class="wrap">
           <h2>{k.featGet}</h2>
           <div class="fitems">{items.map(([t, d]) => <div class="fitem"><b>{t}</b><span>{d}</span></div>)}</div>
-          <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>
+          <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={LANG_IMGS.has(img) ? `${img}-${lang}` : img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>
         </div>
       </section>
       <section data-sec={`f-${slug}-more`} style="padding-top:10px">

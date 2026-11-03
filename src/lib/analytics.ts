@@ -37,7 +37,7 @@ setInterval(function(){if(document.visibilityState==='visible'){acc();send('leav
 
 /** Landing page sections, top to bottom (data-sec on each <section> in routes/site.tsx). */
 export const LANDING_SECTIONS: [string, string][] = [
-  ['hero', 'Top – what it is + sale video'], ['how', 'How it works (4 steps)'], ['jobs', 'What it does (4 jobs)'],
+  ['hero', 'Top – what it is + sale video'], ['how', 'How it works (4 steps)'], ['jobs', 'What it does (4 jobs)'], ['new', 'Live drops + Ask your buyers'],
   ['day', 'Before and after'], ['who', 'Who it is for'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['form', 'Get-started form'],
 ]
 

@@ -101,6 +101,8 @@ export type Drop = {
   cost_paise: number
   /** Weight of one piece in grams, for courier rates. 0 = 500 g. */
   weight_g: number
+  /** Live drop: buyers see pieces left, recent buyers and a reminder before it starts. */
+  live_drop?: number
 }
 
 /** A personal price link for one buyer. */
