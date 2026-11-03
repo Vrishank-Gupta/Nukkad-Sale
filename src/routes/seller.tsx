@@ -15,6 +15,7 @@ import { setPin } from '../lib/sellers'
 import { notifyOwner } from '../lib/mail'
 import { billingState, confirmInvoice, ensureInvoices, getSettings, onlineFeePayments, parseModes, startInvoicePayment, type Invoice } from '../lib/billing'
 import { notifyBuyer } from '../lib/notify'
+import { asPlan, higherPlans, planUsage, PLANS, requestUpgrade, upgradePaid, type PlanId, type Usage } from '../lib/plans'
 import { upiAppLinks, upiLink } from '../lib/upi'
 import { cancelCod, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
 import { isValidVpa } from '../lib/upi'
@@ -32,10 +33,69 @@ const OPEN_WHEN_PAUSED = /^\/app\/(billing|orders|proof|help|settings|pin|pulse\
 app.use('*', async (c, next) => {
   if (OPEN_WHEN_PAUSED.test(c.req.path)) return next()
   const bill = await billingState(c.env, c.get('seller').id)
-  if (!bill.overdue || !bill.open) return next()
+  if (bill.overdue && bill.open) {
+    if (c.req.method !== 'GET') return c.redirect('/app/billing', 303)
+    return pausedPage(c, bill.open)
+  }
+  // Plan limit reached: the shop stops taking orders until the seller upgrades (or the month resets).
+  const s = c.get('seller')
+  const use = await planUsage(c.env, s.id, asPlan(s.plan))
+  if (!use.reached) return next()
   if (c.req.method !== 'GET') return c.redirect('/app/billing', 303)
-  return pausedPage(c, bill.open)
+  return limitPage(c, use)
 })
+
+/** Plan cards with an upgrade button for every plan above the seller's. */
+const UpgradeOptions: FC<{ t: Dict; current: PlanId; primaryFirst?: boolean }> = ({ t, current, primaryFirst = true }) => (
+  <div class="stack">
+    {higherPlans(current).map((p, i) => (
+      <form method="post" action="/app/billing/upgrade" class="card stack" style={i === 0 && primaryFirst ? 'border:2px solid var(--brand)' : ''}>
+        <input type="hidden" name="plan" value={p} />
+        <div class="row between"><b style="font-size:1.1rem">{t.planNames[p]}</b><b>{t.planPrice(rupees(PLANS[p].fee))}</b></div>
+        <small class="muted" style="margin-top:-6px">{t.planLimit(PLANS[p].limit)}{p === 'badi' ? ` · ${t.planExtraBadi}` : ''}</small>
+        <button class={`btn block ${i === 0 && primaryFirst ? 'primary big' : ''}`} type="submit">{t.upgradeLabel(t.planNames[p])}</button>
+      </form>
+    ))}
+  </div>
+)
+
+function limitPage(c: Context<AppEnv>, use: Usage) {
+  const t = tr(c)
+  const s = c.get('seller')
+  return c.html(
+    <Layout t={t} path={here(c)} nav="home" title={t.limitTitle(use.limit ?? 0)} brand={s.shop_name}>
+      <div class="card stack" style="text-align:center;border:2px solid var(--warn);margin-top:16px">
+        <div style="color:var(--warn);display:flex;justify-content:center"><Icon n="pause" s={44} /></div>
+        <h1 style="margin:0">{t.limitTitle(use.limit ?? 0)}</h1>
+        <p style="margin:0">{t.limitBody}</p>
+        <small class="muted">{t.planOn(t.planNames[use.plan])} · {t.planLimit(use.limit)}</small>
+      </div>
+      <h2>{t.plansTitle}</h2>
+      <UpgradeOptions t={t} current={use.plan} />
+      <small class="muted" style="display:block;margin-top:8px">{t.upgradeNote}</small>
+      <p class="muted" style="margin-top:12px">{t.limitWait(fmtDate(use.resetsAt))} {t.pausedSafe}</p>
+      <a class="btn block" href="/app/orders" style="margin-top:12px">{t.pausedOrders}</a>
+      {c.env.SUPPORT_PHONE && <a class="btn block wa" href={waLink(c.env.SUPPORT_PHONE, t.pausedHelpMsg(s.shop_name))} style="margin-top:10px"><Icon n="chat" s={18} />{t.pausedHelp}</a>}
+    </Layout>,
+  )
+}
+
+/** "18 of 30 orders used this month" with a bar – home and the plan page. */
+const PlanMeter: FC<{ t: Dict; use: Usage; link?: boolean }> = ({ t, use, link }) => {
+  const pctUsed = use.limit ? Math.min(100, Math.round((use.used / use.limit) * 100)) : 0
+  const body = (
+    <>
+      <div class="row between"><b>{t.planOn(t.planNames[use.plan])}</b>{use.limit !== null && <small class="muted">{t.planLeft(use.left ?? 0)}</small>}</div>
+      {use.limit !== null ? (
+        <>
+          <div style="height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:8px 0 6px"><div style={`height:100%;width:${pctUsed}%;background:var(--${use.reached ? 'bad' : use.near ? 'warn' : 'ok'})`} /></div>
+          <small>{t.planUsed(use.used, use.limit)} · {t.planResets(fmtDate(use.resetsAt))}</small>
+        </>
+      ) : <small style="display:block;margin-top:4px">{t.planUnlimitedNow}</small>}
+    </>
+  )
+  return link ? <a class="card" href="/app/billing" style="display:block;text-decoration:none;color:inherit">{body}</a> : <div class="card">{body}</div>
+}
 
 function pausedPage(c: Context<AppEnv>, inv: Invoice) {
   const t = tr(c)
@@ -76,19 +136,22 @@ const WIDE = /^\/app(\/|\/orders|\/drops\/[a-z0-9]+|\/buyers)?$/
 async function page(c: Context<AppEnv>, nav: Nav, title: string, body: Child, scripts = PULSE_JS, say?: string) {
   const t = tr(c)
   const s = c.get('seller')
-  const [badge, bill] = await Promise.all([attentionCount(c.env.DB, s.id), billingState(c.env, s.id)])
+  const [badge, bill, use] = await Promise.all([attentionCount(c.env.DB, s.id), billingState(c.env, s.id), planUsage(c.env, s.id, asPlan(s.plan))])
   const keysMissing = s.pay_mode === 'razorpay' && !s.rzp_secret_enc
   return c.html(
     <Layout t={t} path={here(c)} nav={nav} badge={badge} title={title} brand={s.shop_name} ok={c.req.query('ok')} scripts={scripts} say={say} wide={WIDE.test(c.req.path) && c.req.path !== '/app/drops/new'}>
       {s.account_status === 'suspended' && <div class="alert bad">{t.accountSuspended}</div>}
       {bill.open && !c.req.path.startsWith('/app/billing') && (
         <a class={`alert ${bill.overdue ? 'bad' : 'info'}`} href="/app/billing" style="display:block;text-decoration:none">
-          {bill.overdue ? t.feeOverdue(rupees(bill.open.amount_paise)) : bill.open.status === 'claimed' ? t.feeClaimed : t.feeDue(rupees(bill.open.amount_paise), monthName(bill.open.period, t), fmtDate(bill.open.due_at))}
+          {bill.open.plan ? (bill.open.status === 'claimed' ? t.feeClaimed : t.upgradeDue(t.planNames[bill.open.plan], rupees(bill.open.amount_paise))) : bill.overdue ? t.feeOverdue(rupees(bill.open.amount_paise)) : bill.open.status === 'claimed' ? t.feeClaimed : t.feeDue(rupees(bill.open.amount_paise), monthName(bill.open.period, t), fmtDate(bill.open.due_at))}
           {bill.open.status === 'due' && <b style="display:block;margin-top:4px">{t.payNow}</b>}
         </a>
       )}
       {keysMissing && <a class="alert bad" href="/app/settings" style="display:block;text-decoration:none">{t.needKeys}</a>}
-      {bill.open?.status === 'due' && !bill.overdue && !c.req.path.startsWith('/app/billing') && (
+      {use.near && !use.reached && use.limit !== null && !c.req.path.startsWith('/app/billing') && (
+        <a class="alert warn" href="/app/billing" style="display:block;text-decoration:none">{t.nearLimit(use.left ?? 0, use.limit)}<b style="display:block;margin-top:4px">{t.upgradeLabel(t.planNames[higherPlans(use.plan)[0] ?? 'badi'])}</b></a>
+      )}
+      {bill.open?.status === 'due' && !bill.open.plan && !bill.overdue && !c.req.path.startsWith('/app/billing') && (
         // Once a day until the due date: a popup that's hard to miss, with one tap to pay.
         <div class="modal" id="feepop" hidden data-key={`kk_fee_${bill.open.id}_${istDay(Date.now())}`}>
           <div class="card stack" role="dialog" aria-modal="true" aria-labelledby="feepop-t">
@@ -106,13 +169,15 @@ async function page(c: Context<AppEnv>, nav: Nav, title: string, body: Child, sc
 }
 
 const fmtDate = (ms: number) => istDay(ms).split('-').reverse().join('/')
-const monthName = (period: string, t: Dict) => new Date(period + '-01T00:00:00Z').toLocaleString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+const monthName = (period: string, t: Dict) => new Date(period.slice(0, 7) + '-01T00:00:00Z').toLocaleString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })
 
 /** New sales pause while the plan fee is overdue or the shop is suspended (existing sales keep working). */
 async function salesBlocked(c: Context<AppEnv>) {
   const s = c.get('seller')
   if (s.account_status === 'suspended') return tr(c).accountSuspended
-  return (await billingState(c.env, s.id)).overdue ? tr(c).salesPaused : null
+  if ((await billingState(c.env, s.id)).overdue) return tr(c).salesPaused
+  const use = await planUsage(c.env, s.id, asPlan(s.plan))
+  return use.reached ? tr(c).limitSales(use.limit ?? 0) : null
 }
 
 // Polls a cheap fingerprint of the seller's orders and offers a refresh when anything changes.
@@ -199,10 +264,12 @@ app.get('/', async (c) => {
   const next = setup.find((x) => !x.done)
   const doneN = setup.filter((x) => x.done).length
 
+  const use = await planUsage(c.env, s.id, asPlan(s.plan))
   return page(c, 'home', s.shop_name, (
     <>
       <h1 class="vh">{s.shop_name}</h1>
       <p class="muted" style="margin:6px 0 0">{t.namaste(s.name.split(' ')[0])}</p>
+      {use.limit !== null && <PlanMeter t={t} use={use} link />}
       {started && s.temp_pin ? (
         <div class="alert info row between" style="gap:10px"><span class="row" style="gap:8px;align-items:flex-start"><Icon n="key" s={18} />{t.tempPinBanner}</span><a class="btn sm" href="/app/settings#pin" style="flex:none">{t.changePinBtn}</a></div>
       ) : null}
@@ -296,7 +363,7 @@ function shrink(f){return (window.createImageBitmap?createImageBitmap(f):Promise
  return new Promise(function(res){cv.toBlob(function(o){res(o&&o.size<f.size?new File([o],'photo.jpg',{type:'image/jpeg'}):f)},'image/jpeg',0.82)})}).catch(function(){return f})}
 // Gallery picks replace the photos; each camera shot is added (up to 5). Everything is sent through #image.
 var cam=document.getElementById('cam'),picked=[];
-function show(){prev.src=URL.createObjectURL(picked[0]);box.classList.add('has');strip.innerHTML='';picked.forEach(function(f){var i=document.createElement('img');i.src=URL.createObjectURL(f);strip.appendChild(i)})}
+function show(){prev.src=URL.createObjectURL(picked[0]);box.classList.add('has');strip.innerHTML='';picked.forEach(function(f){var i=document.createElement('img');i.alt='';i.src=URL.createObjectURL(f);strip.appendChild(i)})}
 function apply(){if(!window.DataTransfer)return;Promise.all(picked.map(shrink)).then(function(out){var dt=new DataTransfer();out.forEach(function(o){dt.items.add(o)});inp.files=dt.files})}
 inp.addEventListener('change',function(){var fs=[].slice.call(inp.files,0,5);if(!fs.length)return;picked=fs;show();apply()});
 if(cam){if(!window.DataTransfer)cam.name='image';cam.addEventListener('change',function(){var f=cam.files&&cam.files[0];if(!f)return;picked=picked.concat([f]).slice(-5);show();apply()})}
@@ -385,7 +452,7 @@ app.get('/drops/new', async (c) => {
             <div class="row sizerow" style="margin-bottom:10px">
               <input name="size_label" placeholder={t.sizeName} maxlength={20} style="flex:1;min-width:0" aria-label={t.sizeName} />
               <Stepper id="" name="size_qty" value={1} min={0} max={10000} compact label={t.quantity} />
-              <button type="button" class="btn sm ghost" data-rm aria-label="Remove" style="padding:0 6px;border:0"><Icon n="x" s={18} /></button>
+              <button type="button" class="btn sm ghost" data-rm aria-label="Remove" style="padding:0 6px;border:0;min-width:44px"><Icon n="x" s={18} /></button>
             </div>
           </template>
           <button type="button" id="addsize" class="btn sm block">{t.addSize}</button>
@@ -1907,15 +1974,14 @@ app.get('/billing', async (c) => {
      FROM orders WHERE seller_id = ?1 AND status = 'paid' AND paid_at >= ?3`,
   ).bind(s.id, ist(thisMonth), ist(lastMonth)).first<{ n: number; amt: number; n_last: number; amt_last: number }>()
   const online = onlineFeePayments(settings)
+  const use = await planUsage(c.env, s.id, asPlan(s.plan))
   const upi = open && settings.upi_vpa ? upiLink(settings.upi_vpa, settings.payee_name, open.amount_paise, `NukkadSale ${open.period} ${s.shop_name}`) : null
   return page(c, 'settings', t.billingTitle, (
     <>
       <a class="back" href="/app/settings">← {t.settingsTitle}</a>
       <h1>{t.billingTitle}</h1>
-      <div class="card">
-        <b>{plan?.plan_fee_paise ? t.planFee(rupees(plan.plan_fee_paise)) : t.planFree}</b>
-        {plan && plan.trial_until > Date.now() && <div><small>{t.trialTill(fmtDate(plan.trial_until))}</small></div>}
-      </div>
+      <PlanMeter t={t} use={use} />
+      {plan && plan.plan_fee_paise > 0 && <small class="muted" style="display:block;margin:-4px 0 8px">{t.planPrice(rupees(plan.plan_fee_paise))}{plan.trial_until > Date.now() ? ` · ${t.trialTill(fmtDate(plan.trial_until))}` : ''}</small>}
       <div class="card" style="background:var(--ok-soft);border-color:transparent">
         <b style="color:var(--ok)">{t.planValue(value?.n ?? 0, rupees(value?.amt ?? 0))}</b>
         {(value?.n_last ?? 0) > 0 && <small style="display:block;margin-top:2px">{t.planValueLast(value!.n_last, rupees(value!.amt_last))}</small>}
@@ -1923,7 +1989,12 @@ app.get('/billing', async (c) => {
       <Flash msg={c.req.query('err')} />
       {open ? (
         <div class="card stack" style={`border:2px solid var(--${overdue ? 'bad' : 'warn'})`}>
-          <b style={overdue ? 'color:var(--bad)' : ''}>{overdue ? t.feeOverdue(rupees(open.amount_paise)) : t.feeDue(rupees(open.amount_paise), monthName(open.period, t), fmtDate(open.due_at))}</b>
+          {open.plan ? (
+            <>
+              <b>{t.upgradeDue(t.planNames[open.plan], rupees(open.amount_paise))}</b>
+              <small class="muted">{t.upgradeNote}</small>
+            </>
+          ) : <b style={overdue && !open.plan ? 'color:var(--bad)' : ''}>{overdue ? t.feeOverdue(rupees(open.amount_paise)) : t.feeDue(rupees(open.amount_paise), monthName(open.period, t), fmtDate(open.due_at))}</b>}
           {open.status === 'claimed' ? (
             <div class="alert info" style="margin:0">{t.feeClaimed}</div>
           ) : (
@@ -1946,11 +2017,23 @@ app.get('/billing', async (c) => {
                   </form>
                 </>
               )}
+              {open.plan && (
+                <form method="post" action={`/app/billing/cancel/${open.id}`}>
+                  <button class="btn ghost block sm" type="submit">{t.upgradeCancel}</button>
+                </form>
+              )}
             </>
           )}
         </div>
       ) : (
         plan?.plan_fee_paise ? <div class="alert ok">{t.feeAllPaid}</div> : null
+      )}
+      {!open?.plan && higherPlans(use.plan).length > 0 && (
+        <>
+          <h2>{t.plansTitle}</h2>
+          <UpgradeOptions t={t} current={use.plan} primaryFirst={use.near || use.reached} />
+          <small class="muted" style="display:block;margin-top:8px">{t.planEvery}</small>
+        </>
       )}
       {invoices.length > 0 && (
         <>
@@ -1958,7 +2041,7 @@ app.get('/billing', async (c) => {
           <div class="card" style="padding:4px 16px">
             {invoices.map((inv, i) => (
               <div class="row between" style={`padding:12px 0;${i ? 'border-top:1px solid var(--line)' : ''}`}>
-                <span>{monthName(inv.period, t)}</span>
+                <span>{inv.plan ? `${t.upgradeLabel(t.planNames[inv.plan])} · ${monthName(inv.period, t)}` : monthName(inv.period, t)}</span>
                 <span><b>{rupees(inv.amount_paise)}</b> <span class={`chip ${inv.status === 'paid' ? 'paid' : inv.status === 'waived' ? 'closed' : inv.status === 'claimed' ? 'verifying' : 'pending'}`}>{t.feeStatus[inv.status]}</span></span>
               </div>
             ))}
@@ -1987,20 +2070,39 @@ app.post('/billing/pay/:id', async (c) => {
 app.post('/billing/claim/:id', async (c) => {
   const s = c.get('seller')
   const r = await c.env.DB.prepare(`UPDATE invoices SET status = 'claimed' WHERE id = ? AND seller_id = ? AND status = 'due'`).bind(c.req.param('id'), s.id).run()
+  let upgraded = ''
   if (r.meta.changes) {
     // The shop stays open while the owner checks, so tell them right away.
     const inv = await ownInvoice(c, c.req.param('id'))
+    // A claimed upgrade switches the plan straight away; the admin's "Not received" switches it back.
+    if (inv?.plan) { await upgradePaid(c.env, inv.id); upgraded = tr(c).planNames[inv.plan] }
     const origin = new URL(c.req.url).origin
     c.executionCtx.waitUntil(notifyOwner(c.env, `${s.shop_name} says they paid ${inv ? rupees(inv.amount_paise) : 'their fee'}`,
       `${s.shop_name} (${s.name}, ${displayPhone(s.phone)}) tapped "I have paid" for their NukkadSale fee${inv ? ` of ${rupees(inv.amount_paise)} (${inv.period})` : ''}.\n\nCheck for that exact amount in your UPI app, then mark it paid – or "Not received" – in Admin:\n${origin}/admin/billing?f=claimed\n\nTheir shop stays open until you decide.`))
   }
-  return c.redirect('/app/billing?ok=' + enc(tr(c).feeClaimed), 303)
+  return upgraded ? c.redirect('/app?ok=' + enc(tr(c).upgradeClaimed(upgraded)), 303) : c.redirect('/app/billing?ok=' + enc(tr(c).feeClaimed), 303)
+})
+
+// Move up a plan: creates (or updates) the upgrade invoice, or switches at once if this month is already paid for.
+app.post('/billing/upgrade', async (c) => {
+  const s = c.get('seller')
+  const f = await c.req.parseBody()
+  const target = asPlan(f.plan)
+  const res = await requestUpgrade(c.env, s.id, asPlan(s.plan), target)
+  if (res === 'applied') return c.redirect('/app?ok=' + enc(tr(c).upgradeDone(tr(c).planNames[target])), 303)
+  return c.redirect('/app/billing', 303)
+})
+
+app.post('/billing/cancel/:id', async (c) => {
+  await c.env.DB.prepare(`DELETE FROM invoices WHERE id = ? AND seller_id = ? AND plan IS NOT NULL AND status = 'due'`).bind(c.req.param('id'), c.get('seller').id).run()
+  return c.redirect('/app/billing', 303)
 })
 
 // Back from the platform's Razorpay page – confirm with Razorpay right away.
 app.get('/billing/return/:id', async (c) => {
   const inv = await ownInvoice(c, c.req.param('id'))
-  if (inv) await confirmInvoice(c.env, inv.id).catch((e) => console.error('invoice confirm', e))
+  const paid = inv ? await confirmInvoice(c.env, inv.id).catch((e) => { console.error('invoice confirm', e); return false }) : false
+  if (paid && inv?.plan) return c.redirect('/app?ok=' + enc(tr(c).upgradeDone(tr(c).planNames[inv.plan])), 303)
   return c.redirect('/app/billing', 303)
 })
 
@@ -2111,7 +2213,7 @@ app.get('/quick-order', async (c) => {
   const live = drops.filter((d) => variants.some((v) => v.drop_id === d.id))
   return page(c, 'orders', t.qoTitle, (
     <>
-      <a href="/app/orders">← {t.ordersPageTitle}</a>
+      <a class="back" href="/app/orders">← {t.ordersPageTitle}</a>
       <h1>{t.qoTitle}</h1>
       <p class="hint" style="margin-top:-4px">{t.qoHint}</p>
       <Flash msg={c.req.query('err')} />
@@ -2198,8 +2300,9 @@ app.get('/quick-order/done/:id', async (c) => {
   const msg = t.qoMsg(o.buyer_name === 'Customer' ? '' : o.buyer_name.split(' ')[0], s.shop_name, list, rupees(total), link, vpa, !o.address)
   return page(c, 'orders', t.qoTitle, (
     <>
-      <a href="/app/orders">← {t.ordersPageTitle}</a>
+      <a class="back" href="/app/orders">← {t.ordersPageTitle}</a>
       <Flash msg={c.req.query('err')} />
+      <h1>{t.qoTitle}</h1>
       <div class="alert ok" style="margin-top:12px">{t.qoReady}</div>
       <div class="card stack">
         <pre class="bubble" id="qomsg">{msg}</pre>

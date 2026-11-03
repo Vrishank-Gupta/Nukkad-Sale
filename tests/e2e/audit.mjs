@@ -120,6 +120,8 @@ await step('visitor: Get started form (validation + submit)', async () => {
   await v.waitForTimeout(400)
   if (!/\/$|#get-started/.test(v.url()) && /thanks/.test(v.url())) add('high', 'visitor /get-started', 'empty form was accepted')
   await v.goto(B + '/#get-started')
+  // City, channel, volume and payments sit in the optional "Tell us more" panel – open it first.
+  await form.locator('details.more summary').click()
   for (const [n, val] of [['name', 'Neha Sharma'], ['business', 'Neha Kurtis'], ['phone', '9811100001'], ['city', 'Jaipur'], ['sells', 'kurtis']]) { const i = form.locator(`[name=${n}]`); if (await i.count()) await i.fill(val) }
   for (const sel of await form.locator('select').all()) { const o = await sel.locator('option').nth(1).getAttribute('value').catch(() => null); if (o) await sel.selectOption(o) }
   await form.locator('button[type=submit]').click(); await v.waitForURL(/thanks/)

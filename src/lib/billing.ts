@@ -2,6 +2,7 @@ import type { Bindings } from '../env'
 import { createPaymentLink, getPaymentLink } from './razorpay'
 import { decrypt, encrypt } from './crypto'
 import { istDay, istDayStart, randomId } from './util'
+import { planUsage, upgradePaid } from './plans'
 
 /*
  * Monthly platform fees (what sellers pay NukkadSale).
@@ -72,6 +73,9 @@ export type Invoice = {
   due_at: number
   paid_at: number | null
   paid_via: string | null
+  /** Upgrade invoices only: the plan being bought and the plan before it. */
+  plan?: string | null
+  plan_from?: string | null
   gateway_ref: string | null
   pay_url: string | null
   created_at: number
@@ -90,7 +94,7 @@ export async function ensureInvoices(env: Bindings, sellerId?: string) {
     .prepare(
       `SELECT s.id, s.plan_fee_paise FROM sellers s
        WHERE s.plan_fee_paise > 0 AND (s.trial_until <= ?1 OR s.trial_until <= s.created_at + 60000) AND s.trial_until <= ?4 AND s.account_status = 'active' ${sellerId ? 'AND s.id = ?3' : ''}
-       AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.seller_id = s.id AND i.period = ?2) LIMIT 50`,
+       AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.seller_id = s.id AND (i.period = ?2 OR (i.period LIKE ?2 || '-u%' AND i.status IN ('paid', 'claimed')))) LIMIT 50`,
     )
     .bind(...(sellerId ? [monthStart, period, sellerId, now] : [monthStart, period, null, now]))
     .all<{ id: string; plan_fee_paise: number }>()
@@ -118,17 +122,19 @@ export const graceDays = (s: PlatformSettings) => {
 /** What the seller dashboard needs: the open invoice (if any) and whether the shop is paused for it. */
 export async function billingState(env: Bindings, sellerId: string) {
   const open = await env.DB
-    .prepare(`SELECT * FROM invoices WHERE seller_id = ? AND status IN ('due', 'claimed') ORDER BY created_at LIMIT 1`)
+    .prepare(`SELECT * FROM invoices WHERE seller_id = ? AND status IN ('due', 'claimed') ORDER BY plan IS NOT NULL, created_at LIMIT 1`)
     .bind(sellerId)
     .first<Invoice>()
-  const overdue = Boolean(open && open.status === 'due' && open.due_at < Date.now()) && canPayFees(await getSettings(env))
+  // Only the monthly fee pauses a shop; an upgrade the seller hasn't paid for yet just waits.
+  const overdue = Boolean(open && !open.plan && open.status === 'due' && open.due_at < Date.now()) && canPayFees(await getSettings(env))
   return { open, overdue }
 }
 
-/** Can buyers start new orders with this seller? Not when suspended or paused for an unpaid fee. */
+/** Can buyers start new orders with this seller? Not when suspended, paused for an unpaid fee, or at the plan's order limit. */
 export async function shopOpen(env: Bindings, seller: { id: string; account_status: string }) {
   if (seller.account_status !== 'active') return false
-  const r = await env.DB.prepare(`SELECT 1 FROM invoices WHERE seller_id = ? AND status = 'due' AND due_at < ? LIMIT 1`).bind(seller.id, Date.now()).first()
+  if ((await planUsage(env, seller.id)).reached) return false
+  const r = await env.DB.prepare(`SELECT 1 FROM invoices WHERE seller_id = ? AND status = 'due' AND plan IS NULL AND due_at < ? LIMIT 1`).bind(seller.id, Date.now()).first()
   return !r || !canPayFees(await getSettings(env))
 }
 
@@ -140,7 +146,7 @@ export async function startInvoicePayment(env: Bindings, inv: Invoice, seller: {
   const link = await createPaymentLink(auth.keyId, auth.secret, {
     amountPaise: inv.amount_paise,
     referenceId: `inv_${inv.id}_${randomId(4)}`,
-    description: `NukkadSale ${inv.period} – ${seller.shop_name}`,
+    description: `NukkadSale ${inv.plan ? `upgrade to ${inv.plan === 'badi' ? 'Badi Dukaan' : 'Dukaan'}` : inv.period} – ${seller.shop_name}`,
     customerName: seller.name,
     customerPhone: seller.phone,
     callbackUrl: `${origin}/app/billing/return/${inv.id}`,
@@ -165,6 +171,7 @@ export async function confirmInvoice(env: Bindings, invoiceId: string): Promise<
 export async function markInvoicePaid(env: Bindings, invoiceId: string, via: string) {
   const r = await env.DB.prepare(`UPDATE invoices SET status = 'paid', paid_at = ?, paid_via = ? WHERE id = ? AND status IN ('due', 'claimed')`)
     .bind(Date.now(), via, invoiceId).run()
+  if (r.meta.changes === 1) await upgradePaid(env, invoiceId)
   return r.meta.changes === 1
 }
 

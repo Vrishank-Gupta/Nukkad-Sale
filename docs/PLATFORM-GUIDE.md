@@ -497,6 +497,21 @@ Besides the to-do list, Home has two more sections:
 
 ## 13. Admin portal and monthly fees
 
+### Plans (src/lib/plans.ts, migration 0016)
+
+| Plan | Fee | Orders a month |
+|---|---|---|
+| Shuruaat | ₹0 | 30 |
+| Dukaan | ₹999 | 300 |
+| Badi Dukaan | ₹1,999 | unlimited (plus automatic payments and priority help) |
+
+- **What counts:** one payment = one order (a cart counts once). It counts when paid, or for cash on delivery when placed. Months are IST calendar months.
+- **Near the limit (80%):** the seller sees a warning on every page and a meter on home.
+- **At the limit:** buyers can't start new orders (the same message as a paused shop). The seller app shows "You've used all N orders" with upgrade buttons. Orders, billing, settings and help stay open, so placed orders are still confirmed and sent.
+- **Upgrading:** creates an upgrade invoice (period `YYYY-MM-uN`) for the new fee minus anything already paid this month. Paying online switches the plan at once. "I have paid" by UPI switches it too, and **Not received** in admin switches it back. A paid upgrade also covers this month's monthly invoice.
+- **Admin:** each seller page has a plan picker with this month's usage (the fee follows the plan; edit it for special deals). The sellers list shows plan and usage, and the dashboard lists shops at their limit.
+- **Existing sellers:** the migration put anyone with a fee on Dukaan or Badi Dukaan (unlimited if the fee was below ₹999), and everyone else on Shuruaat.
+
 **Access:** the admin portal is separate from seller accounts. It has its own login at `/admin/login`, its own 6-digit PIN (5 wrong tries lock it for 15 minutes), and its own session cookie, scoped to `/admin`. It is never linked from the seller app.
 - To create an admin PIN at `/admin/setup`, the phone must be in `ADMIN_PHONES` **and** you must enter the one-time `ADMIN_SETUP_CODE`, so knowing your number isn't enough.
 - Removing a number from `ADMIN_PHONES` revokes that admin's access immediately.

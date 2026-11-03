@@ -15,7 +15,7 @@ const CSS = `
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari",sans-serif}
 main{max-width:560px;margin:0 auto;padding:4px 16px 96px}
 header.top{max-width:560px;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 16px 4px;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:56px}
-header.top .brand{min-width:0;font-weight:700;font-size:1.02rem;text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:9px}header.top .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.top .brand{min-width:0;min-height:40px;font-weight:700;font-size:1.02rem;text-decoration:none;color:var(--ink);display:flex;align-items:center;gap:9px}header.top .brand span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .logo{flex:none;width:28px;height:28px;border-radius:8px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center}
 .lang{flex:none;font:inherit;font-weight:600;font-size:.82rem;height:40px;min-width:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card);display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer}.lang.ib{padding:0;width:36px;color:var(--muted)}
 .tools{display:flex;gap:6px;flex:none}[data-say][hidden]{display:none}
@@ -55,7 +55,7 @@ background:var(--card);color:var(--ink);font:inherit;font-size:.95rem;font-weigh
 .order{border-left:4px solid var(--line)}.order.paid{border-left-color:var(--ok)}.order.pending{border-left-color:var(--warn)}
 .order.verifying{border-left-color:var(--info)}.order.refund_due{border-left-color:var(--bad)}
 .alert{padding:12px 14px;border-radius:12px;margin:10px 0;font-size:.92rem;font-weight:500;line-height:1.45}.alert.bad{background:var(--bad-soft);color:var(--bad)}
-.alert.ok{background:var(--ok-soft);color:var(--ok)}.alert.info{background:var(--info-soft);color:var(--info)}
+.alert.ok{background:var(--ok-soft);color:var(--ok)}.alert.warn{background:var(--warn-soft);color:var(--warn)}.alert.info{background:var(--info-soft);color:var(--info)}
 .ask{background:var(--info-soft);border-radius:14px;padding:14px;margin-top:10px}.ask .q{font-weight:650;font-size:1rem;color:var(--info)}
 .morerow{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 6px;scrollbar-width:none}
 .moreitem{flex:0 0 140px;text-decoration:none;color:inherit}.moreitem img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;display:block;background:var(--line)}
@@ -71,7 +71,7 @@ input.switch:checked{background:var(--ok)}input.switch:checked:before{transform:
 .tool>summary .ic{width:36px;height:36px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;flex:none}
 .tool>summary small{display:block;color:var(--muted);font-weight:500;line-height:1.35}.tool>summary:after{content:"";width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);flex:none;margin-left:4px}
 .tool[open]>summary:after{transform:rotate(-135deg)}.tool>:not(summary){margin-left:16px;margin-right:16px}.tool[open]{padding-bottom:14px}
-details.quiet{margin:-4px 0 10px}details.quiet>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:.88rem;min-height:32px;display:flex;align-items:center}details.quiet>summary::-webkit-details-marker{display:none}
+details.quiet{margin:-4px 0 10px}details.quiet>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:.88rem;min-height:44px;display:flex;align-items:center}details.quiet>summary::-webkit-details-marker{display:none}
 .setuplist{list-style:none;padding:0;margin:6px 0 0}.setuplist li{display:flex;align-items:center;gap:12px;min-height:46px;border-top:1px solid var(--line)}.setuplist li:first-child{border-top:0}
 .setuplist .tick,.setuplist .dot{width:24px;height:24px;border-radius:99px;flex:none;display:inline-flex;align-items:center;justify-content:center}
 .setuplist .tick{background:var(--ok);color:var(--card)}.setuplist .dot{border:2px solid var(--line)}.setuplist li.next .dot{border-color:var(--brand);background:var(--brand-soft)}

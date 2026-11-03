@@ -15,6 +15,7 @@ import { isValidVpa } from '../lib/upi'
 import { checkKeys, isTestKey } from '../lib/razorpay'
 import { here } from './public'
 import { LANDING_SECTIONS } from '../lib/analytics'
+import { asPlan, PLAN_IDS, PLANS, uniqueFee, upgradeUndone } from '../lib/plans'
 
 /*
  * Admin portal for the platform owner – completely separate from seller accounts: its own
@@ -139,6 +140,10 @@ body{font-size:14px}
 .alogout{margin-top:auto}
 .content{padding:24px 32px 48px;max-width:1280px;width:100%}
 .content h1{font-size:1.45rem;margin:0 0 4px}.content .sub{color:var(--muted);margin:0 0 18px}
+.planpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.planopt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;font-weight:400}
+.planopt input{width:20px;min-height:20px;flex:none;margin-top:2px}.planopt span{display:grid;gap:2px}.planopt small{color:var(--muted)}
+.planopt:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:14px 0}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-decoration:none;color:inherit;display:block}
 .kpi small{font-size:.76rem}.kpi b{display:block;font-size:1.35rem;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
@@ -223,11 +228,14 @@ const shortDate = (ms: number) => {
 type SellerRow = {
   id: string; name: string; shop_name: string; phone: string; pay_mode: PayMode; allowed_modes: string; plan_fee_paise: number; trial_until: number
   account_status: string; created_at: number; rzp_key_id: string | null; gateway_request: number; gmv30: number; orders30: number; open_status: string | null; open_due: number | null
-  last_seen_at: number; live_sales: number; msgs30: number
+  last_seen_at: number; live_sales: number; msgs30: number; plan: string; used_month: number
 }
 
+// Start of the current IST month, in ms (orders counted against the plan limit; see lib/plans.ts).
+const MONTH_START_SQL = `(CAST(strftime('%s', date('now', '+330 minutes', 'start of month')) AS INTEGER) * 1000 - 19800000)`
 const SELLER_LIST_SQL = `SELECT s.id, s.name, s.shop_name, s.phone, s.pay_mode, s.allowed_modes, s.plan_fee_paise, s.trial_until, s.account_status, s.created_at,
-  s.rzp_key_id, s.gateway_request, s.last_seen_at,
+  s.rzp_key_id, s.gateway_request, s.last_seen_at, s.plan,
+  (SELECT COUNT(DISTINCT COALESCE(o.cart_id, o.id)) FROM orders o WHERE o.seller_id = s.id AND ((o.status = 'paid' AND o.paid_at >= ${MONTH_START_SQL}) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.created_at >= ${MONTH_START_SQL}))) AS used_month,
   (SELECT COUNT(*) FROM drops d WHERE d.seller_id = s.id AND d.status = 'live') AS live_sales,
   (SELECT COALESCE(SUM(count), 0) FROM wa_usage w WHERE w.seller_id = s.id AND w.day >= date('now', '-30 days')) AS msgs30,
   (SELECT COALESCE(SUM(amount_paise), 0) FROM orders o WHERE o.seller_id = s.id AND o.status = 'paid' AND o.paid_at > ?1) AS gmv30,
@@ -242,6 +250,14 @@ function billingChip(s: Pick<SellerRow, 'plan_fee_paise' | 'trial_until' | 'open
   if (s.open_status === 'claimed') return <span class="chip verifying">Says paid – check</span>
   if (s.open_status === 'due') return s.open_due! < Date.now() ? <span class="chip refund_due">Overdue</span> : <span class="chip pending">Due</span>
   return <span class="chip paid">Paid up</span>
+}
+
+/** "18/30" this month, red at the limit, amber from 80%. */
+const PlanUse = ({ plan, used }: { plan: string; used: number }) => {
+  const limit = PLANS[asPlan(plan)].limit
+  if (limit === null) return <small class="muted">· {used} this month</small>
+  const cls = used >= limit ? 'refund_due' : used >= limit * 0.8 ? 'pending' : 'closed'
+  return <span class={`chip ${cls}`}>{used}/{limit}{used >= limit ? ' · at limit' : ''}</span>
 }
 
 // ---------- Dashboard ----------
@@ -259,7 +275,9 @@ admin.get('/', async (c) => {
               (SELECT COALESCE(SUM(plan_fee_paise), 0) FROM sellers WHERE plan_fee_paise > 0 AND trial_until <= ?2 AND account_status = 'active') AS mrr,
               (SELECT COUNT(*) FROM invoices WHERE status IN ('due', 'claimed')) AS open_inv,
               (SELECT COALESCE(SUM(amount_paise), 0) FROM invoices WHERE status IN ('due', 'claimed')) AS open_amt,
-              (SELECT COUNT(*) FROM invoices WHERE status = 'due' AND due_at < ?2) AS overdue,
+              (SELECT COUNT(*) FROM invoices WHERE status = 'due' AND plan IS NULL AND due_at < ?2) AS overdue,
+              (SELECT COUNT(*) FROM (SELECT s.plan, (SELECT COUNT(DISTINCT COALESCE(o.cart_id, o.id)) FROM orders o WHERE o.seller_id = s.id AND ((o.status = 'paid' AND o.paid_at >= ?3) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.created_at >= ?3))) AS u
+                 FROM sellers s WHERE s.plan IN ('free', 'dukaan') AND s.account_status = 'active') WHERE (plan = 'free' AND u >= ${PLANS.free.limit}) OR (plan = 'dukaan' AND u >= ${PLANS.dukaan.limit})) AS at_limit,
               (SELECT COUNT(*) FROM invoices WHERE status = 'claimed') AS claimed,
               (SELECT COUNT(*) FROM sellers WHERE gateway_request = 1) AS gw_requests,
               (SELECT COUNT(*) FROM leads WHERE status = 'new') AS new_leads,
@@ -290,6 +308,7 @@ admin.get('/', async (c) => {
   )
   const todos = [
     (x.fee_sellers ?? 0) > 0 && !canPayFees(settings) && <Todo href="/admin/settings" kind="bad" icon="wallet" title="Sellers can’t pay their fee yet" sub="Add your UPI ID or Razorpay keys in Settings. Until then no shop is paused for unpaid fees." />,
+    (x.at_limit ?? 0) > 0 && <Todo href="/admin/sellers" kind="warn" icon="pause" title={`${x.at_limit} shop(s) reached their plan's order limit`} sub="Their shop has stopped taking orders until they upgrade – a good time to call them" />,
     (x.new_leads ?? 0) > 0 && <Todo href="/admin/leads" kind="info" icon="edit" title={`${x.new_leads} new request(s) to get started`} sub="Call or WhatsApp them, then create their shop" />,
     (x.claimed ?? 0) > 0 && <Todo href="/admin/billing?f=claimed" kind="info" icon="search" title={`${x.claimed} seller(s) say they paid`} sub="Check your UPI app, then mark paid or not received" />,
     (x.gw_requests ?? 0) > 0 && <Todo href="/admin/sellers?f=gw" kind="warn" icon="key" title={`${x.gw_requests} seller(s) want automatic payments`} sub="Send the Razorpay guide, then add their keys" />,
@@ -381,7 +400,7 @@ admin.get('/sellers', async (c) => {
             {results.map((s) => (
               <tr>
                 <td><a class="rowlink" href={`/admin/sellers/${s.id}`}>{s.shop_name}</a><br /><small>{s.name} · {displayPhone(s.phone)}</small></td>
-                <td>{s.account_status === 'suspended' ? <span class="chip refund_due">Suspended</span> : billingChip(s)}{s.plan_fee_paise ? <small>{rupees(s.plan_fee_paise)}/mo</small> : null}</td>
+                <td><b>{PLANS[asPlan(s.plan)].en}</b> <PlanUse plan={s.plan} used={s.used_month} /><br />{s.account_status === 'suspended' ? <span class="chip refund_due">Suspended</span> : billingChip(s)}{s.plan_fee_paise ? <small> {rupees(s.plan_fee_paise)}/mo</small> : null}</td>
                 <td>{parseModes(s.allowed_modes).map((m) => <span class={`chip ${m === s.pay_mode ? 'paid' : 'closed'}`} style="margin-right:4px">{MODE_SHORT[m]}</span>)}{s.gateway_request ? <span class="chip pending">wants Razorpay</span> : null}</td>
                 <td class="r">{s.live_sales}</td>
                 <td class="r">{s.orders30}</td>
@@ -689,15 +708,26 @@ admin.get('/sellers/:id', async (c) => {
         <button class="btn primary block" type="submit">Save payment methods</button>
       </form>
 
-      <h2>Monthly fee</h2>
+      <h2>Plan</h2>
       <form method="post" action={`/admin/sellers/${id}/billing`} class="card stack">
+        <div class="row between"><span>This month: <PlanUse plan={s.plan} used={s.used_month} /></span><small class="muted">Limit resets on the 1st (IST)</small></div>
+        <div class="planpick">
+          {PLAN_IDS.map((p) => (
+            <label class="planopt">
+              <input type="radio" name="plan" value={p} checked={asPlan(s.plan) === p} data-fee={String(PLANS[p].fee / 100)} />
+              <span><b>{PLANS[p].en}</b><small>{PLANS[p].fee ? `${rupees(PLANS[p].fee)}/month` : 'Free'} · {PLANS[p].limit === null ? 'unlimited orders' : `${PLANS[p].limit} orders/month`}</small></span>
+            </label>
+          ))}
+        </div>
+        <script>{raw(`document.querySelectorAll('.planopt input').forEach(function(r){r.addEventListener('change',function(){var f=document.getElementById('fee');if(f)f.value=r.dataset.fee})})`)}</script>
+        <small class="muted">Choosing a plan sets its fee below. Change the fee for a special deal – the order limit still follows the plan. Badi Dukaan sellers also get automatic payments: switch Razorpay on above.</small>
         <div class="duo">
           <div><label for="fee">Fee per month (₹)</label><div class="money"><span>₹</span><input id="fee" name="fee" inputmode="decimal" value={String(s.plan_fee_paise / 100)} /></div></div>
           <div><label for="trial">Free trial until</label><input id="trial" name="trial" type="date" value={s.trial_until ? istDay(s.trial_until) : ''} /></div>
         </div>
         <small>₹0 = free. Invoices are created automatically on the 1st of each month after the trial.</small>
         <div class="row">
-          <button class="btn primary grow" type="submit">Save fee</button>
+          <button class="btn primary grow" type="submit">Save plan</button>
           <button class="btn grow" type="submit" name="invoice_now" value="1">Save & create invoice now</button>
         </div>
       </form>
@@ -738,7 +768,7 @@ const MANUAL_STEPS = [['account', 'Gateway account created (in the seller’s na
 
 const InvoiceCard = ({ inv, seller, origin }: { inv: Invoice & { shop_name?: string }; seller: { name: string; phone: string; shop_name: string }; origin: string }) => {
   const overdue = inv.status === 'due' && inv.due_at < Date.now()
-  const month = new Date(inv.period + '-01T00:00:00Z').toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const month = (inv.plan ? `Upgrade to ${PLANS[asPlan(inv.plan)].en} · ` : '') + new Date(inv.period.slice(0, 7) + '-01T00:00:00Z').toLocaleString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })
   return (
     <div class={`card order ${inv.status === 'paid' ? 'paid' : inv.status === 'claimed' ? 'verifying' : overdue ? 'refund_due' : inv.status === 'due' ? 'pending' : ''}`}>
       <div class="row between"><b>{inv.shop_name ?? seller.shop_name} · {month}</b><b>{rupees(inv.amount_paise)}</b></div>
@@ -792,12 +822,18 @@ admin.post('/sellers/:id/payments', async (c) => {
 admin.post('/sellers/:id/billing', async (c) => {
   const id = c.req.param('id')
   const f = await c.req.parseBody()
-  const fee = parsePaise(String(f.fee ?? '0') || '0')
+  const plan = asPlan(f.plan)
+  const feeText = String(f.fee ?? '').trim()
+  const fee = feeText === '' ? PLANS[plan].fee : parsePaise(feeText)
   if (fee === null) return c.redirect(`/admin/sellers/${id}?err=${enc('Enter a valid fee.')}`, 303)
   const trial = /^\d{4}-\d{2}-\d{2}$/.test(String(f.trial ?? '')) ? istDayStart(Date.parse(String(f.trial) + 'T12:00:00Z')) : 0
-  await c.env.DB.prepare(`UPDATE sellers SET plan_fee_paise = ?, trial_until = ? WHERE id = ?`).bind(fee, trial, id).run()
+  await c.env.DB.prepare(`UPDATE sellers SET plan = ?, plan_fee_paise = ?, trial_until = ? WHERE id = ?`).bind(plan, fee, trial, id).run()
+  // This month's unpaid monthly invoice follows the new fee: gone on a free plan, re-priced otherwise.
+  const open = await c.env.DB.prepare(`SELECT id, amount_paise FROM invoices WHERE seller_id = ? AND period = ? AND plan IS NULL AND status = 'due'`).bind(id, istDay(Date.now()).slice(0, 7)).first<{ id: string; amount_paise: number }>()
+  if (open && fee === 0) await c.env.DB.prepare(`DELETE FROM invoices WHERE id = ?`).bind(open.id).run()
+  else if (open && open.amount_paise - (open.amount_paise % 100) !== fee) await c.env.DB.prepare(`UPDATE invoices SET amount_paise = ?, pay_url = NULL, gateway_ref = NULL WHERE id = ?`).bind(await uniqueFee(c.env, fee), open.id).run()
   if (f.invoice_now) await ensureInvoices(c.env, id)
-  return c.redirect(`/admin/sellers/${id}?ok=${enc('Fee saved.')}`, 303)
+  return c.redirect(`/admin/sellers/${id}?ok=${enc(`${PLANS[plan].en} plan saved.`)}`, 303)
 })
 
 admin.post('/sellers/:id/onboarding', async (c) => {
@@ -828,7 +864,8 @@ admin.post('/invoices/:id/paid', async (c) => {
 
 // The seller said they paid by UPI but the money isn't there: back to due (pauses again if past due).
 admin.post('/invoices/:id/not-received', async (c) => {
-  await c.env.DB.prepare(`UPDATE invoices SET status = 'due' WHERE id = ? AND status = 'claimed'`).bind(c.req.param('id')).run()
+  const r = await c.env.DB.prepare(`UPDATE invoices SET status = 'due' WHERE id = ? AND status = 'claimed'`).bind(c.req.param('id')).run()
+  if (r.meta.changes) await upgradeUndone(c.env, c.req.param('id')) // an upgrade they claimed goes back to the plan before
   return backTo(c, 'Marked not received. The seller sees it as unpaid again.')
 })
 

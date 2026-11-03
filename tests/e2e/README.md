@@ -26,6 +26,7 @@ npx wrangler dev --local-upstream localhost:8787 --upstream-protocol http --var 
 python3 tests/e2e/wa_bot_test.py         # 28 checks; empty database
 python3 tests/e2e/admin_billing_test.py  # admin login, payment methods, billing; empty database
 python3 tests/e2e/features_test.py       # several UPI IDs, per-sale UPI, 5 photos, sell again
+python3 tests/e2e/plans_test.py          # plans: 30-order limit, block, upgrade, admin undo/activate (OPEN_SIGNUP + admin vars; KK_PERSIST if --persist-to)
 node tests/e2e/pwa.mjs <base-url> /tmp/x  # installable app: manifest, service worker, offline, install card
 ```
 (Start the app with `--var ADMIN_SETUP_CODE:setup-code` for the admin test. Against staging, set `BASE=…` for the Python tests too.)

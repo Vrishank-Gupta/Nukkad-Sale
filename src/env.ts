@@ -69,6 +69,8 @@ export type Seller = {
   rzp_webhook_enc: string | null
   allowed_modes: string
   account_status: 'active' | 'suspended'
+  /** Pricing plan (lib/plans.ts): sets the monthly fee and the monthly order limit. */
+  plan?: 'free' | 'dukaan' | 'badi'
   gateway_request: number
   temp_pin: number
   last_seen_at?: number
