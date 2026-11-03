@@ -37,10 +37,8 @@ setInterval(function(){if(document.visibilityState==='visible'){acc();send('leav
 
 /** Landing page sections, top to bottom (data-sec on each <section> in routes/site.tsx). */
 export const LANDING_SECTIONS: [string, string][] = [
-  ['hero', 'Top – headline'], ['what', 'What you get'], ['pain', 'The problem (DMs)'], ['how', 'How it works'],
-  ['paise', 'Exact-amount UPI'], ['shop', 'Shop link'], ['tools', 'Selling tools'], ['shipping', 'Shipping'],
-  ['profit', 'Profit'], ['features', 'Everything in the app'], ['payments', 'Two ways to get paid'], ['hindi', 'Hindi'],
-  ['onboarding', 'We set it up'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['form', 'Get-started form'],
+  ['hero', 'Top – what it is + sale video'], ['how', 'How it works (4 steps)'], ['jobs', 'What it does (4 jobs)'],
+  ['day', 'Before and after'], ['who', 'Who it is for'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['form', 'Get-started form'],
 ]
 
 const SITE = new Set(['/', '/thanks', '/privacy', '/terms', '/refunds', '/contact', '/data-request', '/login', '/seller', '/help/razorpay', '/signup', '/reset'])
@@ -61,7 +59,7 @@ export async function collect(c: Context<AppEnv>) {
   await c.env.DB.prepare(
     `INSERT INTO events (at, type, area, vid, sid, path, label, href, ref, utm_source, utm_medium, utm_campaign, device, country, city, ms, scroll, section)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(Date.now(), type, SITE.has(path) ? 'site' : 'shop', s(e.v, 32), s(e.s, 32), path, s(e.l, 60), s(e.h, 120), s(e.r, 80),
+  ).bind(Date.now(), type, SITE.has(path) || path.startsWith('/features/') ? 'site' : 'shop', s(e.v, 32), s(e.s, 32), path, s(e.l, 60), s(e.h, 120), s(e.r, 80),
     s(e.us, 60).toLowerCase(), s(e.um, 60).toLowerCase(), s(e.uc, 60), device, s(cf?.country ?? c.req.header('cf-ipcountry'), 4), s(cf?.city, 60),
     Math.max(0, Math.min(3_600_000, Math.round(Number(e.ms) || 0))), Math.max(0, Math.min(100, Math.round(Number(e.sc) || 0))), s(e.sec, 24).replace(/[^\w-]/g, '')).run()
   return c.body(null, 204)

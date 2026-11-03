@@ -32,7 +32,7 @@ anon = client()
 
 # --- marketing site ---
 s, h, body = anon('/')
-check(s == 200 and 'Your online shop,' in body and 'id="get-started"' in body, 'landing page renders with the form')
+check(s == 200 and 'The app that runs' in body and 'id="get-started"' in body, 'landing page renders with the form')
 check('/signup' not in body, 'landing page has no self-signup link')
 s, h, _ = anon('/site/home.webp')
 check(s == 200 and h['Content-Type'] == 'image/webp', 'site images are served as static files')

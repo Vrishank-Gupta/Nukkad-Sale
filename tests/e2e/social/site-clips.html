@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>NukkadSale site clips</title>
+<!-- Short looping phone-screen clips for the website (site-clips.html#<id>). Every frame is a real app
+     screenshot; the only additions are a tap ripple, a step label and a small toast. Rendered by render-clips.mjs. -->
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:432px;height:936px;overflow:hidden;background:#fff;font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif}
+.shot{position:absolute;inset:0;opacity:0}
+.shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transform-origin:50% 40%}
+.rip{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(217,72,15,.3);border:4px solid rgba(217,72,15,.9);opacity:0}
+.pill{position:absolute;left:14px;right:14px;top:12px;background:#1d1a16;color:#fff;border-radius:16px;padding:12px 14px;font-weight:800;font-size:19px;line-height:1.2;display:flex;gap:10px;align-items:center;box-shadow:0 10px 24px rgba(0,0,0,.3)}
+.pill b{flex:none;width:30px;height:30px;border-radius:50%;background:#e2560c;display:flex;align-items:center;justify-content:center;font-size:16px}
+.who{position:absolute;right:14px;top:84px;background:#1971c2;color:#fff;font-weight:800;font-size:13px;padding:5px 10px;border-radius:99px}
+.toast{position:absolute;left:50%;top:46%;transform:translateX(-50%);background:#2b8a3e;color:#fff;font-weight:900;font-size:22px;padding:12px 20px;border-radius:14px;white-space:nowrap;opacity:0;box-shadow:0 12px 28px rgba(0,0,0,.3)}
+@keyframes show{0%{opacity:0}8%{opacity:1}92%{opacity:1}100%{opacity:0}}
+@keyframes tap{0%{opacity:0;transform:scale(.4)}30%{opacity:1}100%{opacity:0;transform:scale(2.2)}}
+@keyframes pop{0%{opacity:0;transform:translateX(-50%) scale(.7)}25%{opacity:1;transform:translateX(-50%) scale(1.05)}35%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
+@keyframes push{from{transform:scale(1)}to{transform:scale(1.06)}}
+</style></head><body><div id="root"></div>
+<script>
+// Each shot: real screen, how long, taps [x%, y%, at s], label, optional toast / "buyer's phone" badge.
+const SHOT = {
+  add:   { img: 'img/newsale.png', d: 2.6, taps: [[50, 88.6, 1.7]], n: 1, label: { en: 'Add your product: photo, price, sizes', hi: 'प्रोडक्ट डालें: फ़ोटो, दाम, साइज़' } },
+  share: { img: 'img/sale-live.png', d: 2.4, n: 2, label: { en: 'Share it in your WhatsApp groups', hi: 'WhatsApp ग्रुप में शेयर करें' } },
+  order: { img: 'img/buyer-sale.png', d: 2.6, taps: [[50, 87.8, 1.6]], n: 3, buyer: true, label: { en: 'Buyer picks a size and orders', hi: 'ग्राहक साइज़ चुनकर ऑर्डर करे' } },
+  pay:   { img: 'img/buyer-pay.png', d: 2.4, taps: [[50, 61.5, 1.4]], n: 4, buyer: true, label: { en: 'Buyer pays your UPI – exact amount', hi: 'ग्राहक आपकी UPI पर सही रकम भेजे' } },
+  check: { img: 'img/orders-check.png', d: 2.8, taps: [[39.5, 44, 1.4]], n: 5, toast: { en: 'Paid ✓', hi: 'पैसे आ गए ✓', at: 1.7 }, label: { en: 'You see who paid. One tap.', hi: 'पता चले किसने भेजा। एक टैप।' } },
+  book:  { img: '../../../public/site/ship-book.webp', d: 2.6, taps: [[50, 82, 1.5]], n: 6, toast: { en: 'Courier booked ✓', hi: 'कूरियर बुक ✓', at: 1.8 }, label: { en: 'Book a courier at the best rate', hi: 'सबसे सस्ता कूरियर बुक करें' } },
+  track: { img: '../../../public/site/track.webp', d: 2.2, n: 7, buyer: true, label: { en: 'Buyer tracks the parcel', hi: 'ग्राहक पार्सल ट्रैक करे' } },
+  khata: { img: 'img/feat-khata-profit.png', d: 2.6, n: 8, label: { en: 'Your khata and profit update themselves', hi: 'खाता और मुनाफ़ा अपने आप' } },
+}
+const CLIPS = {
+  flow: ['add', 'share', 'order', 'pay', 'check', 'book', 'track', 'khata'],
+  orders: ['add', 'share', 'order'],
+  payments: ['pay', 'check'],
+  delivery: ['book', 'track'],
+  accounts: ['khata'],
+}
+const [id, lang = 'en'] = location.hash.slice(1).split('-'), list = CLIPS[id]
+let t = 0, html = ''
+for (const [i, k] of list.entries()) {
+  const s = SHOT[k], num = id === 'flow' ? s.n : i + 1
+  html += `<div class="shot" style="animation:show ${s.d}s linear ${t}s both"><img src="${s.img}" style="animation:push ${s.d}s ease-out ${t}s both">
+    ${(s.taps || []).map(([x, y, at]) => `<div class="rip" style="left:${x}%;top:${y}%;animation:tap .7s ease-out ${t + at}s both"></div>`).join('')}
+    ${s.buyer ? `<div class="who">${lang === 'hi' ? 'ग्राहक का फ़ोन' : 'Buyer’s phone'}</div>` : ''}
+    ${s.toast ? `<div class="toast" style="animation:pop ${s.d - s.toast.at}s ease-out ${t + s.toast.at}s both">${s.toast[lang]}</div>` : ''}
+    <div class="pill">${id === 'flow' ? `<b>${num}</b>` : ''}<span>${s.label[lang]}</span></div></div>`
+  t += s.d
+}
+document.getElementById('root').innerHTML = html
+window.DURATION = t
+window.seek = (sec) => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = sec * 1000 } }
+window.seek(0)
+</script></body></html>
