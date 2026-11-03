@@ -31,27 +31,25 @@ Use the same username on Facebook.
 
 | Field | What to enter |
 |---|---|
-| Name (shows in search, so keep the keywords) | `NukkadSale · Sell on WhatsApp` |
+| Name (shows in search, 30 characters max) | `NukkadSale | WhatsApp shop app`
 | Profile picture | `profile-picture.png` |
 | Bio (pick one; both are under the 150-character limit) | see below |
 | Links → Add external link | URL `https://nukkadsale.in/signup`, title `Start selling` |
 | Contact options | Email: hello@vrishankgupta.in. WhatsApp / phone: +91 91366 66425 (support) |
 | Action button | Skip for now, or **Contact us** |
 
-**Bio, option A – English (under 150 characters):**
+**Bio, option A – English (138 characters).** Line 1 says what it is; a seller must never have to guess:
 ```
-Your WhatsApp group, now a shop
-🔗 One order link – no "price?" DMs
-₹ Exact-amount UPI – no fake screenshots
-📒 Khata writes itself · हिंदी 👇
+The app for people who sell on WhatsApp.
+Your own shop link · orders taken for you · UPI payments to you · stock & khata
+हिंदी + English 👇
 ```
 
-**Bio, option B – Hinglish (under 150 characters):**
+**Bio, option B – Hinglish (130 characters):**
 ```
-WhatsApp pe bechna, ab aasaan
-🔗 Ek order link – "price?" DMs khatam
-₹ Har order ki exact amount – fake screenshot nahi
-📒 Khata apne aap · हिंदी 👇
+WhatsApp pe bechne walon ka app.
+Apni shop ka link · order apne aap · UPI payment seedha aapko · stock aur khata
+हिंदी + English 👇
 ```
 
 Start with **A**. After two weeks, switch to **B** and compare profile visits in Insights.
@@ -66,10 +64,13 @@ Start with **A**. After two weeks, switch to **B** and compare profile visits in
 | `4-hindi.png` | हिंदी | Story 4 |
 | `5-start-here.png` | Start here | Story 1 (poll), plus a story with a **Link** sticker to `nukkadsale.in/signup` |
 
-**6. First posts and pins.** Post in the order given in `../CAPTIONS.md`. Then pin 3 posts to the top of the grid (open the post → ⋯ → Pin to your profile):
-- Reel 6 (DM flood)
-- Post 2 (carousel "Post → Paid in 4 steps")
-- Post 1 (launch)
+**6. Pins (top of the grid).** Pin the three explainers so anyone opening the profile sees what NukkadSale is
+before any feature post (open the post → ⋯ → Pin to your profile):
+- Reel 17 – "What is NukkadSale?"
+- Post 18 – "nukkad·sale, noun"
+- Post 19 – carousel "What you get"
+
+Don't delete or archive older posts – the pins sit above them.
 
 ---
 
@@ -103,7 +104,7 @@ Start with **A**. After two weeks, switch to **B** and compare profile visits in
 >
 > • Post a sale with photos, price and sizes. NukkadSale writes the WhatsApp message for your groups.
 > • Buyers tap your post and order right inside WhatsApp. The ordering bot asks size and address.
-> • Every order gets its own exact amount (like ₹799.79), so you know who paid. Buyers pay you directly on UPI. Big sellers can switch to Razorpay, where payments confirm themselves.
+> • Every order gets its own exact amount (like ₹798.79 for a ₹799 kurta), so you know who paid. Buyers pay you directly on UPI. Big sellers can switch to Razorpay, where payments confirm themselves.
 > • Stock is held for the buyer while they pay, so the last piece isn't sold twice.
 > • Pack & send, buyer list and a khata that fills itself, all in one app on your phone. हिंदी + English.
 >

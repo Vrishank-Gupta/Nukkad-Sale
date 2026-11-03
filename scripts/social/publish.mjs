@@ -47,6 +47,7 @@ const ITEMS = {
   'reel-14': { type: 'reel', file: 'reels/reel-14-waitlist.mp4', cover: 'reels/reel-14-waitlist-cover.jpg', caption: 'Reel 14' },
   'reel-15': { type: 'reel', file: 'reels/reel-15-profit.mp4', cover: 'reels/reel-15-profit-cover.jpg', caption: 'Reel 15' },
   'reel-16': { type: 'reel', file: 'reels/reel-16-labels.mp4', cover: 'reels/reel-16-labels-cover.jpg', caption: 'Reel 16' },
+  'reel-17': { type: 'reel', file: 'reels/reel-17-what-is.mp4', cover: 'reels/reel-17-what-is-cover.jpg', caption: 'Reel 17' },
   'post-1': { type: 'image', file: 'posts/post-1-launch.png', caption: 'Post 1' },
   'post-2': { type: 'carousel', files: 'abcdef'.split('').map((x) => `posts/post-2-carousel-${x}.png`), caption: 'Post 2' },
   'post-3': { type: 'image', file: 'posts/post-3-paise.png', caption: 'Post 3' },
@@ -64,6 +65,9 @@ const ITEMS = {
   'post-15': { type: 'carousel', files: 'abcde'.split('').map((x) => `posts/post-15-profit-${x}.png`), caption: 'Post 15' },
   'post-16': { type: 'image', file: 'posts/post-16-labels.png', caption: 'Post 16' },
   'post-17': { type: 'carousel', files: 'abcdefg'.split('').map((x) => `posts/post-17-new-things-${x}.png`), caption: 'Post 17' },
+  'post-18': { type: 'image', file: 'posts/post-18-what-is.png', caption: 'Post 18' },
+  'post-19': { type: 'carousel', files: 'abcdef'.split('').map((x) => `posts/post-19-what-you-get-${x}.png`), caption: 'Post 19' },
+  'post-20': { type: 'image', file: 'posts/post-20-before-after.png', caption: 'Post 20' },
   // Stickers (poll, quiz, link) can't be added through the API – those stories are best posted in the app.
   'story-1': { type: 'story', file: 'stories/story-1-poll.png', note: 'needs a Poll sticker – post it in the app' },
   'story-2': { type: 'story', file: 'stories/story-2-quiz.png', note: 'needs a Quiz sticker – post it in the app' },
@@ -151,6 +155,8 @@ function loadConfig() {
 }
 
 // ---------- captions ----------
+const ABOUT_MARK = 'the app for people who sell on WhatsApp'
+const ABOUT = `NukkadSale is ${ABOUT_MARK}: your own shop link, orders taken for you, UPI payments straight to you, and stock, packing and khata in one place.`
 function captionFor(heading) {
   const md = fs.readFileSync(path.join(SOCIAL, 'CAPTIONS.md'), 'utf8').split('\n')
   const start = md.findIndex((l) => l.startsWith(`### ${heading} `) || l === `### ${heading}`)
@@ -160,8 +166,14 @@ function captionFor(heading) {
     if (md[i].startsWith('>')) out.push(md[i].replace(/^> ?/, ''))
     else if (out.length && md[i].trim() !== '') break
   }
-  const caption = out.join('\n').trim()
-  if (!caption) throw new Error(`No caption (blockquote) under "### ${heading}" in CAPTIONS.md`)
+  if (!out.join('').trim()) throw new Error(`No caption (blockquote) under "### ${heading}" in CAPTIONS.md`)
+  // Every caption says what NukkadSale is, so a post seen on its own (shared, in Explore) is never read as
+  // a payment app or a message organiser. Goes just above the hashtags.
+  if (!out.some((l) => l.includes(ABOUT_MARK))) {
+    const tags = out.findIndex((l) => l.trim().startsWith('#'))
+    out.splice(tags < 0 ? out.length : tags, 0, ...(tags > 0 && out[tags - 1].trim() === '' ? [ABOUT, ''] : ['', ABOUT, '']))
+  }
+  const caption = out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
   if (caption.length > 2200) throw new Error(`Caption for ${heading} is ${caption.length} characters; Instagram allows 2,200`)
   return caption
 }

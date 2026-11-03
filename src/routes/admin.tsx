@@ -14,6 +14,7 @@ import { createSeller, setPin, tempPin } from '../lib/sellers'
 import { isValidVpa } from '../lib/upi'
 import { checkKeys, isTestKey } from '../lib/razorpay'
 import { here } from './public'
+import { LANDING_SECTIONS } from '../lib/analytics'
 
 /*
  * Admin portal for the platform owner – completely separate from seller accounts: its own
@@ -959,6 +960,24 @@ admin.get('/analytics', async (c) => {
   const steps: [string, number][] = funnel ? [['Visited the home page', funnel.home], ['Scrolled half way', funnel.deep], ['Tapped Get started', funnel.cta], ['Started the form', funnel.start], ['Sent the form', funnel.sent]] : []
   const tab = (d: number, a: string, label: string) => <a class={`btn sm${d === days && a === area ? ' primary' : ''}`} href={`/admin/analytics?d=${d}&area=${a}`}>{label}</a>
 
+  // Landing page, section by section (data-sec on the home page; see lib/analytics.ts).
+  const depthCase = `CASE label ${LANDING_SECTIONS.map(([k], i) => `WHEN '${k}' THEN ${i}`).join(' ')} ELSE -1 END`
+  const H = `at >= ?1 AND area = 'site' AND path = '/'`
+  const [lpReach, lpDwell, lpClicks, lpExit, lpTime, lpClickList] = area === 'site' ? await Promise.all([
+    q<{ label: string; n: number }>(`SELECT label, COUNT(DISTINCT sid) n FROM events WHERE ${H} AND type = 'section' GROUP BY label`, since),
+    q<{ label: string; ms: number }>(`SELECT label, AVG(ms) ms FROM (SELECT sid, label, MAX(ms) ms FROM events WHERE ${H} AND type = 'dwell' GROUP BY sid, label) GROUP BY label`, since),
+    q<{ section: string; n: number }>(`SELECT section, COUNT(*) n FROM events WHERE ${H} AND type = 'click' GROUP BY section`, since),
+    // The deepest section each visit reached = where it left the page.
+    q<{ d: number; n: number }>(`SELECT d, COUNT(*) n FROM (SELECT sid, MAX(${depthCase}) d FROM events WHERE ${H} AND type = 'section' GROUP BY sid) GROUP BY d`, since),
+    q<{ b: number; n: number }>(`SELECT CASE WHEN ms < 10000 THEN 0 WHEN ms < 30000 THEN 1 WHEN ms < 60000 THEN 2 WHEN ms < 180000 THEN 3 ELSE 4 END b, COUNT(*) n
+       FROM (SELECT sid, MAX(ms) ms FROM events WHERE ${H} AND type = 'leave' GROUP BY sid) GROUP BY b`, since),
+    q<{ label: string; section: string; n: number; visits: number }>(`SELECT label, section, COUNT(*) n, COUNT(DISTINCT sid) visits FROM events WHERE ${H} AND type = 'click' AND label <> '' GROUP BY label, section ORDER BY n DESC LIMIT 25`, since),
+  ]) : [[], [], [], [], [], []]
+  const reach = new Map(lpReach.map((r) => [r.label, r.n])), dwell = new Map(lpDwell.map((r) => [r.label, r.ms]))
+  const secClicks = new Map(lpClicks.map((r) => [r.section, r.n])), exits = new Map(lpExit.map((r) => [r.d, r.n]))
+  const secName = new Map(LANDING_SECTIONS), homeVisits = funnel?.home ?? 0
+  const timeB = new Map(lpTime.map((r) => [r.b, r.n])), timeTotal = lpTime.reduce((a, r) => a + r.n, 0)
+
   return page(c, '/admin/analytics', 'Analytics', (
     <>
       <h1>Analytics</h1>
@@ -978,6 +997,21 @@ admin.get('/analytics', async (c) => {
         {area === 'site' && <a class="kpi ok" href="/admin/leads"><small class="muted">Get-started requests</small><b>{leads?.n ?? 0}</b></a>}
         {area === 'site' && <div class="kpi"><small class="muted">Visitor → request</small><b>{pct(leads?.n ?? 0, visitors)}</b></div>}
       </div>
+      {area === 'site' && <div class="panel"><h2>Landing page – section by section</h2>
+        <p class="muted" style="margin:-4px 0 10px">{homeVisits} visits to the home page. A section counts as seen when it reaches the middle of the screen. “Left here” = the last section that visit saw.</p>
+        <table class="data"><thead><tr><th>Section (top to bottom)</th><th>Reached</th><th class="r">Visits</th><th class="r">Avg time on it</th><th class="r">Clicks in it</th><th class="r">Left here</th></tr></thead>
+          <tbody>{LANDING_SECTIONS.map(([k, name], i) => { const n = reach.get(k) ?? 0; return (
+            <tr><td>{name}</td><td><span class="row" style="gap:8px">{bar(n, homeVisits)}<small class="muted">{pct(n, homeVisits)}</small></span></td><td class="r">{n}</td><td class="r">{n ? dur(dwell.get(k) ?? 0) : '–'}</td><td class="r">{secClicks.get(k) ?? 0}</td><td class="r">{exits.get(i) ?? 0}</td></tr>) })}
+            <tr><td class="muted">Header (top bar)</td><td /><td /><td /><td class="r">{secClicks.get('') ?? 0}</td><td /></tr></tbody></table>
+      </div>}
+      {area === 'site' && <div class="cols">
+        <div><div class="panel"><h2>Home page – what visitors clicked</h2>
+          <table class="data"><thead><tr><th>Button / link / question</th><th>Section</th><th class="r">Clicks</th><th class="r">Visits</th></tr></thead>
+            <tbody>{lpClickList.length ? lpClickList.map((k) => <tr><td style="white-space:normal">{k.label}</td><td class="muted">{k.section ? secName.get(k.section) ?? k.section : 'Header'}</td><td class="r">{k.n}</td><td class="r">{k.visits}</td></tr>) : <tr><td colspan={4} class="muted">No clicks yet.</td></tr>}</tbody></table></div></div>
+        <div><div class="panel"><h2>Home page – time spent per visit</h2>
+          {['Under 10 s', '10–30 s', '30 s – 1 min', '1–3 min', 'Over 3 min'].map((label, b) => <div class="row between" style="padding:6px 0;border-top:1px solid var(--line)"><span>{label}</span><span class="row" style="gap:10px">{bar(timeB.get(b) ?? 0, timeTotal)}<b style="min-width:32px;text-align:right">{timeB.get(b) ?? 0}</b><small class="muted" style="min-width:38px;text-align:right">{pct(timeB.get(b) ?? 0, timeTotal)}</small></span></div>)}
+          <small class="muted">Time the page was actually on screen (switching apps pauses it).</small></div></div>
+      </div>}
       <div class="panel"><h2>Visitors per day</h2><Bars values={dayKeys.map((d) => byDay.get(d) ?? 0)} days={dayKeys} fmt={(n) => `${n} visitors`} /></div>
       <div class="cols">
         <div>

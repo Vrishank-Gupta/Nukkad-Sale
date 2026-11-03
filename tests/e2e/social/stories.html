@@ -22,6 +22,7 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .yellow .series,.receipt .series,.kraft .series,.greyb .series{background:rgba(0,0,0,.08);color:#14120f}
 .top{position:absolute;left:44px;right:44px;top:150px;display:flex;align-items:center;justify-content:space-between}
 .brand{display:inline-flex;align-items:center;gap:10px;font-weight:900;font-size:28px;letter-spacing:-.5px}
+.brand .tagl{font-size:18px;font-weight:700;letter-spacing:0;margin-left:4px;padding-left:12px;border-left:2px solid currentColor;opacity:.65}
 .count{font-size:22px;font-weight:800;opacity:.6}
 .series{display:inline-block;font-size:20px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.18)}
 .cream .series{background:#fde3d3;color:#b83f0d}
@@ -72,7 +73,7 @@ const I = (n, s = 60, c = 'currentColor') => `<svg width="${s}" height="${s}" vi
 const P = (img, top, w = 360, extra = '') => `<div class="phone" style="top:${top}px;width:${w}px;height:${w * 2.167}px;margin-left:-${w / 2}px;${extra}"><div class="scr"><img src="img/${img}.png"></div></div>`
 
 // A frame: theme, series label, counter, body. Counters tell people there's more – they tap through.
-const frame = (cls, label, i, n, body) => `<div class="f ${cls}"><div class="top"><span class="brand">${I('shop', 30)}NukkadSale</span><span class="count">${i}/${n}</span></div>${body}</div>`
+const frame = (cls, label, i, n, body) => `<div class="f ${cls}"><div class="top"><span class="brand">${I('shop', 30)}NukkadSale<span class="tagl">App for WhatsApp sellers</span></span><span class="count">${i}/${n}</span></div>${body}</div>`
 const cover = (cls, label, icon, title, sub, n) => frame(cls, label, 1, n, `
   <div class="txt" style="top:330px;text-align:center"><div class="ic">${I(icon, 64)}</div><span class="series">${label}</span>
     <div class="h" style="font-size:78px;margin-top:26px">${title}</div><div class="s" style="margin-top:22px">${sub}</div>

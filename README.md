@@ -18,7 +18,7 @@ Buyers don't use websites, so they don't have to:
 3. The NukkadSale bot shows the photo, price and size buttons, then asks for the address (remembered next time) and sends the payment button.
 4. Confirmation and shipping updates come back in the same chat.
 
-**No UTR is ever needed.** The unique amount (₹799.48) identifies the buyer, and buyers can tap "I have paid" or just send their payment screenshot. The seller sees the screenshot with a reminder that screenshots can be faked.
+**No UTR is ever needed.** The unique amount (₹798.52) identifies the buyer, and buyers can tap "I have paid" or just send their payment screenshot. The seller sees the screenshot with a reminder that screenshots can be faked.
 
 Meta doesn't charge for these replies, because the buyer starts the chat. The website checkout stays as a fallback.
 
@@ -34,7 +34,7 @@ Meta doesn't charge for these replies, because the buyer starts the chat. The we
 | | Option 1: Manual check | Option 2: Automatic (payment gateway) |
 |---|---|---|
 | Best for | Small sellers, up to about 20 orders a day | Busy sellers |
-| How | Buyer pays the seller's UPI ID. Each order gets a unique amount (₹799.**48**), so the seller sees "Did you get ₹799.48?" and taps **Yes** | **Razorpay**, on the seller's own account. Confirms itself within about a minute. |
+| How | Buyer pays the seller's UPI ID. Each order gets a unique amount (₹798.**52**), so the seller sees "Did you get ₹798.52?" and taps **Yes** | **Razorpay**, on the seller's own account. Confirms itself within about a minute. |
 | Fee | **₹0** | The gateway's fee: standard is about 2%, and UPI is often 0% during offers |
 | Setup | Just a UPI ID | Paste the Razorpay Key ID and secret into Settings. No webhook needed. |
 
@@ -65,7 +65,7 @@ Cloudflare Workers, D1 (database), R2 (photos) and cron all fit in the free tier
 - **Home is a to-do list:** "2 payments to check", "5 orders to send". Below it, the week at a glance: a sales chart, orders, average order and money waiting.
 - **Several UPI IDs** (shop, personal…): pick one per sale. **Up to 5 photos per sale**, swipeable for buyers. Buyers never see stock counts – only “Available”, “🔥 Selling fast” or “Sold out”.
 - **Your buyers:** a customer list ranked by spend, with repeat buyers, one-tap WhatsApp and a contacts export for broadcast lists. **Sell again** relaunches a past sale in one tap.
-- **Payment checks are a yes/no question:** "Did you get ₹799.48?"
+- **Payment checks are a yes/no question:** "Did you get ₹798.52?"
 - **Khatabook-style khata:** green **You got ₹** and red **You gave ₹**.
 - **Big touch targets** (at least 44 px), +/− steppers instead of typing, and product photos on every order.
 - **Buyers:**

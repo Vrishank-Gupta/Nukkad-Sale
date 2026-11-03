@@ -408,6 +408,55 @@ Own look on purpose (dark + money green, big centred phones, section labels) –
 > Get started → nukkadsale.in
 > #NukkadSale #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia
 
+## Explainers – what NukkadSale is (pin Reel 17, Post 18 and Post 19 to the top of the grid)
+
+A seller who looked through the page thought we sell "a WhatsApp message organiser and a payment method". Every
+earlier post showed one feature or one pain, and none said what the product is. These four answer that on their own.
+
+### Reel 17 – "What is NukkadSale?" (20 s) · `reel-17-what-is.mp4` · white "definition" look
+> What is NukkadSale? 👇
+>
+> It's the app for people who sell on WhatsApp. You get:
+> 1. Your own shop link – every product with photo, price and sizes
+> 2. Orders taken for you – buyers pick a size and order themselves
+> 3. Money straight to your UPI – and you see who paid
+> 4. Stock, packing and khata – kept for you, on your phone
+>
+> Not a marketplace. Not a payment app. Your shop, on WhatsApp – in English and हिंदी.
+> We set it up with you. Link in bio → nukkadsale.in
+>
+> #NukkadSale #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia #BoutiqueOwner #OnlineShop
+
+### Post 18 – "What is NukkadSale?" · `post-18-what-is.png`
+> NukkadSale, in one line: the app for people who sell on WhatsApp. It gives your business a proper online shop. 🛍️
+>
+> 1. Your own shop link
+> 2. Orders taken for you
+> 3. Money straight to your UPI – you see who paid
+> 4. Stock, packing and khata, kept for you
+>
+> Not a marketplace – your buyers stay yours. Not a payment app – money goes to your own UPI ID.
+> Get your shop → nukkadsale.in
+>
+> #NukkadSale #WhatsAppSeller #SmallBusinessIndia #OnlineShop
+
+### Post 19 – Carousel "What you get" · `post-19-what-you-get-a…f.png` (upload all 6 in order)
+> Selling on WhatsApp? Here's exactly what you get with NukkadSale 👉
+>
+> Your own shop link · orders taken for you · money straight to your UPI · packing, buyers and khata. It's the app for people who sell on WhatsApp – on your phone, in English and हिंदी.
+>
+> Your shop. Your buyers. Your money. We set it up with you on WhatsApp → nukkadsale.in
+>
+> #NukkadSale #WhatsAppSeller #ResellersOfIndia #SmallBusinessIndia
+
+### Post 20 – "4 things you juggle. 1 app." · `post-20-before-after.png`
+> DMs for orders. A notebook for stock. Screenshots for payments. Excel for hisaab. 😮‍💨
+>
+> NukkadSale, the app for people who sell on WhatsApp, puts all four in one place: your shop link, orders, UPI payments and khata. Save this if it sounds like your week. 🔖
+> Get your shop → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #SellerTips
+
 ## Stories (add the sticker in the Instagram app – the empty space is left for it)
 
 | Story | File | Add in the app |

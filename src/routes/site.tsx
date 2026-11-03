@@ -26,16 +26,32 @@ export const site = new Hono<AppEnv>()
 
 const C = {
   en: {
-    title: 'NukkadSale – Sell on WhatsApp, without the DM chaos',
-    desc: 'Take orders from your WhatsApp groups and your own shop link, get paid on UPI and know exactly who paid. Cart, offers, courier booking and a khata that writes itself. हिंदी + English.',
-    nav: ['How it works', 'Shop link', 'Tools', 'Shipping', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get started', other: 'हिंदी', otherLang: 'hi',
-    eyebrow: 'For sellers on WhatsApp',
-    h1a: 'Sell on WhatsApp.', h1b: 'Without the DM chaos.',
+    title: 'NukkadSale – Online shop and order app for WhatsApp sellers',
+    desc: 'NukkadSale is an app for people who sell on WhatsApp: your own shop link, orders taken for you, UPI payments straight to you (and you know who paid), stock, shipping and a khata that writes itself. हिंदी + English.',
+    nav: ['What you get', 'How it works', 'Shop link', 'Tools', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
+    eyebrow: 'An app for people who sell on WhatsApp',
+    h1a: 'Your online shop,', h1b: 'made for WhatsApp.',
     sub: (bot: boolean): string => bot
-      ? 'Post your products in your groups. Buyers order right in WhatsApp, pay you on UPI – and you know exactly who paid. Stock, orders and khata in one app.'
-      : 'Post your products in your groups. Buyers order from your link in seconds, pay you on UPI – and you know exactly who paid. Stock, orders and khata in one app.',
-    heroCta: 'Get started – we set it up for you', heroCta2: 'See how it works',
-    trust: ['Works on any Android or iPhone', 'हिंदी + English', 'Money goes straight to you'],
+      ? 'NukkadSale is an app for sellers. Add your products, share them in your WhatsApp groups, and buyers order right inside WhatsApp and pay you on UPI. Every order, payment, parcel and rupee is tracked for you.'
+      : 'NukkadSale is an app for sellers. Add your products, share the link in your WhatsApp groups or Instagram, and buyers order and pay you on UPI. Every order, payment, parcel and rupee is tracked for you.',
+    heroCta: 'Get your shop', heroCta2: 'See what you get', heroNote: 'We set it up with you on WhatsApp.',
+    trust: ['Keep your own WhatsApp number', 'Money goes straight to you', 'हिंदी + English'],
+    heroAlt: ['Your shop page: every product with photo and price', 'The seller app home: payments to check and orders to send'],
+    whatEyebrow: 'What you get', whatH: 'One app that runs your selling. From post to parcel.',
+    whatP: 'NukkadSale replaces the DMs, the notebook, the payment screenshots and the Excel sheet with one app on your phone.',
+    what: (bot: boolean) => [
+      ['shop', 'Your own shop link', 'nukkadsale.in/your-shop: every product with photos, price and sizes. Share it in groups, on your status and in your Instagram bio.', 'storefront'],
+      bot ? ['bag', 'Orders, taken for you', 'Buyers order inside WhatsApp: the ordering bot asks size and address. Stock is held while they pay, so nothing is sold twice.', 'chat-product']
+          : ['bag', 'Orders, taken for you', 'Buyers pick a size, add their address and order themselves. Stock is held while they pay, so nothing is sold twice.', 'buyer-sale'],
+      ['wallet', 'Payments you can trust', 'Buyers pay your UPI ID directly. Every order has its own exact amount, so you know who paid without checking screenshots.', 'orders-check'],
+      ['book', 'Packing, buyers and khata', 'A to-send list, address labels, courier booking (with your Shiprocket account), your buyers list and a khata that writes itself.', 'home'],
+    ],
+    notH: 'What NukkadSale is not',
+    nots: [
+      ['Not a marketplace', 'Your shop, your buyers, your prices. Buyers come from your groups, not ours.'],
+      ['Not a payment app', 'Money goes straight to your UPI ID or your own Razorpay account. We never hold it.'],
+      ['Not a new WhatsApp', 'Keep your number, your groups and the way you sell today.'],
+    ],
     painEyebrow: 'Sound familiar?', painH: 'You post one deal… and your phone explodes.',
     dms: ['Price?', 'M size hai??', 'Mera hold karo pls', 'Payment kaise karu?', 'Still available??', 'COD hai?', 'Photo bhejo', 'Hello??'],
     pains: ['Typing the same price and sizes 50 times', 'Who asked first?', 'The last piece promised to 3 people', 'Scrolling through payment screenshots'],
@@ -80,17 +96,6 @@ const C = {
     profitEyebrow: 'Profit', profitH: 'Know what you actually made.',
     profitP: 'Add what a piece cost you, once. Every sale shows its profit, and the khata shows this month’s – after product cost and expenses.',
     profitAlt: 'The khata showing profit this month after product cost and expenses',
-    featEyebrow: 'Features', featH: 'Everything a WhatsApp seller needs. Nothing extra.',
-    feats: (bot: boolean) => [
-      ['chat', bot ? 'Orders in WhatsApp' : 'One link per sale', bot ? 'Buyers order in the chat they already use. No app for them.' : 'Buyers order from your link in seconds. No app, no sign-up.'],
-      ['₹', 'Exact-amount UPI', 'Every order has its own paise, so you know who paid. GPay, PhonePe, Paytm – any UPI app.'],
-      ['lock', 'Never oversell', 'Stock is held for a buyer while they pay. Didn’t pay in time? It goes back on sale by itself.'],
-      ['book', 'Khata that writes itself', 'Every sale is added automatically. Add courier or cash entries in one tap.'],
-      ['box', 'Pack & send', 'Paid → Packed → Sent → Delivered. Print every address label at once.'],
-      ['users', 'Know your buyers', 'Repeat buyers, total spent, one-tap WhatsApp.'],
-      ['refresh', 'Sell again in one tap', 'Photos, price and sizes come back pre-filled.'],
-      ['download', 'Opens like an app', 'Add it to your home screen from Chrome or Safari. No app store.'],
-    ],
     payEyebrow: 'Payments', payH: 'Two ways to get paid. You choose.',
     pay: [
       ['wallet', 'UPI, straight to you', ['Buyers pay your UPI ID', 'Exact amount tells you who paid', 'One tap to confirm', 'No gateway fee'], 'Best for small sellers'],
@@ -102,6 +107,8 @@ const C = {
     onb: [['Tell us about your business', 'Fill the short form below – takes a minute.'], ['We call you', 'We understand how you sell and set up your shop with you.'], ['Start selling', 'You get your login on WhatsApp. Post your first sale the same day.']],
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
     faq: (bot: boolean) => [
+      ['What is NukkadSale, exactly?', 'An app for sellers who sell on WhatsApp and Instagram. You add your products. NukkadSale gives you a shop link and order links, takes the orders, tells you who paid, and keeps your stock, parcels and khata in order. It is not a marketplace and it never holds your money.'],
+      ['Who is it for?', 'Boutiques, resellers and home businesses that sell clothes, jewellery, perfume, food or anything else through WhatsApp groups, status or Instagram DMs.'],
       ['Do my buyers need to install anything?', bot ? 'No. They order inside WhatsApp, or from your link in any browser.' : 'No. They order from your link in any browser – no app, no sign-up.'],
       ['Which payment apps work?', 'Any UPI app – GPay, PhonePe, Paytm, BHIM and others. Money goes straight to your UPI ID (or your own Razorpay account).'],
       ['Do I need a WhatsApp Business API account?', 'No. Keep selling from your own WhatsApp number and groups.'],
@@ -111,23 +118,39 @@ const C = {
       ['Do I need Shiprocket?', 'No. Send parcels however you like and print address labels from NukkadSale. If you already use Shiprocket, connect it to book couriers and share tracking.'],
       ['What does it cost?', 'We’ll walk you through the plans on the call – no commitment.'],
     ],
-    formEyebrow: 'Get started', formH: 'Tell us about your business', formP: 'We’ll reach out on WhatsApp, set up your shop with you and send your login.',
-    f: { name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Request a call back', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
+    formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Leave your name and WhatsApp number. We’ll message you, set up your shop with you and send your login.',
+    f: { more: 'Tell us more about your business (optional)', name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Request a call back', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
     errs: { fill: 'Please fill your name, business name and WhatsApp number.', phone: 'Please enter a valid 10-digit mobile number.', many: 'Too many requests from this device today. Please message us on WhatsApp instead.' },
     thanksH: 'Thank you!', thanksP: (p: string) => `We got your request. We’ll message you on WhatsApp at ${p} soon to set up your shop.`, thanksWa: 'Message us now on WhatsApp', back: '← Back to home',
-    footer: 'Sell on WhatsApp, the easy way.', policies: [['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/refunds', 'Refunds'], ['/contact', 'Contact']],
+    footer: 'The app for people who sell on WhatsApp.', policies: [['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/refunds', 'Refunds'], ['/contact', 'Contact']],
   },
   hi: {
-    title: 'NukkadSale – WhatsApp पर बेचिए, DM के झंझट के बिना',
-    desc: 'WhatsApp ग्रुप और अपनी दुकान के लिंक से ऑर्डर लें, UPI पर पैसे पाएं और जानें किसने पेमेंट किया। कार्ट, छूट, कूरियर बुकिंग और खाता अपने आप। हिंदी + English।',
-    nav: ['कैसे काम करता है', 'दुकान लिंक', 'टूल', 'शिपिंग', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'शुरू करें', other: 'English', otherLang: 'en',
-    eyebrow: 'WhatsApp पर बेचने वालों के लिए',
-    h1a: 'WhatsApp पर बेचिए।', h1b: 'DM के झंझट के बिना।',
+    title: 'NukkadSale – WhatsApp पर बेचने वालों की ऑनलाइन दुकान और ऑर्डर ऐप',
+    desc: 'NukkadSale WhatsApp पर बेचने वालों का ऐप है: अपनी दुकान का लिंक, ऑर्डर अपने आप, UPI पेमेंट सीधे आपको (और पता रहे किसने भेजा), स्टॉक, शिपिंग और अपने आप भरने वाला खाता। हिंदी + English।',
+    nav: ['क्या मिलता है', 'कैसे काम करता है', 'दुकान लिंक', 'टूल', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
+    eyebrow: 'WhatsApp पर बेचने वालों का ऐप',
+    h1a: 'आपकी ऑनलाइन दुकान,', h1b: 'WhatsApp के लिए।',
     sub: (bot: boolean): string => bot
-      ? 'अपने ग्रुप में प्रोडक्ट डालें। ग्राहक WhatsApp में ही ऑर्डर करें, UPI से सीधे आपको पेमेंट करें – और आपको पता रहे किसने पेमेंट किया। स्टॉक, ऑर्डर और खाता एक ऐप में।'
-      : 'अपने ग्रुप में प्रोडक्ट डालें। ग्राहक आपके लिंक से सेकंडों में ऑर्डर करें, UPI से सीधे आपको पेमेंट करें – और आपको पता रहे किसने पेमेंट किया। स्टॉक, ऑर्डर और खाता एक ऐप में।',
-    heroCta: 'शुरू करें – हम सेट-अप कर देंगे', heroCta2: 'देखें कैसे काम करता है',
-    trust: ['हर Android और iPhone पर', 'हिंदी + English', 'पैसा सीधे आपके पास'],
+      ? 'NukkadSale बेचने वालों का ऐप है। अपने प्रोडक्ट डालें, WhatsApp ग्रुप में शेयर करें – ग्राहक WhatsApp में ही ऑर्डर करें और UPI से सीधे आपको पेमेंट करें। हर ऑर्डर, पेमेंट, पार्सल और हिसाब आपके लिए दर्ज होता है।'
+      : 'NukkadSale बेचने वालों का ऐप है। अपने प्रोडक्ट डालें, लिंक WhatsApp ग्रुप या Instagram पर शेयर करें – ग्राहक ख़ुद ऑर्डर करें और UPI से सीधे आपको पेमेंट करें। हर ऑर्डर, पेमेंट, पार्सल और हिसाब आपके लिए दर्ज होता है।',
+    heroCta: 'अपनी दुकान पाएं', heroCta2: 'देखें क्या मिलता है', heroNote: 'हम WhatsApp पर आपके साथ सेट-अप करेंगे।',
+    trust: ['आपका WhatsApp नंबर वही रहेगा', 'पैसा सीधे आपके पास', 'हिंदी + English'],
+    heroAlt: ['आपकी दुकान का पेज: हर प्रोडक्ट फ़ोटो और दाम के साथ', 'सेलर ऐप का होम: चेक करने वाले पेमेंट और भेजने वाले ऑर्डर'],
+    whatEyebrow: 'आपको क्या मिलता है', whatH: 'एक ऐप जो आपकी बिक्री संभाले। पोस्ट से पार्सल तक।',
+    whatP: 'DM, कॉपी, पेमेंट के स्क्रीनशॉट और Excel – सबकी जगह आपके फ़ोन पर एक ऐप।',
+    what: (bot: boolean) => [
+      ['shop', 'अपनी दुकान का लिंक', 'nukkadsale.in/your-shop: हर प्रोडक्ट फ़ोटो, दाम और साइज़ के साथ। ग्रुप, स्टेटस और Instagram बायो में शेयर करें।', 'storefront'],
+      bot ? ['bag', 'ऑर्डर अपने आप', 'ग्राहक WhatsApp में ही ऑर्डर करें: ऑर्डर बॉट साइज़ और पता पूछता है। पेमेंट तक स्टॉक होल्ड, तो एक पीस दो बार नहीं बिकता।', 'chat-product']
+          : ['bag', 'ऑर्डर अपने आप', 'ग्राहक ख़ुद साइज़ चुनें, पता डालें और ऑर्डर करें। पेमेंट तक स्टॉक होल्ड, तो एक पीस दो बार नहीं बिकता।', 'buyer-sale'],
+      ['wallet', 'भरोसेमंद पेमेंट', 'ग्राहक सीधे आपकी UPI ID पर भेजें। हर ऑर्डर की अपनी सही रकम – स्क्रीनशॉट देखे बिना पता चले किसने पेमेंट किया।', 'orders-check'],
+      ['book', 'पैकिंग, ग्राहक और खाता', 'भेजने की लिस्ट, पते के लेबल, कूरियर बुकिंग (आपके Shiprocket खाते से), ग्राहकों की लिस्ट और अपने आप भरने वाला खाता।', 'home'],
+    ],
+    notH: 'NukkadSale क्या नहीं है',
+    nots: [
+      ['मार्केटप्लेस नहीं', 'आपकी दुकान, आपके ग्राहक, आपके दाम। ग्राहक आपके ग्रुप से आते हैं, हमारे नहीं।'],
+      ['पेमेंट ऐप नहीं', 'पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में। हम कभी नहीं रखते।'],
+      ['नया WhatsApp नहीं', 'वही नंबर, वही ग्रुप, बेचने का वही तरीका।'],
+    ],
     painEyebrow: 'जाना-पहचाना लगता है?', painH: 'एक डील डाली… और फ़ोन पर मैसेज की बाढ़।',
     dms: ['Price?', 'M size hai??', 'Mera hold karo pls', 'Payment kaise karu?', 'Still available??', 'COD hai?', 'Photo bhejo', 'Hello??'],
     pains: ['एक ही दाम और साइज़ 50 बार लिखना', 'पहले किसने पूछा था?', 'आख़िरी पीस 3 लोगों से वादा', 'पेमेंट के स्क्रीनशॉट ढूँढते रहना'],
@@ -172,17 +195,6 @@ const C = {
     profitEyebrow: 'मुनाफ़ा', profitH: 'जानें असल में कितना कमाया।',
     profitP: 'एक पीस की लागत एक बार डालें। हर सेल पर मुनाफ़ा दिखेगा, और खाते में इस महीने का – माल की लागत और ख़र्च घटाकर।',
     profitAlt: 'खाता: इस महीने का मुनाफ़ा, लागत और ख़र्च घटाकर',
-    featEyebrow: 'फ़ीचर', featH: 'WhatsApp सेलर को जो चाहिए, बस वही।',
-    feats: (bot: boolean) => [
-      ['chat', bot ? 'WhatsApp में ऑर्डर' : 'हर सेल का एक लिंक', bot ? 'ग्राहक उसी चैट में ऑर्डर करें जो वो रोज़ चलाते हैं। उनके लिए कोई ऐप नहीं।' : 'ग्राहक आपके लिंक से सेकंडों में ऑर्डर करें। कोई ऐप नहीं, कोई साइन-अप नहीं।'],
-      ['₹', 'सही रकम वाला UPI', 'हर ऑर्डर के अपने पैसे, तो पता रहे किसने पेमेंट किया। GPay, PhonePe, Paytm – कोई भी UPI ऐप।'],
-      ['lock', 'कभी ज़्यादा न बिके', 'पेमेंट होने तक स्टॉक ग्राहक के लिए होल्ड। समय पर पेमेंट नहीं? अपने आप फिर से बिक्री में।'],
-      ['book', 'खाता अपने आप', 'हर बिक्री अपने आप जुड़ती है। कूरियर या कैश एक टैप में जोड़ें।'],
-      ['box', 'पैक करके भेजें', 'पेमेंट → पैक → भेजा → पहुँचा। सारे पते के लेबल एक साथ प्रिंट।'],
-      ['users', 'अपने ग्राहक पहचानें', 'बार-बार आने वाले ग्राहक, कुल ख़रीद, एक टैप में WhatsApp।'],
-      ['refresh', 'एक टैप में फिर से बेचें', 'फ़ोटो, दाम और साइज़ पहले से भरे मिलते हैं।'],
-      ['download', 'ऐप की तरह खुलता है', 'Chrome या Safari से होम स्क्रीन पर जोड़ें। ऐप स्टोर की ज़रूरत नहीं।'],
-    ],
     payEyebrow: 'पेमेंट', payH: 'पैसे लेने के दो तरीके। आप चुनें।',
     pay: [
       ['wallet', 'UPI, सीधे आपको', ['ग्राहक आपकी UPI ID पर भेजें', 'सही रकम से पता चले किसने भेजा', 'एक टैप में पक्का', 'कोई गेटवे फ़ीस नहीं'], 'छोटे सेलर के लिए सबसे अच्छा'],
@@ -194,6 +206,8 @@ const C = {
     onb: [['अपने काम के बारे में बताएं', 'नीचे छोटा फ़ॉर्म भरें – एक मिनट लगेगा।'], ['हम आपको कॉल करेंगे', 'समझेंगे आप कैसे बेचते हैं और आपके साथ दुकान सेट करेंगे।'], ['बेचना शुरू करें', 'लॉग इन WhatsApp पर मिलेगा। उसी दिन पहली सेल डालें।']],
     faqEyebrow: 'सवाल', faqH: 'सेलर अक्सर पूछते हैं',
     faq: (bot: boolean) => [
+      ['NukkadSale असल में है क्या?', 'WhatsApp और Instagram पर बेचने वालों का ऐप। आप प्रोडक्ट डालते हैं। NukkadSale आपको दुकान का लिंक और ऑर्डर लिंक देता है, ऑर्डर लेता है, बताता है किसने पेमेंट किया, और स्टॉक, पार्सल व खाता संभालता है। यह मार्केटप्लेस नहीं है और आपका पैसा कभी नहीं रखता।'],
+      ['यह किसके लिए है?', 'बुटीक, रीसेलर और घर से काम करने वाले – जो कपड़े, ज्वेलरी, परफ़्यूम, खाना या कुछ भी WhatsApp ग्रुप, स्टेटस या Instagram DM से बेचते हैं।'],
       ['क्या ग्राहकों को कुछ इंस्टॉल करना होगा?', bot ? 'नहीं। वो WhatsApp में ही ऑर्डर करें, या किसी भी ब्राउज़र में आपके लिंक से।' : 'नहीं। वो किसी भी ब्राउज़र में आपके लिंक से ऑर्डर करें – कोई ऐप नहीं, कोई साइन-अप नहीं।'],
       ['कौन से पेमेंट ऐप चलते हैं?', 'कोई भी UPI ऐप – GPay, PhonePe, Paytm, BHIM वग़ैरह। पैसा सीधे आपकी UPI ID (या आपके अपने Razorpay खाते) में।'],
       ['क्या WhatsApp Business API खाता चाहिए?', 'नहीं। अपने ही WhatsApp नंबर और ग्रुप से बेचते रहें।'],
@@ -203,11 +217,11 @@ const C = {
       ['क्या Shiprocket ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। Shiprocket पहले से चलाते हैं तो जोड़ें – कूरियर बुक करें और ट्रैकिंग भेजें।'],
       ['इसका ख़र्च कितना है?', 'कॉल पर हम प्लान समझा देंगे – कोई बाध्यता नहीं।'],
     ],
-    formEyebrow: 'शुरू करें', formH: 'अपने काम के बारे में बताएं', formP: 'हम WhatsApp पर संपर्क करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
-    f: { name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'कॉल बैक माँगें', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
+    formEyebrow: 'शुरू करें', formH: 'अपनी दुकान पाएं', formP: 'अपना नाम और WhatsApp नंबर दें। हम मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
+    f: { more: 'अपने काम के बारे में और बताएं (ज़रूरी नहीं)', name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'कॉल बैक माँगें', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
     errs: { fill: 'कृपया नाम, बिज़नेस का नाम और WhatsApp नंबर भरें।', phone: 'कृपया सही 10 अंकों का मोबाइल नंबर डालें।', many: 'आज इस फ़ोन से बहुत सारे फ़ॉर्म आ चुके। कृपया WhatsApp पर मैसेज करें।' },
     thanksH: 'धन्यवाद!', thanksP: (p: string) => `आपकी जानकारी मिल गई। दुकान सेट करने के लिए हम जल्द ही ${p} पर WhatsApp करेंगे।`, thanksWa: 'अभी WhatsApp पर मैसेज करें', back: '← होम पर वापस',
-    footer: 'WhatsApp पर बेचिए, आसानी से।', policies: [['/privacy', 'प्राइवेसी'], ['/terms', 'शर्तें'], ['/refunds', 'रिफ़ंड'], ['/contact', 'संपर्क']],
+    footer: 'WhatsApp पर बेचने वालों का ऐप।', policies: [['/privacy', 'प्राइवेसी'], ['/terms', 'शर्तें'], ['/refunds', 'रिफ़ंड'], ['/contact', 'संपर्क']],
   },
 }
 type Copy = (typeof C)['en'] | (typeof C)['hi']
@@ -234,7 +248,7 @@ nav.links a{text-decoration:none;font-weight:600;color:var(--muted);white-space:
 @media (max-width:1100px){nav.links{gap:16px;margin-left:8px}}@media (max-width:980px){nav.links{display:none}}
 nav.links a:hover{color:var(--ink)}
 .hgap{flex:1}
-.lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem}
+.lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem;display:inline-flex;align-items:center;min-height:40px}
 .login{font-weight:700;text-decoration:none;font-size:.95rem;display:inline-flex;align-items:center;min-height:40px;white-space:nowrap}.login .short,header .btn .short{display:none}
 section{padding:72px 0}
 .eyebrow{display:inline-block;font-weight:800;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin-bottom:10px}
@@ -245,9 +259,10 @@ h3{font-size:1.15rem;font-weight:800;margin-bottom:6px}
 .center{text-align:center}.center .lead{margin:0 auto}
 .hero{padding:56px 0 40px;background:radial-gradient(circle at 85% 10%,#ffe3cf,transparent 45%),radial-gradient(circle at 5% 90%,#fff0e2,transparent 40%)}
 .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
-.hero h1 span{color:var(--brand)}
+.hero h1{font-size:clamp(2.3rem,5.4vw,3.6rem)}.hero h1 span{color:var(--brand)}
 .hero .lead{margin:18px 0 26px}
 .ctas{display:flex;gap:12px;flex-wrap:wrap}
+.heronote{margin-top:10px;color:var(--muted);font-size:.93rem;font-weight:600}
 .trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;color:var(--muted);font-weight:600;font-size:.93rem}
 .trust span:before{content:"✓ ";color:var(--green);font-weight:900}
 .phones{position:relative;height:560px}
@@ -280,9 +295,6 @@ h3{font-size:1.15rem;font-weight:800;margin-bottom:6px}
 .green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e);color:#fff}
 .green .lead{color:#d3eedc}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:36px}
-.feat{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px}
-.feat .ic{width:46px;height:46px;border-radius:14px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;color:var(--brand);margin-bottom:12px}
-.feat p{color:var(--muted);font-size:.95rem}
 .pay{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:36px;max-width:860px;margin-left:auto;margin-right:auto}
 .paycard{background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px}
 .paycard .ic{color:var(--brand)}
@@ -299,12 +311,12 @@ h3{font-size:1.15rem;font-weight:800;margin-bottom:6px}
 .onb b{display:inline-flex;width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;align-items:center;justify-content:center;margin-bottom:12px;font-size:1.1rem}
 .onb p{color:var(--muted)}
 .faq{max-width:780px;margin:30px auto 0;display:grid;gap:12px}
-details{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 22px}
-summary{font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details{background:#fff;border:1px solid var(--line);border-radius:18px}
+summary{font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;min-height:48px}
 summary::-webkit-details-marker{display:none}
 summary:after{content:"+";font-size:1.4rem;line-height:1;color:var(--brand)}
 details[open] summary:after{content:"–"}
-details p{color:var(--muted);margin-top:10px}
+details p{color:var(--muted);padding:0 22px 18px}
 .formsec{background:linear-gradient(160deg,var(--brand2),var(--brand) 60%,var(--deep));color:#fff}
 .formsec .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:start}
 .formsec .lead{color:#ffe8d9}
@@ -336,6 +348,22 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 .ticks b{display:block;font-size:1.02rem;margin-bottom:2px}.ticks span:not(.ic){color:var(--muted);font-size:.95rem}
 .pair{display:flex;gap:5%;justify-content:center;align-items:flex-start;padding-bottom:20px}
 .pair .phone{position:relative;width:47%;max-width:250px}.pair .b{margin-top:60px}
+/* What you get */
+.what{background:#fff;border-bottom:1px solid var(--line)}
+.gets{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
+.get{background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:22px 20px 0;display:flex;flex-direction:column;overflow:hidden}
+.get .ic{width:46px;height:46px;border-radius:14px;background:var(--soft);color:var(--brand);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.get p{color:var(--muted);font-size:.95rem;margin-bottom:18px}
+.get .crop{margin-top:auto;height:260px;border-radius:20px 20px 0 0;overflow:hidden;border:6px solid #1d1a16;border-bottom:0}
+.get .crop img{width:100%;height:100%;object-fit:cover;object-position:top}
+.nots{margin-top:28px;border:1px solid var(--line);border-radius:22px;padding:22px 24px;display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:center}
+.nots h3{margin:0}
+.nots ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.nots b{display:block;margin-bottom:2px}.nots span{color:var(--muted);font-size:.93rem}
+.nots li{padding-left:16px;border-left:3px solid var(--brand)}
+details.more{padding:0;border:0;background:none}
+details.more summary{font-weight:700;color:var(--deep);font-size:.95rem;justify-content:flex-start;gap:8px;padding:8px 0;min-height:40px}
+details.more summary:after{content:"+"}details.more[open] summary:after{content:"–"}
 .note.small{font-size:.9rem;font-weight:500;margin-top:24px;padding-left:14px;border-left:3px solid var(--line)}
 .dark .lead{margin-top:6px}
 .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
@@ -349,7 +377,7 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 .profit .wrap>div{padding:64px 0}
 .peek{margin:0;align-self:end;height:340px;overflow:hidden;border-radius:30px 30px 0 0;border:9px solid #1d1a16;border-bottom:0;max-width:290px;justify-self:center;margin-top:48px;box-shadow:0 -10px 50px rgba(80,40,10,.18)}
 .peek img{width:100%;border-radius:22px 22px 0 0;margin-top:-27%}
-@media (max-width:1000px){.bento{grid-template-columns:1fr 1fr}}
+@media (max-width:1000px){.bento,.gets{grid-template-columns:1fr 1fr}.nots{grid-template-columns:1fr}.nots ul{grid-template-columns:1fr}}
 @media (max-width:900px){
   .split .wrap,.split.rev .wrap,.profit .wrap{grid-template-columns:1fr;gap:36px}
   .split.rev .pair{order:2}
@@ -371,7 +399,7 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
   .duo .phone{width:46%}
   .ctas .btn{width:100%}
   .ticks.two{grid-template-columns:1fr}
-  .bento{grid-template-columns:1fr}.tile .crop{height:250px}
+  .bento,.gets{grid-template-columns:1fr}.tile .crop{height:250px}.get .crop{height:170px}
   .pair .b{margin-top:36px}
 }@media (max-width:430px){
   header .wrap{gap:8px;padding-left:14px;padding-right:14px}.logo{font-size:1.08rem;gap:6px}header .btn.sm{padding:0 12px}header .btn .long{display:none}header .btn .short{display:inline}
@@ -383,7 +411,7 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 `
 
 const Logo = () => <a class="logo" href="/"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="#fff" stroke-width="1.4" /><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5" /></svg></i><span>NukkadSale</span></a>
-const Phone = (p: { img: string; cls?: string; alt: string }) => <div class={`phone ${p.cls ?? ''}`}><img src={`/site/${p.img}.webp`} alt={p.alt} loading="lazy" width="540" height="1169" /></div>
+const Phone = (p: { img: string; cls?: string; alt: string; eager?: boolean }) => <div class={`phone ${p.cls ?? ''}`}><img src={`/site/${p.img}.webp`} alt={p.alt} loading={p.eager ? 'eager' : 'lazy'} fetchpriority={p.eager ? 'high' : undefined} width="540" height="1169" /></div>
 
 function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string; children: Child }) {
   const origin = new URL(p.c.req.url).origin
@@ -410,7 +438,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <header>
           <div class="wrap">
             <Logo />
-            <nav class="links">{['how', 'shop', 'tools', 'shipping', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
+            <nav class="links">{['what', 'how', 'shop', 'tools', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
@@ -443,23 +471,39 @@ site.get('/', async (c) => {
   const err = c.req.query('err')
   return c.html('<!doctype html>' + (
     <Page c={c} k={k} lang={lang} back="/">
-      <section class="hero">
+      <section class="hero" data-sec="hero">
         <div class="wrap">
           <div>
             <span class="eyebrow">{k.eyebrow}</span>
             <h1>{k.h1a}<br /><span>{k.h1b}</span></h1>
             <p class="lead">{k.sub(bot)}</p>
-            <div class="ctas"><a class="btn primary" href="#get-started">{k.heroCta}</a><a class="btn ghost" href="#how">{k.heroCta2}</a></div>
+            <div class="ctas"><a class="btn primary" href="#get-started">{k.heroCta}</a><a class="btn ghost" href="#what">{k.heroCta2}</a></div>
+            <p class="heronote">{k.heroNote}</p>
             <div class="trust">{k.trust.map((x) => <span>{x}</span>)}</div>
           </div>
-          <div class="phones" aria-hidden="true">
-            <Phone img={bot ? 'chat-pay' : 'buyer-sale'} cls="p1" alt="" />
-            <Phone img={lang === 'hi' ? 'home-hi' : 'home'} cls="p2" alt="" />
+          <div class="phones">
+            <Phone img="storefront" cls="p1" alt={k.heroAlt[0]} eager />
+            <Phone img={lang === 'hi' ? 'home-hi' : 'home'} cls="p2" alt={k.heroAlt[1]} eager />
           </div>
         </div>
       </section>
 
-      <section class="dark pain">
+      <section id="what" class="what" data-sec="what">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow">{k.whatEyebrow}</span><h2>{k.whatH}</h2><p class="lead">{k.whatP}</p></div>
+          <div class="gets">
+            {k.what(bot).map(([ic, h, p, img]) => (
+              <div class="get"><span class="ic">{svgIcon(ic)}</span><h3>{h}</h3><p>{p}</p><div class="crop"><img src={`/site/${img}.webp`} alt={h} loading="lazy" width="540" height="1169" /></div></div>
+            ))}
+          </div>
+          <div class="nots">
+            <h3>{k.notH}</h3>
+            <ul>{k.nots.map(([h, p]) => <li><b>{h}</b><span>{p}</span></li>)}</ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="dark pain" data-sec="pain">
         <div class="wrap">
           <div>
             <span class="eyebrow">{k.painEyebrow}</span>
@@ -470,7 +514,7 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section id="how">
+      <section id="how" data-sec="how">
         <div class="wrap">
           <div class="center"><span class="eyebrow">{k.howEyebrow}</span><h2>{k.howH}</h2></div>
           <div class="steps">
@@ -481,7 +525,7 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section class="green paise">
+      <section class="green paise" data-sec="paise">
         <div class="wrap">
           <div>
             <span class="eyebrow" style="color:#ffd43b">{k.paiseEyebrow}</span>
@@ -493,7 +537,7 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section id="shop" class="split">
+      <section id="shop" class="split" data-sec="shop">
         <div class="wrap">
           <div>
             <span class="eyebrow">{k.shopEyebrow}</span><h2>{k.shopH}</h2><p class="lead">{k.shopP}</p>
@@ -503,7 +547,7 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section id="tools" class="dark">
+      <section id="tools" class="dark" data-sec="tools">
         <div class="wrap">
           <div class="center"><span class="eyebrow" style="color:#ffb07a">{k.toolsEyebrow}</span><h2>{k.toolsH}</h2><p class="lead">{k.toolsP}</p></div>
           <div class="bento">
@@ -514,7 +558,7 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section id="shipping" class="split rev">
+      <section id="shipping" class="split rev" data-sec="shipping">
         <div class="wrap">
           <div class="pair"><Phone img="ship-book" cls="a" alt={k.shipAlt[0]} /><Phone img="track" cls="b" alt={k.shipAlt[1]} /></div>
           <div>
@@ -525,21 +569,14 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section class="profit">
+      <section class="profit" data-sec="profit">
         <div class="wrap">
           <div><span class="eyebrow">{k.profitEyebrow}</span><h2>{k.profitH}</h2><p class="lead">{k.profitP}</p></div>
           <figure class="peek"><img src="/site/profit.webp" alt={k.profitAlt} loading="lazy" width="540" height="1169" /></figure>
         </div>
       </section>
 
-      <section id="features">
-        <div class="wrap">
-          <div class="center"><span class="eyebrow">{k.featEyebrow}</span><h2>{k.featH}</h2></div>
-          <div class="grid">{k.feats(bot).map(([ic, h, p]) => <div class="feat"><div class="ic">{svgIcon(ic as string)}</div><h3>{h}</h3><p>{p}</p></div>)}</div>
-        </div>
-      </section>
-
-      <section style="background:var(--soft)">
+      <section style="background:var(--soft)" data-sec="payments">
         <div class="wrap center">
           <span class="eyebrow">{k.payEyebrow}</span><h2>{k.payH}</h2>
           <div class="pay" style="text-align:left">
@@ -551,28 +588,28 @@ site.get('/', async (c) => {
         </div>
       </section>
 
-      <section class="hindi">
+      <section class="hindi" data-sec="hindi">
         <div class="wrap">
           <div><span class="eyebrow">{k.hiEyebrow}</span><h2>{k.hiH}</h2><p class="lead">{k.hiP}</p></div>
           <div class="duo"><Phone img="home" alt="English" /><Phone img="home-hi" alt="हिंदी" /></div>
         </div>
       </section>
 
-      <section style="padding-top:20px">
+      <section style="padding-top:20px" data-sec="onboarding">
         <div class="wrap">
           <div class="center"><span class="eyebrow">{k.onbEyebrow}</span><h2>{k.onbH}</h2></div>
           <div class="onb">{k.onb.map(([h, p], i) => <div><b>{i + 1}</b><h3>{h}</h3><p>{p}</p></div>)}</div>
         </div>
       </section>
 
-      <section id="faq" style="padding-top:20px">
+      <section id="faq" style="padding-top:20px" data-sec="faq">
         <div class="wrap">
           <div class="center"><span class="eyebrow">{k.faqEyebrow}</span><h2>{k.faqH}</h2></div>
           <div class="faq">{k.faq(bot).map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}</div>
         </div>
       </section>
 
-      <section class="formsec" id="get-started">
+      <section class="formsec" id="get-started" data-sec="form">
         <div class="wrap">
           <div>
             <span class="eyebrow" style="color:#ffe8d9">{k.formEyebrow}</span>
@@ -583,15 +620,20 @@ site.get('/', async (c) => {
             {err && <div class="err">{err}</div>}
             <div class="fields">
               <div><label for="name">{k.f.name}</label><input id="name" name="name" autocomplete="name" required maxlength={60} /></div>
-              <div><label for="business">{k.f.business}</label><input id="business" name="business" required maxlength={80} /></div>
               <div><label for="phone">{k.f.phone}</label><div class="tel"><span>+91</span><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength={14} placeholder="98XXXXXXXX" required /></div></div>
-              <div><label for="city">{k.f.city}</label><input id="city" name="city" autocomplete="address-level2" maxlength={60} /></div>
+              <div><label for="business">{k.f.business}</label><input id="business" name="business" required maxlength={80} /></div>
               <div><label for="sells">{k.f.sells}</label><input id="sells" name="sells" placeholder={k.f.sellsPh} maxlength={120} /></div>
-              <div><label for="channel">{k.f.channel}</label><select id="channel" name="channel"><Options map={CHANNELS} lang={lang} placeholder={k.f.choose} /></select></div>
-              <div><label for="volume">{k.f.volume}</label><select id="volume" name="volume"><Options map={VOLUMES} lang={lang} placeholder={k.f.choose} /></select></div>
-              <div><label for="payments">{k.f.payments}</label><select id="payments" name="payments"><Options map={PAYMENTS} lang={lang} placeholder={k.f.choose} /></select></div>
             </div>
-            <div><label for="message">{k.f.message}</label><textarea id="message" name="message" maxlength={1000} /></div>
+            <details class="more">
+              <summary>{k.f.more}</summary>
+              <div class="fields" style="margin-top:14px">
+                <div><label for="city">{k.f.city}</label><input id="city" name="city" autocomplete="address-level2" maxlength={60} /></div>
+                <div><label for="channel">{k.f.channel}</label><select id="channel" name="channel"><Options map={CHANNELS} lang={lang} placeholder={k.f.choose} /></select></div>
+                <div><label for="volume">{k.f.volume}</label><select id="volume" name="volume"><Options map={VOLUMES} lang={lang} placeholder={k.f.choose} /></select></div>
+                <div><label for="payments">{k.f.payments}</label><select id="payments" name="payments"><Options map={PAYMENTS} lang={lang} placeholder={k.f.choose} /></select></div>
+              </div>
+              <div style="margin-top:14px"><label for="message">{k.f.message}</label><textarea id="message" name="message" maxlength={1000} /></div>
+            </details>
             <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex={-1} autocomplete="off" /></div>
             <button class="btn primary" type="submit" style="width:100%;min-height:54px;font-size:1.05rem">{k.f.submit}</button>
             <p class="consent">{k.f.consent} <a href="/privacy">{k.f.privacy}</a>.</p>

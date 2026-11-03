@@ -179,15 +179,15 @@ Sellers pick in **Settings → How you get paid** and can switch at any time. Or
 
 **How it works**
 
-1. The order gets a **unique amount**: the price plus 1–99 paise that no other open order of that seller has. For example, ₹799 becomes ₹799.48.
+1. The order gets a **unique amount**: the price minus 1–99 paise (so a buyer never pays more than listed), an amount no other open order of that seller has. For example, ₹799 becomes ₹798.52.
 2. The buyer pays, and the right buttons appear for their device:
-   - **Android:** one **Pay** button with `upi://pay?pa=<seller VPA>&am=799.48&tn=<order no>`. The phone shows its own UPI app chooser.
+   - **Android:** one **Pay** button with `upi://pay?pa=<seller VPA>&am=798.52&tn=<order no>`. The phone shows its own UPI app chooser.
    - **iPhone:** iOS has no chooser, and `upi://` opens whichever app claimed it last, or nothing. So there's one button per app: GPay (`gpay://upi/pay`), PhonePe (`phonepe://pay`), Paytm (`paytmmp://pay`), and BHIM/other (`upi://`).
    - **Any phone:** **Copy UPI ID** and **Copy amount** as a fallback.
    - **Computer:** the QR code is open by default.
    - When the buyer comes back from their UPI app, the page scrolls to **"I have paid"** and highlights it.
 3. The buyer taps **"I have paid"**, or sends their payment screenshot, which is the habit they already have. **No UTR or reference number is ever asked for**, because most buyers can't find one.
-4. The seller sees **"Did you get ₹799.48 in your UPI app?"** with Yes / No buttons. If the buyer sent a screenshot, it appears with a warning that screenshots can be faked. The unique paise let the seller match the payment in their UPI app at a glance.
+4. The seller sees **"Did you get ₹798.52 in your UPI app?"** with Yes / No buttons. If the buyer sent a screenshot, it appears with a warning that screenshots can be faked. The unique paise let the seller match the payment in their UPI app at a glance.
 5. **"Waiting for money":** buyers often pay without telling anyone, so the Check payment tab also lists every open amount, including holds that lapsed in the last 24 hours. Those amounts stay reserved for a day, so a late payment can't be confused with a new order. Tapping Yes on a lapsed order takes the piece back if it's still in stock, or flags a refund.
 
 **Cost:** ₹0. P2M UPI below ₹2,000 carries no MDR (merchant discount rate, the bank fee merchants pay on each payment). Small merchants stay at zero MDR up to ₹1 lakh/month in receipts. ([Insights on India](https://www.insightsonindia.com/2026/09/16/upi-merchant-discount-rate-mdr-framework-2026/), [FintechSpecs](https://fintechspecs.com/blog/india-upi-mdr-october-15-2026-merchant-fee-explained/))
@@ -248,7 +248,7 @@ Buyer taps Send  →  bot: photo + price + stock + size buttons (or a list for >
                  →  quantity buttons (only if more than 1 allowed)
                  →  "Send it to this address? [✅ Yes, here] [✏️ New address]"   (saved buyers)
                     or "Type your full address with pincode"                     (first time)
-                 →  stock held · "Pay ₹799.48" button + UPI ID to copy
+                 →  stock held · "Pay ₹798.52" button + UPI ID to copy
                     + [✅ I have paid] [❌ Cancel]  – or the buyer just sends a screenshot
 Seller taps Yes  →  bot: "✅ Payment received! Order #… Updates will come here."
 Seller ships     →  bot: "📦 Order #…: Packed / Sent / Delivered"
@@ -444,7 +444,7 @@ A busy flash sale (50 pieces, 300 buyers) uses only a few thousand requests, so 
 | Voice | A 🔊 button reads the instructions for each main screen aloud, using the phone's own text-to-speech (free, `hi-IN` / `en-IN`). |
 | Familiar habits | Soundbox-style spoken "New order" with a vibration. Khatabook-style green **You got ₹** and red **You gave ₹**. WhatsApp-green share buttons. |
 | Tasks, not menus | Home shows "N payments to check / N orders to send / N paying now". Orders open on the first tab that has work in it. |
-| Questions, not jargon | "Did you get ₹799.48 in your UPI app?" → ✓ Yes / ✗ No. Status chips have icons (⏳ 🔎 ✅ ↩️). |
+| Questions, not jargon | "Did you get ₹798.52 in your UPI app?" → ✓ Yes / ✗ No. Status chips have icons (⏳ 🔎 ✅ ↩️). |
 | Pictures | A product photo on every order card. Numbered steps when creating a sale. A big photo picker. |
 | No typing where avoidable | +/− steppers, size presets (S M L XL, 28–36, 250g/500g/1kg), remembered buyer details |
 | Human help | ❓ in the header goes to a simple FAQ, plus a "Chat with us on WhatsApp" button (`SUPPORT_PHONE`) |

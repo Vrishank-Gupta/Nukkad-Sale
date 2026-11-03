@@ -14,6 +14,7 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .dark{background:radial-gradient(circle at 50% 30%,#2a2620,#0e0d0b);color:#fff}
 .green{background:linear-gradient(170deg,#1f7a4a,#0f4d2e);color:#fff}
 .brand{position:absolute;left:44px;top:38px;font-weight:900;font-size:30px;letter-spacing:-.5px}
+.brand .tagl{font-size:19px;font-weight:700;letter-spacing:0;margin-left:14px;padding-left:14px;border-left:2px solid currentColor;opacity:.65;vertical-align:4px}
 .handle{position:absolute;right:44px;top:44px;font-weight:700;font-size:22px;opacity:.6}
 .h{font-size:64px;font-weight:900;line-height:1.03;letter-spacing:-1.5px}
 .m{font-size:40px;font-weight:800;line-height:1.12;letter-spacing:-.5px}
@@ -54,6 +55,16 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .dot5{display:inline-block;width:22px;height:22px;border-radius:50%;margin-right:8px}
 .lblsheet{border-radius:6px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);background:#fff}
 .lblsheet img{width:100%;display:block}
+.whitep{background:#fff;color:#14120f}
+.dict{font-family:Georgia,"Noto Serif",serif;font-size:30px;color:#6b6258}.dict i{color:#d9480f}
+.getrow{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.getrow b{flex:none;width:46px;height:46px;border-radius:16px;background:#fff1e8;color:#d9480f;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900}
+.getrow div{font-size:25px;font-weight:800;line-height:1.2}.getrow small{display:block;font-size:19px;font-weight:600;color:#6b6258;margin-top:4px}
+.notrow{display:flex;gap:10px;flex-wrap:nowrap;white-space:nowrap}.notrow span{font-size:19px;font-weight:800;border:2px solid #ecdccc;border-radius:99px;padding:8px 14px;color:#5c5248}
+.col{position:absolute;top:250px;bottom:110px;padding:28px 26px;border-radius:28px}
+.col h4{font-size:22px;font-weight:900;letter-spacing:2px;margin-bottom:22px}
+.mess{font-size:27px;font-weight:800;margin-bottom:20px;display:flex;gap:12px;align-items:center}
+.mess i{font-style:normal;flex:none;width:36px;height:36px;border-radius:50%;background:#e03131;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
 .slot{position:absolute;left:60px;right:60px;border:4px dashed rgba(255,255,255,.55);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;opacity:.8;text-align:center;padding:20px}
 .cream .slot{border-color:rgba(29,26,22,.3)}
 </style>
@@ -63,7 +74,8 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 <script>
 const P = (img, l, t, w = 300, extra = '') => `<div class="phone" style="left:${l}px;top:${t}px;width:${w}px;height:${w * 2.167}px;${extra}"><div class="scr"><img src="img/${img}.png"></div></div>`
 const SHOP = (w, c = 'currentColor') => `<svg class="shop" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
-const B = (dark) => `<div class="brand"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('1em')}NukkadSale</span></div>`
+// The brand bar always says what NukkadSale is, so any single post read on its own can't be mistaken for a payment app or a shop's ad.
+const B = (dark) => `<div class="brand"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('1em')}NukkadSale</span><span class="tagl">App for WhatsApp sellers</span></div>`
 const F = {
 // ── Post 1: launch
 p1: `<div class="f cream">${B()}
@@ -262,6 +274,51 @@ p17g: `<div class="f orange">${B()}
     <div class="s" style="margin-top:18px;font-size:27px">On your phone, in English and हिंदी.</div>
     <div style="margin-top:44px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div></div></div>`,
 
+// ─────── Explainers: what NukkadSale is (pin these; white + orange "definition" look) ───────
+// Post 18 · What is NukkadSale? – one image that answers it completely
+p18: `<div class="f whitep">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:110px">
+    <div class="dict">nukkad·sale <i>noun</i></div>
+    <div class="h" style="font-size:50px;margin-top:8px;line-height:1.08">An app that gives your WhatsApp business a <span class="o">proper online shop.</span></div></div>
+  <div style="position:absolute;left:44px;top:345px;width:400px">
+      <div class="getrow"><b>1</b><div>Your own shop link<small>Every product, photo, price and size</small></div></div>
+      <div class="getrow"><b>2</b><div>Orders taken for you<small>Buyers pick a size and order themselves</small></div></div>
+      <div class="getrow"><b>3</b><div>Money to your UPI<small>You see who paid – no screenshots</small></div></div>
+      <div class="getrow"><b>4</b><div>Stock, packing, khata<small>Kept for you, on your phone</small></div></div><div style="margin-top:22px;font-size:28px;font-weight:900;color:#d9480f">nukkadsale.in</div></div>
+  ${P('storefront', 476, 330, 200)}
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;display:flex;justify-content:space-between;align-items:center">
+    <div class="notrow"><span>Not a marketplace</span><span>Not a payment app</span></div></div></div>`,
+// Post 19 · carousel "What you get" – one real screen per thing you get
+p19a: `<div class="f whitep">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:150px">
+    <div class="s" style="color:#6b6258">Selling on WhatsApp?</div>
+    <div class="h" style="font-size:78px;margin-top:10px">Here’s exactly<br>what you get<br>with <span class="o">NukkadSale.</span></div>
+    <div class="s" style="margin-top:22px;font-size:27px;color:#5c5248">One app for your whole selling business. Swipe →</div></div>
+  ${P('storefront', 60, 620, 150, 'transform:rotate(-6deg)')}${P('buyer-sale', 215, 645, 150, 'transform:rotate(-2deg)')}${P('orders-check', 370, 645, 150, 'transform:rotate(2deg)')}${P('home', 525, 620, 150, 'transform:rotate(6deg)')}</div>`,
+p19b: get(1, 'Your own <span class="o">shop link</span>', 'nukkadsale.in/your-shop. Every product with photos, price and sizes. Share it in your groups, on status and in your Instagram bio.', 'storefront'),
+p19c: get(2, 'Orders, <span class="o">taken for you</span>', 'Buyers tap your post, pick a size, add their address and order. No app for them. The piece is held while they pay, so it’s never sold twice.', 'buyer-sale'),
+p19d: get(3, 'Money straight<br>to <span class="o">your UPI</span>', 'Each order gets its own exact amount, so you see who paid. Tap “Yes, I got it”. We never touch your money.', 'orders-check'),
+p19e: get(4, 'Packing, buyers<br>&amp; <span class="o">khata</span>', 'A to-send list, address labels, your buyers list and a khata that writes itself. In English and हिंदी.', 'home'),
+p19f: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:150px">
+    <div class="h" style="font-size:60px">Your shop.<br>Your buyers.<br>Your money.</div>
+    <div style="margin-top:36px;display:grid;gap:16px">
+      ${['Not a marketplace – buyers come from your groups', 'Not a payment app – money goes to your UPI', 'Not a new WhatsApp – keep your number'].map((x) => `<div style="font-size:28px;font-weight:800;display:flex;gap:14px;align-items:center"><span style="width:12px;height:12px;border-radius:50%;background:#fff;flex:none"></span>${x}</div>`).join('')}</div>
+    <div style="margin-top:50px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get your shop · nukkadsale.in</span></div>
+    <div class="s" style="margin-top:16px;font-size:23px;opacity:.9">We set it up with you on WhatsApp.</div></div></div>`,
+// Post 20 · Before / after – the four things a seller juggles today vs one app
+p20: `<div class="f whitep">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:110px;text-align:center">
+    <div class="h" style="font-size:54px">4 things you juggle.<br><span class="o">1 app.</span></div></div>
+  <div class="col" style="left:44px;width:300px;background:#f6f1ea">
+    <h4 style="color:#8a7f73">TODAY</h4>
+    ${['DMs for every order', 'Notebook for stock', 'Screenshots for payments', 'Excel for hisaab'].map((x) => `<div class="mess"><i>✗</i>${x}</div>`).join('')}
+    <div style="font-size:21px;color:#8a7f73;font-weight:600;margin-top:10px">…and the last piece sold twice.</div></div>
+  <div class="col" style="right:44px;width:300px;background:#fff1e8;padding:24px 20px">
+    <h4 style="color:#d9480f;font-size:19px;letter-spacing:1px">WITH NUKKADSALE</h4>
+    ${P('home', 0, 0, 210, 'position:relative;margin:0 auto')}</div>
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center;font-size:24px;font-weight:800">Shop link · orders · UPI payments · stock · khata <span class="o">– nukkadsale.in</span></div></div>`,
+
 // ── Stories
 s1: `<div class="f story dark">${B()}
   <div style="position:absolute;left:50px;right:50px;top:260px;text-align:center"><div class="h" style="font-size:84px">Orders kaise<br>lete ho? 🤔</div></div></div>`,
@@ -315,6 +372,14 @@ function nw(cls, n, title, body, img) {
     <div class="h" style="font-size:48px;margin-top:-20px">${title}</div>
     <div class="s" style="margin-top:14px;font-size:24px">${body}</div></div>
   ${P(img, 420, 130, 270)}<div class="swipe">Swipe →</div></div>`
+}
+function get(n, title, body, img) {
+  return `<div class="f whitep">${B()}<div class="handle">${n}/4</div>
+  <div style="position:absolute;left:44px;top:130px;width:370px">
+    <div style="font-size:22px;font-weight:900;letter-spacing:2px;color:#d9480f">YOU GET</div>
+    <div class="h" style="font-size:52px;margin-top:10px">${title}</div>
+    <div class="s" style="margin-top:18px;font-size:24px;color:#5c5248">${body}</div></div>
+  ${P(img, 430, 130, 260)}<div class="swipe">Swipe →</div></div>`
 }
 function step(n, title, body, img) {
   return `<div class="f cream">${B()}

@@ -23,6 +23,14 @@ resellers, home businesses, mostly on phones, English + Hindi/Hinglish.
    already made, make a different one or drop it. Before posting, put the new item next to the last 3 on the
    grid and check they don't look like a set.
 
+8. **Say what NukkadSale is, every time.** A seller who scrolled the grid thought we sell "a WhatsApp message
+   organiser and a payment method", because every post showed one feature or one pain. So: every post and story
+   carries the brand bar tagline **App for WhatsApp sellers**, every reel end card says **The app for WhatsApp
+   sellers**, and every caption gets the one-line definition (`publish.mjs` adds it above the hashtags unless the
+   caption already says it). Keep the explainers – Reel 17, Post 18, Post 19 – pinned at the top of the grid.
+   Feature posts should show the feature *inside the shop* (shop link → order → payment → khata), not alone.
+   Never delete posted items; improve what hasn't gone out yet.
+
 ## What each format is for
 
 | Format | Job | Lives | What goes in it | How often |
