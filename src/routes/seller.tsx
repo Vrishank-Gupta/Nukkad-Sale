@@ -1444,11 +1444,14 @@ app.get('/orders', async (c) => {
   const s = c.get('seller')
   const now = Date.now()
   const counts = await c.env.DB
-    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')} FROM orders o WHERE o.seller_id = ?1`)
+    // The "Check payment" number counts only what needs the seller (buyer says paid, refunds) – the same number
+    // as "N payments to check" on home. Buyers still paying are listed in the tab, but not counted.
+    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.key === 'check' ? `o.status IN ('verifying', 'refund_due')` : x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')},
+              COUNT(DISTINCT CASE WHEN ${CHECK_WHERE} THEN COALESCE(o.cart_id, o.id) END) AS anycheck FROM orders o WHERE o.seller_id = ?1`)
     .bind(s.id, now)
     .first<Record<string, number>>()
   // Open on the first tab that has work in it, so the seller lands on what needs doing.
-  const tab = TABS.find((x) => x.key === c.req.query('tab')) ?? TABS.find((x) => (counts?.[x.key] ?? 0) > 0) ?? TABS[2]
+  const tab = TABS.find((x) => x.key === c.req.query('tab')) ?? TABS.find((x) => (counts?.[x.key] ?? 0) > 0) ?? ((counts?.anycheck ?? 0) > 0 ? TABS[0] : TABS[2])
   const { results } = await c.env.DB
     .prepare(`SELECT o.*, d.title, d.image_key, v.label FROM orders o JOIN drops d ON d.id = o.drop_id JOIN variants v ON v.id = o.variant_id
               WHERE o.seller_id = ?1 AND (${tab.where})

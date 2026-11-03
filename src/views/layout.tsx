@@ -134,7 +134,7 @@ nav.bottom a.on{color:var(--brand)}
 .qr svg{width:230px;height:230px;display:block;margin:10px auto;background:#fff;border-radius:12px}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);width:max-content;max-width:min(400px,calc(100% - 32px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-size:.92rem;font-weight:600;line-height:1.35;z-index:70;text-align:left;box-shadow:0 8px 28px rgba(0,0,0,.25);animation:toastin .2s ease-out}
 @keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
-.sticky-pay{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 25%);padding:20px 0 10px;margin:0 -2px}
+.sticky-pay{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:14px 0 10px;margin:0 -2px;z-index:2}.paymore{margin-top:-2px}
 body.hasnav .sticky-pay{bottom:calc(59px + env(safe-area-inset-bottom))}   /* stay above the bottom tab bar */
 .countdown{font-size:2rem;font-weight:700;text-align:center;color:var(--warn);font-variant-numeric:tabular-nums}
 details summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;list-style:none}

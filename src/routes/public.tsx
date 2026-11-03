@@ -464,8 +464,11 @@ pub.get('/d/:id', async (c) => {
               <input id="pincode" name="pincode" inputmode="numeric" autocomplete="postal-code" pattern="[1-9][0-9]{5}" maxlength={6} placeholder="411045" required />
             </div>
           </div>
+          {/* Only the Pay button stays pinned while the buyer fills the form – the rest scrolls, so fields aren't covered. */}
           <div class="sticky-pay">
             <button id="paybtn" type="submit" class="btn primary block big">{t.payBtn(rupees(price))}</button>
+          </div>
+          <div class="paymore">
             {!offer && <button type="button" class="btn block" style="margin-top:8px" data-addsale={JSON.stringify({ d: drop.id, t: drop.title, p: drop.price_paise, img: drop.image_key, max: drop.max_per_order, labels: Object.fromEntries(variants.map((v) => [v.id, v.label])) })}><Icon n="bag" s={18} />{t.addToCart}</button>}
             <small style="display:block;text-align:center;margin-top:6px">{t.upiApps}</small>
             <small style="display:block;text-align:center">{t.heldWhilePay} {seller.pay_mode === 'direct' ? t.payTo(seller.shop_name) : ''}</small>
