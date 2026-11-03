@@ -28,7 +28,7 @@ const C = {
   en: {
     title: 'NukkadSale – Online shop and order app for WhatsApp sellers',
     desc: 'NukkadSale is an app for people who sell on WhatsApp: your own shop link, orders taken for you, UPI payments straight to you (and you know who paid), stock, shipping and a khata that writes itself. हिंदी + English.',
-    nav: ['What you get', 'How it works', 'Shop link', 'Tools', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
+    nav: ['What you get', 'How it works', 'Shop link', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
     eyebrow: 'An app for people who sell on WhatsApp',
     h1a: 'Your online shop,', h1b: 'made for WhatsApp.',
     sub: (bot: boolean): string => bot
@@ -105,6 +105,15 @@ const C = {
     hiEyebrow: 'हिंदी', hiH: 'In Hindi too – for you and your buyers', hiP: 'Switch English ⇄ हिंदी with one tap. Every screen, every message.',
     onbEyebrow: 'Getting started', onbH: 'We set it up with you',
     onb: [['Tell us about your business', 'Fill the short form below – takes a minute.'], ['We call you', 'We understand how you sell and set up your shop with you.'], ['Start selling', 'You get your login on WhatsApp. Post your first sale the same day.']],
+    priceEyebrow: 'Pricing', priceH: 'Simple monthly plans. No commission.',
+    priceP: 'Start free. Pay a flat monthly fee only when you sell more – never a cut of your sales.',
+    plans: [
+      { name: 'Shuruaat', price: '₹0', per: 'free', limit: 'Up to 30 paid orders a month', tag: 'For trying it out', extra: 'Every feature included. Nothing to pay to start.', cta: 'Start free' },
+      { name: 'Dukaan', price: '₹999', per: '/month', limit: 'Up to 300 paid orders a month', tag: 'For regular sellers', extra: 'Every feature, ten times the orders.', cta: 'Choose Dukaan' },
+      { name: 'Badi Dukaan', price: '₹1,999', per: '/month', limit: 'Unlimited orders', tag: 'For busy sellers', extra: 'Plus automatic payments with Razorpay and priority help on WhatsApp', cta: 'Choose Badi Dukaan' },
+    ],
+    planIncl: 'Every plan includes', incl: ['Your shop link and order links', 'Exact-amount UPI payments', 'Stock held while buyers pay', 'Khata and profit', 'Discounts, special prices, waitlist', 'Address labels and Shiprocket booking', 'Buyers list', 'हिंदी + English'],
+    priceNote: 'No commission on your sales – money goes straight to your UPI ID or your own Razorpay account (Razorpay charges its own fee). We set up your shop with you on every plan.',
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
     faq: (bot: boolean) => [
       ['What is NukkadSale, exactly?', 'An app for sellers who sell on WhatsApp and Instagram. You add your products. NukkadSale gives you a shop link and order links, takes the orders, tells you who paid, and keeps your stock, parcels and khata in order. It is not a marketplace and it never holds your money.'],
@@ -116,7 +125,7 @@ const C = {
       ['How do I get my account?', 'Fill the form below. We’ll call you, set up your shop and send your login on WhatsApp. You can change your PIN anytime in Settings.'],
       ['Can buyers order many things at once?', 'Yes. From your shop link they add items to a cart and pay you once. Your spend-more offer comes off automatically.'],
       ['Do I need Shiprocket?', 'No. Send parcels however you like and print address labels from NukkadSale. If you already use Shiprocket, connect it to book couriers and share tracking.'],
-      ['What does it cost?', 'We’ll walk you through the plans on the call – no commitment.'],
+      ['What does it cost?', 'Shuruaat is free for up to 30 paid orders a month. Dukaan is ₹999 a month for up to 300 orders, and Badi Dukaan is ₹1,999 a month with unlimited orders. No commission on your sales.'],
     ],
     formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Leave your name and WhatsApp number. We’ll message you, set up your shop with you and send your login.',
     f: { more: 'Tell us more about your business (optional)', name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Request a call back', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
@@ -127,7 +136,7 @@ const C = {
   hi: {
     title: 'NukkadSale – WhatsApp पर बेचने वालों की ऑनलाइन दुकान और ऑर्डर ऐप',
     desc: 'NukkadSale WhatsApp पर बेचने वालों का ऐप है: अपनी दुकान का लिंक, ऑर्डर अपने आप, UPI पेमेंट सीधे आपको (और पता रहे किसने भेजा), स्टॉक, शिपिंग और अपने आप भरने वाला खाता। हिंदी + English।',
-    nav: ['क्या मिलता है', 'कैसे काम करता है', 'दुकान लिंक', 'टूल', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
+    nav: ['क्या मिलता है', 'कैसे काम करता है', 'दुकान लिंक', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
     eyebrow: 'WhatsApp पर बेचने वालों का ऐप',
     h1a: 'आपकी ऑनलाइन दुकान,', h1b: 'WhatsApp के लिए।',
     sub: (bot: boolean): string => bot
@@ -204,6 +213,15 @@ const C = {
     hiEyebrow: 'English', hiH: 'आपके और आपके ग्राहकों के लिए हिंदी में', hiP: 'एक टैप में English ⇄ हिंदी। हर स्क्रीन, हर मैसेज।',
     onbEyebrow: 'शुरुआत', onbH: 'हम आपके साथ सेट-अप करेंगे',
     onb: [['अपने काम के बारे में बताएं', 'नीचे छोटा फ़ॉर्म भरें – एक मिनट लगेगा।'], ['हम आपको कॉल करेंगे', 'समझेंगे आप कैसे बेचते हैं और आपके साथ दुकान सेट करेंगे।'], ['बेचना शुरू करें', 'लॉग इन WhatsApp पर मिलेगा। उसी दिन पहली सेल डालें।']],
+    priceEyebrow: 'क़ीमत', priceH: 'आसान मासिक प्लान। कोई कमीशन नहीं।',
+    priceP: 'मुफ़्त शुरू करें। ज़्यादा बिकने पर ही तय मासिक फ़ीस – आपकी बिक्री में से कभी कोई हिस्सा नहीं।',
+    plans: [
+      { name: 'शुरुआत', price: '₹0', per: 'मुफ़्त', limit: 'महीने में 30 पेड ऑर्डर तक', tag: 'आज़माने के लिए', extra: 'हर फ़ीचर शामिल। शुरू करने के लिए कुछ नहीं देना।', cta: 'मुफ़्त शुरू करें' },
+      { name: 'दुकान', price: '₹999', per: '/महीना', limit: 'महीने में 300 पेड ऑर्डर तक', tag: 'नियमित सेलर के लिए', extra: 'हर फ़ीचर, दस गुना ऑर्डर।', cta: 'दुकान चुनें' },
+      { name: 'बड़ी दुकान', price: '₹1,999', per: '/महीना', limit: 'अनलिमिटेड ऑर्डर', tag: 'ज़्यादा ऑर्डर वालों के लिए', extra: 'साथ में Razorpay से अपने आप पेमेंट और WhatsApp पर प्राथमिकता से मदद', cta: 'बड़ी दुकान चुनें' },
+    ],
+    planIncl: 'हर प्लान में', incl: ['दुकान का लिंक और ऑर्डर लिंक', 'सही रकम वाला UPI पेमेंट', 'पेमेंट तक स्टॉक होल्ड', 'खाता और मुनाफ़ा', 'छूट, ख़ास दाम, वेटलिस्ट', 'पते के लेबल और Shiprocket बुकिंग', 'ग्राहकों की लिस्ट', 'हिंदी + English'],
+    priceNote: 'बिक्री पर कोई कमीशन नहीं – पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में (Razorpay अपनी फ़ीस लेता है)। हर प्लान में दुकान हम आपके साथ सेट करते हैं।',
     faqEyebrow: 'सवाल', faqH: 'सेलर अक्सर पूछते हैं',
     faq: (bot: boolean) => [
       ['NukkadSale असल में है क्या?', 'WhatsApp और Instagram पर बेचने वालों का ऐप। आप प्रोडक्ट डालते हैं। NukkadSale आपको दुकान का लिंक और ऑर्डर लिंक देता है, ऑर्डर लेता है, बताता है किसने पेमेंट किया, और स्टॉक, पार्सल व खाता संभालता है। यह मार्केटप्लेस नहीं है और आपका पैसा कभी नहीं रखता।'],
@@ -215,7 +233,7 @@ const C = {
       ['मेरा खाता कैसे बनेगा?', 'नीचे फ़ॉर्म भरें। हम कॉल करके आपकी दुकान सेट करेंगे और लॉग इन WhatsApp पर भेजेंगे। PIN आप कभी भी सेटिंग में बदल सकते हैं।'],
       ['क्या ग्राहक एक साथ कई चीज़ें ले सकते हैं?', 'हाँ। आपकी दुकान के लिंक से कार्ट में डालें और एक बार में पेमेंट करें। ज़्यादा ख़रीद वाली छूट अपने आप लगती है।'],
       ['क्या Shiprocket ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। Shiprocket पहले से चलाते हैं तो जोड़ें – कूरियर बुक करें और ट्रैकिंग भेजें।'],
-      ['इसका ख़र्च कितना है?', 'कॉल पर हम प्लान समझा देंगे – कोई बाध्यता नहीं।'],
+      ['इसका ख़र्च कितना है?', 'शुरुआत प्लान महीने में 30 पेड ऑर्डर तक मुफ़्त है। दुकान ₹999 महीना (300 ऑर्डर तक) और बड़ी दुकान ₹1,999 महीना (अनलिमिटेड ऑर्डर)। बिक्री पर कोई कमीशन नहीं।'],
     ],
     formEyebrow: 'शुरू करें', formH: 'अपनी दुकान पाएं', formP: 'अपना नाम और WhatsApp नंबर दें। हम मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
     f: { more: 'अपने काम के बारे में और बताएं (ज़रूरी नहीं)', name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'कॉल बैक माँगें', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
@@ -364,6 +382,18 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 details.more{padding:0;border:0;background:none}
 details.more summary{font-weight:700;color:var(--deep);font-size:.95rem;justify-content:flex-start;gap:8px;padding:8px 0;min-height:40px}
 details.more summary:after{content:"+"}details.more[open] summary:after{content:"–"}
+.pricing{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px;align-items:stretch}
+.plan{background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:26px 24px;display:flex;flex-direction:column}
+.plan.mid{border:2px solid var(--brand);background:#fff;box-shadow:0 18px 40px rgba(226,86,12,.12)}
+.plan .tag{align-self:flex-start;margin-bottom:14px}
+.plan h3{font-size:1.3rem;margin:0}
+.plan .amt{display:flex;align-items:baseline;gap:6px;margin:8px 0 4px}.plan .amt b{font-size:2.6rem;font-weight:900;letter-spacing:-1px}.plan .amt span{color:var(--muted);font-weight:700}
+.plan .lim{font-weight:800}.plan .extra{color:var(--muted);font-size:.93rem;margin-top:8px}
+.plan .extra{margin-bottom:22px}.plan .btn{margin-top:auto;width:100%}
+.incl{margin-top:22px;border:1px solid var(--line);border-radius:22px;padding:18px 22px;display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:start}
+.incl ul{list-style:none;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px 18px;color:var(--muted);font-size:.93rem}
+.incl li:before{content:"✓ ";color:var(--green);font-weight:900}
 .note.small{font-size:.9rem;font-weight:500;margin-top:24px;padding-left:14px;border-left:3px solid var(--line)}
 .dark .lead{margin-top:6px}
 .bento{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:40px}
@@ -377,7 +407,7 @@ details.more summary:after{content:"+"}details.more[open] summary:after{content:
 .profit .wrap>div{padding:64px 0}
 .peek{margin:0;align-self:end;height:340px;overflow:hidden;border-radius:30px 30px 0 0;border:9px solid #1d1a16;border-bottom:0;max-width:290px;justify-self:center;margin-top:48px;box-shadow:0 -10px 50px rgba(80,40,10,.18)}
 .peek img{width:100%;border-radius:22px 22px 0 0;margin-top:-27%}
-@media (max-width:1000px){.bento,.gets{grid-template-columns:1fr 1fr}.nots{grid-template-columns:1fr}.nots ul{grid-template-columns:1fr}}
+@media (max-width:1000px){.incl ul{grid-template-columns:1fr 1fr}.incl{grid-template-columns:1fr}.bento,.gets{grid-template-columns:1fr 1fr}.nots{grid-template-columns:1fr}.nots ul{grid-template-columns:1fr}}
 @media (max-width:900px){
   .split .wrap,.split.rev .wrap,.profit .wrap{grid-template-columns:1fr;gap:36px}
   .split.rev .pair{order:2}
@@ -388,7 +418,7 @@ details.more summary:after{content:"+"}details.more[open] summary:after{content:
   .phones{height:470px;max-width:440px;margin:0 auto;width:100%}
   .phone{width:205px}
   .steps,.grid{grid-template-columns:1fr 1fr}
-  .onb,.pay{grid-template-columns:1fr}
+  .onb,.pay,.plans{grid-template-columns:1fr}
   section{padding:56px 0}
 }
 @media (max-width:560px){
@@ -438,7 +468,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <header>
           <div class="wrap">
             <Logo />
-            <nav class="links">{['what', 'how', 'shop', 'tools', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
+            <nav class="links">{['what', 'how', 'shop', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
@@ -599,6 +629,26 @@ site.get('/', async (c) => {
         <div class="wrap">
           <div class="center"><span class="eyebrow">{k.onbEyebrow}</span><h2>{k.onbH}</h2></div>
           <div class="onb">{k.onb.map(([h, p], i) => <div><b>{i + 1}</b><h3>{h}</h3><p>{p}</p></div>)}</div>
+        </div>
+      </section>
+
+      <section id="pricing" class="pricing" data-sec="pricing">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow">{k.priceEyebrow}</span><h2>{k.priceH}</h2><p class="lead">{k.priceP}</p></div>
+          <div class="plans">
+            {k.plans.map((pl, i) => (
+              <div class={`plan${i === 1 ? ' mid' : ''}`}>
+                <span class="tag">{pl.tag}</span>
+                <h3>{pl.name}</h3>
+                <div class="amt"><b>{pl.price}</b><span>{pl.per}</span></div>
+                <p class="lim">{pl.limit}</p>
+                {pl.extra && <p class="extra">{pl.extra}</p>}
+                <a class={`btn ${i === 1 ? 'primary' : 'ghost'}`} href="#get-started" data-track={`Pricing · ${pl.cta}`}>{pl.cta}</a>
+              </div>
+            ))}
+          </div>
+          <div class="incl"><b>{k.planIncl}</b><ul>{k.incl.map((x) => <li>{x}</li>)}</ul></div>
+          <p class="note center">{k.priceNote}</p>
         </div>
       </section>
 

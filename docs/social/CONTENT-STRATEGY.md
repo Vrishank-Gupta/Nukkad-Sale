@@ -9,8 +9,10 @@ resellers, home businesses, mostly on phones, English + Hindi/Hinglish.
    sees it. No mock-ups that look like the app. Re-capture after every UI change (`tests/e2e/social/capture.mjs`).
 2. **Only features that are live.** Ordering inside the WhatsApp chat is shown only while the WhatsApp bot is
    on in production. Until then: the website order link.
-3. **No prices, no "free".** Don't promise plan prices, trials or "free forever". Gateway fees: "Razorpay
-   charges its own fee".
+3. **Prices exactly as on the website.** Plans (also on nukkadsale.in#pricing): Shuruaat ₹0 for up to 30 paid
+   orders a month, Dukaan ₹999/month up to 300, Badi Dukaan ₹1,999/month unlimited with automatic Razorpay
+   payments. Every feature in every plan, no commission on sales. Don't invent trials, discounts or yearly deals.
+   Gateway fees: "Razorpay charges its own fee".
 4. **Paise go below the price.** A ₹799 item is paid as ₹798.xx, never ₹799.xx – that's how the app works.
 5. **Hook in the first frame.** The first thing anyone sees – first reel frame, first story, first carousel
    slide – states the problem or the promise. No logos-first openers.
