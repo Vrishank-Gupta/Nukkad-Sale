@@ -28,7 +28,7 @@ const C = {
   en: {
     title: 'NukkadSale – Online shop and order app for WhatsApp sellers',
     desc: 'NukkadSale is an app for people who sell on WhatsApp: your own shop link, orders taken for you, UPI payments straight to you (and you know who paid), stock, shipping and a khata that writes itself. हिंदी + English.',
-    nav: ['What you get', 'How it works', 'Shop link', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
+    nav: ['What you get', 'How it works', 'Features', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
     eyebrow: 'An app for people who sell on WhatsApp',
     h1a: 'Your online shop,', h1b: 'made for WhatsApp.',
     sub: (bot: boolean): string => bot
@@ -44,7 +44,7 @@ const C = {
       bot ? ['bag', 'Orders, taken for you', 'Buyers order inside WhatsApp: the ordering bot asks size and address. Stock is held while they pay, so nothing is sold twice.', 'chat-product']
           : ['bag', 'Orders, taken for you', 'Buyers pick a size, add their address and order themselves. Stock is held while they pay, so nothing is sold twice.', 'buyer-sale'],
       ['wallet', 'Payments you can trust', 'Buyers pay your UPI ID directly. Every order has its own exact amount, so you know who paid without checking screenshots.', 'orders-check'],
-      ['book', 'Packing, buyers and khata', 'A to-send list, address labels, courier booking (with your Shiprocket account), your buyers list and a khata that writes itself.', 'home'],
+      ['book', 'Packing, buyers and khata', 'A to-send list, address labels, courier booking with tracking, your buyers list and a khata that writes itself.', 'home'],
     ],
     notH: 'What NukkadSale is not',
     nots: [
@@ -84,18 +84,71 @@ const C = {
       ['bell', 'Back-in-stock list', 'Sold out? Buyers ask to be told. Restock and message them in one tap.', 'waitlist', '0%', 'The list of buyers waiting for a restock'],
     ],
     shipEyebrow: 'Shipping', shipH: 'Pack it, book it, let them track it.',
-    shipP: 'Print address labels for every order at once. Use Shiprocket? Connect your own account and book couriers right from your orders.',
+    shipP: 'Print address labels for every order at once. Connect your courier account and book couriers right from your orders.',
     shipPts: [
       ['wallet', 'See courier prices first', 'Rates and delivery dates for the buyer’s pincode, before you book.'],
       ['receipt', 'Label and pickup in one go', 'Book, print the courier label and schedule the pickup without leaving the order.'],
       ['pin', 'Buyers track it themselves', 'Their order page shows every scan – fewer “where is my parcel?” messages.'],
       ['refresh', 'Failed delivery? Sorted.', 'Ask for another attempt, get it back, send again or restock.'],
     ],
-    shipNote: 'Shiprocket is optional and uses your own Shiprocket account and wallet. Don’t use it? Nothing changes for you or your buyers.',
+    shipNote: 'Courier booking is optional and uses your own courier account and wallet. Prefer your local courier? Print labels and send parcels the way you do today.',
     shipAlt: ['Booking a courier: prices and delivery dates for the buyer’s pincode', 'The buyer’s order page with live courier tracking'],
     profitEyebrow: 'Profit', profitH: 'Know what you actually made.',
     profitP: 'Add what a piece cost you, once. Every sale shows its profit, and the khata shows this month’s – after product cost and expenses.',
     profitAlt: 'The khata showing profit this month after product cost and expenses',
+    allEyebrow: 'Everything in the app', allH: 'All the little things that save you hours.',
+    allP: 'Built around how WhatsApp sellers really work – and every one of them is in every plan.',
+    all: (bot: boolean): [string, string, [string, string][]][] => [
+      ['bag', 'Taking orders', [
+        ['An order link for every product', 'Paste it in groups and on status. Buyers order in seconds – no app, no sign-up.'],
+        ...(bot ? [['Orders inside WhatsApp', 'Buyers tap your post and order in the chat. The ordering bot asks size and address.'] as [string, string]] : []),
+        ['Cart, one payment', 'Kurta + dupatta + earrings – one checkout, one amount to check.'],
+        ['Order from a chat', 'Buyer DMed you? Pick the items and send a ready message with the total and a pay link.'],
+        ['Drops that open on time', 'Announce a launch. Buyers see a countdown and the sale opens on the minute.'],
+        ['Photos, sizes, limits', 'Up to 5 swipeable photos, sizes or weights, and a limit per buyer.'],
+        ['Your stock stays private', 'Buyers see “Available”, “Selling fast” or “Sold out” – never your count.'],
+      ]],
+      ['wallet', 'Getting paid', [
+        ['An exact amount per order', 'Every order has its own paise, so you see who paid at a glance.'],
+        ['Any UPI app', 'One Pay button on Android, GPay / PhonePe / Paytm buttons on iPhone, a QR code on a computer.'],
+        ['More than one UPI ID', 'Shop and personal – choose which one each sale pays into.'],
+        ['Cash on delivery', 'Turn on COD for any sale, with an extra COD charge if you want one.'],
+        ['Automatic payments', 'Busy? Payments through your own Razorpay account confirm themselves.'],
+        ['Screenshots, checked', 'Buyers can send a screenshot; you see it with a reminder to check your UPI app.'],
+      ]],
+      ['tag', 'Selling more', [
+        ['Discounts', 'The old price is struck through on the page and in your group post.'],
+        ['A special price for one buyer', 'A private link with her price. Nobody else gets it.'],
+        ['“Spend more, save more”', 'Set it once – it shows on every product and applies itself.'],
+        ['Back-in-stock list', 'Sold out? Buyers ask to be told. Restock and message them in one tap each.'],
+        ['Sell again in one tap', 'Photos, price and sizes come back pre-filled.'],
+        ['Share with photos', 'Photos and caption go to WhatsApp together, just like your normal post.'],
+      ]],
+      ['box', 'Packing and delivery', [
+        ['A to-send list', 'Paid → Packed → Sent → Delivered, and buyers see every step.'],
+        ['Address labels', 'Print every label at once – 8 on an A4 page, COD amount included.'],
+        ['Compare and book couriers', 'Rates and delivery dates for the buyer’s pincode. Book and schedule the pickup in one go.'],
+        ['Tracking for buyers', 'Their order page shows every scan – fewer “where is my parcel?” messages.'],
+        ['Failed deliveries, sorted', 'Ask for another attempt, take it back, send again or restock.'],
+        ['Delivery charges your way', 'A delivery fee per sale, free above an amount you choose.'],
+      ]],
+      ['book', 'Knowing your numbers', [
+        ['A khata that writes itself', 'Every paid order is added. Cash sales and expenses in one tap.'],
+        ['Profit, not just sales', 'Add your cost once – see profit per piece and for the month.'],
+        ['Excel for your CA', 'Download the full khata whenever you need it.'],
+        ['Your week at a glance', 'Sales chart, orders, average order and money still to come.'],
+        ['Know your buyers', 'Ranked by spend, repeat buyers marked, WhatsApp them in one tap.'],
+        ['Broadcast-ready contacts', 'Export buyer numbers for your WhatsApp broadcast lists.'],
+      ]],
+      ['phone', 'Made for your phone', [
+        ['हिंदी + English', 'Every screen and every buyer message. Switch with one tap.'],
+        ['It reads aloud', 'Tap Listen and the screen’s instructions are read out to you.'],
+        ['“New order” alerts', 'Spoken alert and a buzz while the app is open, a phone notification when it isn’t.'],
+        ['Home is a to-do list', '“2 payments to check · 5 orders to send” – just start at the top.'],
+        ['Opens like an app', 'Add it to your home screen from Chrome or Safari. Works on a computer too.'],
+        ['Only the tools you want', 'Switch off anything you don’t use in Settings.'],
+      ]],
+    ],
     payEyebrow: 'Payments', payH: 'Two ways to get paid. You choose.',
     pay: [
       ['wallet', 'UPI, straight to you', ['Buyers pay your UPI ID', 'Exact amount tells you who paid', 'One tap to confirm', 'No gateway fee'], 'Best for small sellers'],
@@ -112,7 +165,7 @@ const C = {
       { name: 'Dukaan', price: '₹999', per: '/month', limit: 'Up to 300 paid orders a month', tag: 'For regular sellers', extra: 'Every feature, ten times the orders.', cta: 'Choose Dukaan' },
       { name: 'Badi Dukaan', price: '₹1,999', per: '/month', limit: 'Unlimited orders', tag: 'For busy sellers', extra: 'Plus automatic payments with Razorpay and priority help on WhatsApp', cta: 'Choose Badi Dukaan' },
     ],
-    planIncl: 'Every plan includes', incl: ['Your shop link and order links', 'Exact-amount UPI payments', 'Stock held while buyers pay', 'Khata and profit', 'Discounts, special prices, waitlist', 'Address labels and Shiprocket booking', 'Buyers list', 'हिंदी + English'],
+    planIncl: 'Every plan includes', incl: ['Your shop link and order links', 'Exact-amount UPI payments', 'Stock held while buyers pay', 'Khata and profit', 'Discounts, special prices, waitlist', 'Address labels and courier booking', 'Buyers list', 'हिंदी + English'],
     priceNote: 'No commission on your sales – money goes straight to your UPI ID or your own Razorpay account (Razorpay charges its own fee). We set up your shop with you on every plan.',
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
     faq: (bot: boolean) => [
@@ -124,7 +177,7 @@ const C = {
       ['Can I use it in Hindi?', 'Yes. The whole app – and what your buyers see – works in Hindi and English.'],
       ['How do I get my account?', 'Fill the form below. We’ll call you, set up your shop and send your login on WhatsApp. You can change your PIN anytime in Settings.'],
       ['Can buyers order many things at once?', 'Yes. From your shop link they add items to a cart and pay you once. Your spend-more offer comes off automatically.'],
-      ['Do I need Shiprocket?', 'No. Send parcels however you like and print address labels from NukkadSale. If you already use Shiprocket, connect it to book couriers and share tracking.'],
+      ['Do I need a courier account?', 'No. Send parcels however you like and print address labels from NukkadSale. If you have a courier account, connect it to compare rates, book pickups and share tracking with buyers.'],
       ['What does it cost?', 'Shuruaat is free for up to 30 paid orders a month. Dukaan is ₹999 a month for up to 300 orders, and Badi Dukaan is ₹1,999 a month with unlimited orders. No commission on your sales.'],
     ],
     formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Leave your name and WhatsApp number. We’ll message you, set up your shop with you and send your login.',
@@ -136,7 +189,7 @@ const C = {
   hi: {
     title: 'NukkadSale – WhatsApp पर बेचने वालों की ऑनलाइन दुकान और ऑर्डर ऐप',
     desc: 'NukkadSale WhatsApp पर बेचने वालों का ऐप है: अपनी दुकान का लिंक, ऑर्डर अपने आप, UPI पेमेंट सीधे आपको (और पता रहे किसने भेजा), स्टॉक, शिपिंग और अपने आप भरने वाला खाता। हिंदी + English।',
-    nav: ['क्या मिलता है', 'कैसे काम करता है', 'दुकान लिंक', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
+    nav: ['क्या मिलता है', 'कैसे काम करता है', 'फ़ीचर', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
     eyebrow: 'WhatsApp पर बेचने वालों का ऐप',
     h1a: 'आपकी ऑनलाइन दुकान,', h1b: 'WhatsApp के लिए।',
     sub: (bot: boolean): string => bot
@@ -152,7 +205,7 @@ const C = {
       bot ? ['bag', 'ऑर्डर अपने आप', 'ग्राहक WhatsApp में ही ऑर्डर करें: ऑर्डर बॉट साइज़ और पता पूछता है। पेमेंट तक स्टॉक होल्ड, तो एक पीस दो बार नहीं बिकता।', 'chat-product']
           : ['bag', 'ऑर्डर अपने आप', 'ग्राहक ख़ुद साइज़ चुनें, पता डालें और ऑर्डर करें। पेमेंट तक स्टॉक होल्ड, तो एक पीस दो बार नहीं बिकता।', 'buyer-sale'],
       ['wallet', 'भरोसेमंद पेमेंट', 'ग्राहक सीधे आपकी UPI ID पर भेजें। हर ऑर्डर की अपनी सही रकम – स्क्रीनशॉट देखे बिना पता चले किसने पेमेंट किया।', 'orders-check'],
-      ['book', 'पैकिंग, ग्राहक और खाता', 'भेजने की लिस्ट, पते के लेबल, कूरियर बुकिंग (आपके Shiprocket खाते से), ग्राहकों की लिस्ट और अपने आप भरने वाला खाता।', 'home'],
+      ['book', 'पैकिंग, ग्राहक और खाता', 'भेजने की लिस्ट, पते के लेबल, ट्रैकिंग के साथ कूरियर बुकिंग, ग्राहकों की लिस्ट और अपने आप भरने वाला खाता।', 'home'],
     ],
     notH: 'NukkadSale क्या नहीं है',
     nots: [
@@ -192,18 +245,71 @@ const C = {
       ['bell', 'स्टॉक वापसी की लिस्ट', 'माल ख़त्म? ग्राहक बताने को कहें। स्टॉक डालें और एक टैप में मैसेज करें।', 'waitlist', '0%', 'स्टॉक का इंतज़ार कर रहे ग्राहकों की लिस्ट'],
     ],
     shipEyebrow: 'शिपिंग', shipH: 'पैक करें, बुक करें, ग्राहक ख़ुद ट्रैक करें।',
-    shipP: 'सारे ऑर्डर के पते के लेबल एक साथ प्रिंट करें। Shiprocket चलाते हैं? अपना खाता जोड़ें और ऑर्डर से ही कूरियर बुक करें।',
+    shipP: 'सारे ऑर्डर के पते के लेबल एक साथ प्रिंट करें। अपना कूरियर खाता जोड़ें और ऑर्डर से ही कूरियर बुक करें।',
     shipPts: [
       ['wallet', 'पहले कूरियर के दाम देखें', 'ग्राहक के पिनकोड के लिए रेट और पहुँचने की तारीख़ – बुक करने से पहले।'],
       ['receipt', 'लेबल और पिकअप एक साथ', 'बुक करें, कूरियर लेबल प्रिंट करें, पिकअप तय करें – ऑर्डर से ही।'],
       ['pin', 'ग्राहक ख़ुद ट्रैक करें', 'उनके ऑर्डर पेज पर हर स्कैन – “पार्सल कहाँ है?” वाले मैसेज कम।'],
       ['refresh', 'डिलीवरी नहीं हुई? संभल जाएगा।', 'फिर से कोशिश करवाएं, वापस मंगवाएं, दोबारा भेजें या स्टॉक में डालें।'],
     ],
-    shipNote: 'Shiprocket ज़रूरी नहीं – यह आपके अपने Shiprocket खाते और वॉलेट से चलता है। नहीं चलाते? आपके और ग्राहकों के लिए कुछ नहीं बदलता।',
+    shipNote: 'कूरियर बुकिंग ज़रूरी नहीं – यह आपके अपने कूरियर खाते और वॉलेट से चलती है। लोकल कूरियर पसंद है? लेबल प्रिंट करें और पार्सल पहले की तरह भेजें।',
     shipAlt: ['कूरियर बुकिंग: ग्राहक के पिनकोड के लिए दाम और तारीख़', 'ग्राहक का ऑर्डर पेज, कूरियर ट्रैकिंग के साथ'],
     profitEyebrow: 'मुनाफ़ा', profitH: 'जानें असल में कितना कमाया।',
     profitP: 'एक पीस की लागत एक बार डालें। हर सेल पर मुनाफ़ा दिखेगा, और खाते में इस महीने का – माल की लागत और ख़र्च घटाकर।',
     profitAlt: 'खाता: इस महीने का मुनाफ़ा, लागत और ख़र्च घटाकर',
+    allEyebrow: 'ऐप में सब कुछ', allH: 'छोटी-छोटी चीज़ें जो आपके घंटे बचाएं।',
+    allP: 'WhatsApp सेलर असल में जैसे काम करते हैं, उसी हिसाब से बना – और हर फ़ीचर हर प्लान में।',
+    all: (bot: boolean): [string, string, [string, string][]][] => [
+      ['bag', 'ऑर्डर लेना', [
+        ['हर प्रोडक्ट का ऑर्डर लिंक', 'ग्रुप और स्टेटस में डालें। ग्राहक सेकंडों में ऑर्डर करें – कोई ऐप, कोई साइन-अप नहीं।'],
+        ...(bot ? [['WhatsApp में ही ऑर्डर', 'ग्राहक आपकी पोस्ट पर टैप करें और चैट में ऑर्डर करें। बॉट साइज़ और पता पूछता है।'] as [string, string]] : []),
+        ['कार्ट, एक पेमेंट', 'कुर्ती + दुपट्टा + झुमके – एक चेकआउट, चेक करने को एक रकम।'],
+        ['चैट से ऑर्डर', 'ग्राहक ने DM किया? चीज़ें चुनें और कुल रकम व पेमेंट लिंक वाला मैसेज भेजें।'],
+        ['तय समय पर लॉन्च', 'लॉन्च पहले से बताएं। ग्राहक काउंटडाउन देखें, सेल ठीक समय पर खुले।'],
+        ['फ़ोटो, साइज़, लिमिट', '5 तक फ़ोटो, साइज़ या वज़न, और एक ग्राहक कितने ले सकता है।'],
+        ['आपका स्टॉक आपके पास', 'ग्राहक को सिर्फ़ “उपलब्ध”, “तेज़ी से बिक रहा” या “ख़त्म” दिखे – गिनती नहीं।'],
+      ]],
+      ['wallet', 'पैसे पाना', [
+        ['हर ऑर्डर की सही रकम', 'हर ऑर्डर के अपने पैसे, तो एक नज़र में पता चले किसने पेमेंट किया।'],
+        ['कोई भी UPI ऐप', 'Android पर एक Pay बटन, iPhone पर GPay / PhonePe / Paytm बटन, कंप्यूटर पर QR कोड।'],
+        ['एक से ज़्यादा UPI ID', 'दुकान की और अपनी – हर सेल के लिए चुनें पैसा कहाँ आए।'],
+        ['कैश ऑन डिलीवरी', 'किसी भी सेल पर COD चालू करें, चाहें तो COD चार्ज के साथ।'],
+        ['अपने आप पेमेंट', 'ज़्यादा ऑर्डर? आपके अपने Razorpay खाते से पेमेंट अपने आप पक्का।'],
+        ['स्क्रीनशॉट की जाँच', 'ग्राहक स्क्रीनशॉट भेज सकते हैं; साथ में याद दिलाया जाता है कि UPI ऐप में देखें।'],
+      ]],
+      ['tag', 'ज़्यादा बेचना', [
+        ['छूट', 'पेज और ग्रुप पोस्ट दोनों में पुराना दाम कटा हुआ दिखे।'],
+        ['एक ग्राहक के लिए ख़ास दाम', 'उनके दाम वाला प्राइवेट लिंक। किसी और को नहीं मिलेगा।'],
+        ['“ज़्यादा ख़रीदें, ज़्यादा बचाएं”', 'एक बार सेट करें – हर प्रोडक्ट पर दिखे और अपने आप लगे।'],
+        ['स्टॉक वापसी की लिस्ट', 'माल ख़त्म? ग्राहक बताने को कहें। स्टॉक डालें और एक-एक टैप में मैसेज करें।'],
+        ['एक टैप में फिर से बेचें', 'फ़ोटो, दाम और साइज़ पहले से भरे मिलें।'],
+        ['फ़ोटो के साथ शेयर', 'फ़ोटो और कैप्शन साथ में WhatsApp पर – बिल्कुल आपकी आम पोस्ट जैसे।'],
+      ]],
+      ['box', 'पैकिंग और डिलीवरी', [
+        ['भेजने की लिस्ट', 'पेमेंट → पैक → भेजा → पहुँचा, और ग्राहक हर कदम देखें।'],
+        ['पते के लेबल', 'सारे लेबल एक साथ प्रिंट – A4 पर 8, COD रकम के साथ।'],
+        ['कूरियर देखें और बुक करें', 'ग्राहक के पिनकोड के लिए रेट और पहुँचने की तारीख़। बुकिंग और पिकअप एक साथ।'],
+        ['ग्राहक के लिए ट्रैकिंग', 'उनके ऑर्डर पेज पर हर स्कैन – “पार्सल कहाँ है?” वाले मैसेज कम।'],
+        ['डिलीवरी फ़ेल? संभल जाएगा', 'फिर से कोशिश, वापस मंगवाना, दोबारा भेजना या स्टॉक में डालना।'],
+        ['डिलीवरी चार्ज आपके हिसाब से', 'हर सेल पर डिलीवरी फ़ीस, आपकी तय रकम से ऊपर मुफ़्त।'],
+      ]],
+      ['book', 'अपना हिसाब', [
+        ['अपने आप भरने वाला खाता', 'हर पेड ऑर्डर जुड़ता है। कैश बिक्री और ख़र्च एक टैप में।'],
+        ['बिक्री नहीं, मुनाफ़ा', 'लागत एक बार डालें – हर पीस और पूरे महीने का मुनाफ़ा देखें।'],
+        ['CA के लिए Excel', 'पूरा खाता जब चाहें डाउनलोड करें।'],
+        ['हफ़्ता एक नज़र में', 'बिक्री का चार्ट, ऑर्डर, औसत ऑर्डर और आने वाला पैसा।'],
+        ['अपने ग्राहक पहचानें', 'ख़रीद के हिसाब से लिस्ट, बार-बार आने वाले अलग से, एक टैप में WhatsApp।'],
+        ['ब्रॉडकास्ट के लिए नंबर', 'WhatsApp ब्रॉडकास्ट लिस्ट के लिए ग्राहकों के नंबर एक्सपोर्ट करें।'],
+      ]],
+      ['phone', 'आपके फ़ोन के लिए बना', [
+        ['हिंदी + English', 'हर स्क्रीन और ग्राहक का हर मैसेज। एक टैप में बदलें।'],
+        ['पढ़कर सुनाता है', 'सुनें दबाएं और स्क्रीन के निर्देश पढ़कर सुनाए जाते हैं।'],
+        ['“नया ऑर्डर” अलर्ट', 'ऐप खुला हो तो बोलकर अलर्ट और वाइब्रेशन, बंद हो तो फ़ोन पर नोटिफ़िकेशन।'],
+        ['होम पर काम की लिस्ट', '“2 पेमेंट चेक करने हैं · 5 ऑर्डर भेजने हैं” – बस ऊपर से शुरू करें।'],
+        ['ऐप की तरह खुलता है', 'Chrome या Safari से होम स्क्रीन पर जोड़ें। कंप्यूटर पर भी चलता है।'],
+        ['सिर्फ़ ज़रूरी टूल', 'जो इस्तेमाल न करें, सेटिंग में बंद कर दें।'],
+      ]],
+    ],
     payEyebrow: 'पेमेंट', payH: 'पैसे लेने के दो तरीके। आप चुनें।',
     pay: [
       ['wallet', 'UPI, सीधे आपको', ['ग्राहक आपकी UPI ID पर भेजें', 'सही रकम से पता चले किसने भेजा', 'एक टैप में पक्का', 'कोई गेटवे फ़ीस नहीं'], 'छोटे सेलर के लिए सबसे अच्छा'],
@@ -220,7 +326,7 @@ const C = {
       { name: 'दुकान', price: '₹999', per: '/महीना', limit: 'महीने में 300 पेड ऑर्डर तक', tag: 'नियमित सेलर के लिए', extra: 'हर फ़ीचर, दस गुना ऑर्डर।', cta: 'दुकान चुनें' },
       { name: 'बड़ी दुकान', price: '₹1,999', per: '/महीना', limit: 'अनलिमिटेड ऑर्डर', tag: 'ज़्यादा ऑर्डर वालों के लिए', extra: 'साथ में Razorpay से अपने आप पेमेंट और WhatsApp पर प्राथमिकता से मदद', cta: 'बड़ी दुकान चुनें' },
     ],
-    planIncl: 'हर प्लान में', incl: ['दुकान का लिंक और ऑर्डर लिंक', 'सही रकम वाला UPI पेमेंट', 'पेमेंट तक स्टॉक होल्ड', 'खाता और मुनाफ़ा', 'छूट, ख़ास दाम, वेटलिस्ट', 'पते के लेबल और Shiprocket बुकिंग', 'ग्राहकों की लिस्ट', 'हिंदी + English'],
+    planIncl: 'हर प्लान में', incl: ['दुकान का लिंक और ऑर्डर लिंक', 'सही रकम वाला UPI पेमेंट', 'पेमेंट तक स्टॉक होल्ड', 'खाता और मुनाफ़ा', 'छूट, ख़ास दाम, वेटलिस्ट', 'पते के लेबल और कूरियर बुकिंग', 'ग्राहकों की लिस्ट', 'हिंदी + English'],
     priceNote: 'बिक्री पर कोई कमीशन नहीं – पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में (Razorpay अपनी फ़ीस लेता है)। हर प्लान में दुकान हम आपके साथ सेट करते हैं।',
     faqEyebrow: 'सवाल', faqH: 'सेलर अक्सर पूछते हैं',
     faq: (bot: boolean) => [
@@ -232,7 +338,7 @@ const C = {
       ['क्या हिंदी में चलेगा?', 'हाँ। पूरा ऐप – और जो आपके ग्राहक देखते हैं – हिंदी और English दोनों में।'],
       ['मेरा खाता कैसे बनेगा?', 'नीचे फ़ॉर्म भरें। हम कॉल करके आपकी दुकान सेट करेंगे और लॉग इन WhatsApp पर भेजेंगे। PIN आप कभी भी सेटिंग में बदल सकते हैं।'],
       ['क्या ग्राहक एक साथ कई चीज़ें ले सकते हैं?', 'हाँ। आपकी दुकान के लिंक से कार्ट में डालें और एक बार में पेमेंट करें। ज़्यादा ख़रीद वाली छूट अपने आप लगती है।'],
-      ['क्या Shiprocket ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। Shiprocket पहले से चलाते हैं तो जोड़ें – कूरियर बुक करें और ट्रैकिंग भेजें।'],
+      ['क्या कूरियर खाता ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। कूरियर खाता है तो जोड़ें – रेट देखें, पिकअप बुक करें और ग्राहकों को ट्रैकिंग भेजें।'],
       ['इसका ख़र्च कितना है?', 'शुरुआत प्लान महीने में 30 पेड ऑर्डर तक मुफ़्त है। दुकान ₹999 महीना (300 ऑर्डर तक) और बड़ी दुकान ₹1,999 महीना (अनलिमिटेड ऑर्डर)। बिक्री पर कोई कमीशन नहीं।'],
     ],
     formEyebrow: 'शुरू करें', formH: 'अपनी दुकान पाएं', formP: 'अपना नाम और WhatsApp नंबर दें। हम मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
@@ -382,6 +488,17 @@ footer a{text-decoration:none;font-weight:600;display:inline-block;padding:10px 
 details.more{padding:0;border:0;background:none}
 details.more summary{font-weight:700;color:var(--deep);font-size:.95rem;justify-content:flex-start;gap:8px;padding:8px 0;min-height:40px}
 details.more summary:after{content:"+"}details.more[open] summary:after{content:"–"}
+.allf{background:#fff;border-top:1px solid var(--line)}
+.fgroups{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.fgroup{background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:24px 22px}
+details.fgroup{background:var(--bg);border-radius:24px}
+summary.fhead{display:flex;align-items:center;justify-content:flex-start;gap:12px;padding:0;min-height:0;cursor:default}
+summary.fhead:after{content:none}.fhead h3{margin:0}.fcount{display:none}
+details.fgroup[open] summary.fhead{margin-bottom:14px}
+.fhead .ic{width:44px;height:44px;border-radius:12px;background:var(--soft);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}
+.fgroup ul{list-style:none;padding:0;display:grid;gap:12px}
+.fgroup li{padding-left:16px;border-left:2px solid var(--line)}
+.fgroup li b{display:block;font-size:.98rem;margin-bottom:1px}.fgroup li span{color:var(--muted);font-size:.9rem;line-height:1.45}
 .pricing{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px;align-items:stretch}
 .plan{background:var(--bg);border:1px solid var(--line);border-radius:24px;padding:26px 24px;display:flex;flex-direction:column}
@@ -407,7 +524,7 @@ details.more summary:after{content:"+"}details.more[open] summary:after{content:
 .profit .wrap>div{padding:64px 0}
 .peek{margin:0;align-self:end;height:340px;overflow:hidden;border-radius:30px 30px 0 0;border:9px solid #1d1a16;border-bottom:0;max-width:290px;justify-self:center;margin-top:48px;box-shadow:0 -10px 50px rgba(80,40,10,.18)}
 .peek img{width:100%;border-radius:22px 22px 0 0;margin-top:-27%}
-@media (max-width:1000px){.incl ul{grid-template-columns:1fr 1fr}.incl{grid-template-columns:1fr}.bento,.gets{grid-template-columns:1fr 1fr}.nots{grid-template-columns:1fr}.nots ul{grid-template-columns:1fr}}
+@media (max-width:1000px){.fgroups{grid-template-columns:1fr 1fr}.incl ul{grid-template-columns:1fr 1fr}.incl{grid-template-columns:1fr}.bento,.gets{grid-template-columns:1fr 1fr}.nots{grid-template-columns:1fr}.nots ul{grid-template-columns:1fr}}
 @media (max-width:900px){
   .split .wrap,.split.rev .wrap,.profit .wrap{grid-template-columns:1fr;gap:36px}
   .split.rev .pair{order:2}
@@ -418,7 +535,10 @@ details.more summary:after{content:"+"}details.more[open] summary:after{content:
   .phones{height:470px;max-width:440px;margin:0 auto;width:100%}
   .phone{width:205px}
   .steps,.grid{grid-template-columns:1fr 1fr}
-  .onb,.pay,.plans{grid-template-columns:1fr}
+  .onb,.pay,.plans,.fgroups{grid-template-columns:1fr}
+  .fgroups{gap:12px}details.fgroup{padding:16px 18px}summary.fhead{cursor:pointer;min-height:44px}
+  .fcount{display:inline-flex;margin-left:auto;font-weight:800;color:var(--muted);font-size:.85rem}
+  summary.fhead:after{content:"+";font-size:1.4rem;color:var(--brand);margin-left:10px}details.fgroup[open] summary.fhead:after{content:"–"}
   section{padding:56px 0}
 }
 @media (max-width:560px){
@@ -468,7 +588,7 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <header>
           <div class="wrap">
             <Logo />
-            <nav class="links">{['what', 'how', 'shop', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
+            <nav class="links">{['what', 'how', 'features', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
@@ -604,6 +724,22 @@ site.get('/', async (c) => {
           <div><span class="eyebrow">{k.profitEyebrow}</span><h2>{k.profitH}</h2><p class="lead">{k.profitP}</p></div>
           <figure class="peek"><img src="/site/profit.webp" alt={k.profitAlt} loading="lazy" width="540" height="1169" /></figure>
         </div>
+      </section>
+
+      <section id="features" class="allf" data-sec="features">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow">{k.allEyebrow}</span><h2>{k.allH}</h2><p class="lead">{k.allP}</p></div>
+          <div class="fgroups">
+            {k.all(bot).map(([ic, h, items]) => (
+              <details class="fgroup" open>
+                <summary class="fhead"><span class="ic">{svgIcon(ic)}</span><h3>{h}</h3><small class="fcount">{items.length}</small></summary>
+                <ul>{items.map(([t, d]) => <li><b>{t}</b><span>{d}</span></li>)}</ul>
+              </details>
+            ))}
+          </div>
+        </div>
+        {/* Phones: only the first group starts open, so the list doesn't run five screens long. */}
+        <script>{raw(`if(innerWidth<700)document.querySelectorAll('details.fgroup').forEach(function(d,i){if(i)d.open=false})`)}</script>
       </section>
 
       <section style="background:var(--soft)" data-sec="payments">

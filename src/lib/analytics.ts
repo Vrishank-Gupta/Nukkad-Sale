@@ -39,7 +39,7 @@ setInterval(function(){if(document.visibilityState==='visible'){acc();send('leav
 export const LANDING_SECTIONS: [string, string][] = [
   ['hero', 'Top – headline'], ['what', 'What you get'], ['pain', 'The problem (DMs)'], ['how', 'How it works'],
   ['paise', 'Exact-amount UPI'], ['shop', 'Shop link'], ['tools', 'Selling tools'], ['shipping', 'Shipping'],
-  ['profit', 'Profit'], ['payments', 'Two ways to get paid'], ['hindi', 'Hindi'],
+  ['profit', 'Profit'], ['features', 'Everything in the app'], ['payments', 'Two ways to get paid'], ['hindi', 'Hindi'],
   ['onboarding', 'We set it up'], ['pricing', 'Pricing'], ['faq', 'FAQ'], ['form', 'Get-started form'],
 ]
 
