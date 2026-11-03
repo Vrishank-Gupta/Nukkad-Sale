@@ -23,7 +23,7 @@ export function courierDate(d: string): string {
 const en = {
   lang: 'en' as Lang,
   otherLangLabel: 'हिंदी',
-  tagline: 'Sell on WhatsApp. Get paid on UPI. Never oversell.',
+  tagline: 'The app that runs your WhatsApp business.',
 
   // nav
   navHome: 'Home', navOrders: 'Orders', navKhata: 'Khata', navSettings: 'Settings',
@@ -820,7 +820,7 @@ export type Dict = typeof en
 const hi: Dict = {
   lang: 'hi',
   otherLangLabel: 'English',
-  tagline: 'WhatsApp पर बेचें। UPI पर पैसे पाएं। स्टॉक से ज़्यादा कभी न बिके।',
+  tagline: 'आपका WhatsApp बिज़नेस चलाने वाला ऐप।',
 
   navHome: 'होम', navOrders: 'ऑर्डर', navKhata: 'खाता', navSettings: 'सेटिंग',
 

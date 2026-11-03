@@ -132,6 +132,7 @@ const C = {
       ['How do I start?', 'Fill the short form below. We message you on WhatsApp, set up your shop with you and send your login. Most sellers post their first product the same day.'],
       ['What does it cost?', 'Shuruaat is free for up to 30 paid orders a month. Dukaan is ₹999 a month for up to 300 orders, and Badi Dukaan is ₹1,999 a month with unlimited orders. No commission on your sales.'],
     ],
+    menu: 'Menu', swipe: 'Swipe to see all four steps →', stickyCta: 'Free to start. We set it up with you.',
     featNav: 'What it does', allJobs: 'The four jobs', backHome: '← Home', featGet: 'What you get', featSteps: 'How it works', featMore: 'See the other jobs', featCtaH: 'Ready to try it?', featCtaP: 'Free to start. We set up your shop with you on WhatsApp.',
     formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Leave your name and WhatsApp number. We’ll message you, set up your shop with you and send your login.',
     f: { more: 'Tell us more about your business (optional)', name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Request a call back', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
@@ -245,6 +246,7 @@ const C = {
       ['शुरू कैसे करें?', 'नीचे छोटा फ़ॉर्म भरें। हम WhatsApp पर मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे। ज़्यादातर सेलर उसी दिन पहला प्रोडक्ट डाल देते हैं।'],
       ['इसका ख़र्च कितना है?', 'शुरुआत प्लान महीने में 30 पेड ऑर्डर तक मुफ़्त है। दुकान ₹999 महीना (300 ऑर्डर तक) और बड़ी दुकान ₹1,999 महीना (अनलिमिटेड ऑर्डर)। बिक्री पर कोई कमीशन नहीं।'],
     ],
+    menu: 'मेन्यू', swipe: 'चारों कदम देखने के लिए स्वाइप करें →', stickyCta: 'शुरुआत मुफ़्त। सेट-अप हम करेंगे।',
     featNav: 'क्या करता है', allJobs: 'चारों काम', backHome: '← होम', featGet: 'आपको क्या मिलता है', featSteps: 'कैसे काम करता है', featMore: 'बाकी काम देखें', featCtaH: 'आज़माना चाहेंगे?', featCtaP: 'शुरुआत मुफ़्त। WhatsApp पर हम आपके साथ दुकान सेट करेंगे।',
     formEyebrow: 'शुरू करें', formH: 'अपनी दुकान पाएं', formP: 'अपना नाम और WhatsApp नंबर दें। हम मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
     f: { more: 'अपने काम के बारे में और बताएं (ज़रूरी नहीं)', name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'कॉल बैक माँगें', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
@@ -495,6 +497,17 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 }
 
 /* ===== Landing v3 ===== */
+nav.links a{display:inline-flex;align-items:center;min-height:44px}
+.menu{display:none;position:relative;border:0;background:none;border-radius:0}.menu>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:800;font-size:.92rem}
+.menu>summary::-webkit-details-marker{display:none}.menu>summary:after,.menu[open]>summary:after{content:none}
+.menu .panel{position:absolute;right:0;top:48px;width:260px;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 50px rgba(60,30,10,.18);padding:8px;display:grid;z-index:30}
+.menu .panel a{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;border-radius:10px;text-decoration:none;font-weight:700}.menu .panel a:hover{background:var(--soft)}
+.menu .panel small{padding:10px 12px 2px;color:var(--muted);font-weight:800;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase}
+.stickycta{position:fixed;left:12px;right:12px;bottom:12px;z-index:25;display:none;align-items:center;justify-content:space-between;gap:10px;background:#1d1a16;color:#fff;border-radius:18px;padding:10px 10px 10px 16px;box-shadow:0 14px 40px rgba(0,0,0,.35);transform:translateY(140%);transition:transform .25s}
+.stickycta.on{transform:none}.stickycta span{font-weight:700;font-size:.92rem;line-height:1.25}.stickycta .btn{min-height:44px;padding:0 16px;flex:none}
+.social{display:flex;gap:10px;margin-top:12px}.social a{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:var(--ink);padding:0}
+.social a:hover{border-color:var(--brand);color:var(--brand)}
+.swipehint{display:none;text-align:center;color:var(--muted);font-weight:700;font-size:.85rem;margin-top:10px}
 .badge2{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 14px;font-weight:800;font-size:.85rem;color:var(--deep)}
 .hero2{padding:40px 0 30px;background:radial-gradient(circle at 85% 10%,#ffe3cf,transparent 45%),radial-gradient(circle at 5% 90%,#fff0e2,transparent 40%)}
 .hero2 .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}
@@ -545,28 +558,47 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 .othjobs a{display:inline-flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:99px;padding:10px 16px;font-weight:700;text-decoration:none;min-height:44px}
 .ctabox{background:linear-gradient(160deg,var(--brand2),var(--brand) 60%,var(--deep));color:#fff;border-radius:26px;padding:30px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ctabox p{color:#ffe8d9}.ctabox .btn{background:#fff;color:var(--deep)}
-@media (max-width:1000px){.flow4,.who4{grid-template-columns:1fr 1fr}}
+@media (max-width:1000px){.flow4,.who4{grid-template-columns:repeat(2,minmax(0,1fr))}.whot h3{overflow-wrap:anywhere}}
+@media (max-width:980px){.menu{display:block}header .login{display:none}.stickycta{display:flex}}
 @media (max-width:900px){.hero2 .wrap{display:flex;flex-direction:column;gap:0}.hero2 .htext{display:contents}
   .hero2 .badge2{order:1;align-self:flex-start}.hero2 h1{order:2}.hero2 .lead{order:3}.hero2 .hvid{order:4;margin:0 0 20px}.hero2 .jobchips{order:5}.hero2 .ctas{order:6}.hero2 .heronote{order:7}.hero2 .notshop{order:8}
   .hero2 .hvid .vphone{width:210px;border-radius:32px;padding:7px}.hero2 .hvid .vphone video{border-radius:26px}
   .feathero .wrap{grid-template-columns:1fr;gap:28px}.jobs4,.fitems{grid-template-columns:1fr}.vphone{width:240px}}
+@media (max-width:700px){
+  .flow4{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;margin:30px -20px 0;padding:0 20px 6px;scrollbar-width:none}.flow4::-webkit-scrollbar{display:none}
+  .fstep{flex:0 0 78%;scroll-snap-align:center}.swipehint{display:block}
+  .daytbl thead{display:none}.daytbl,.daytbl tbody,.daytbl tr,.daytbl td{display:block;width:100%}.daytbl{background:none;border:0}
+  .daytbl tr{background:#fff;border:1px solid var(--line);border-radius:18px;margin-bottom:10px;padding:12px 16px}
+  .daytbl td{border:0;padding:3px 0}.daytbl td:first-child{font-size:1.05rem;margin-bottom:4px}
+  .daytbl td:nth-child(2):before{content:attr(data-l) ": ";font-weight:800}.daytbl td:nth-child(3):before{content:attr(data-l) ": ";font-weight:800}}
 @media (max-width:560px){.jobchips{grid-template-columns:1fr 1fr}.jobchip{padding:9px 10px}.jobchip .ic{width:32px;height:32px}.jobchip small{display:none}
-  .daytbl th:first-child,.daytbl td:first-child{display:none}.daytbl th,.daytbl td{padding:12px}.growrow{flex-wrap:wrap}.growrow .go{margin-left:0}}
+  .growrow{flex-wrap:wrap}.growrow .go{margin-left:0}footer{padding-bottom:90px}}
 `
 
 const Logo = () => <a class="logo" href="/"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="#fff" stroke-width="1.4" /><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5" /></svg></i><span>NukkadSale</span></a>
 const Phone = (p: { img: string; cls?: string; alt: string; eager?: boolean }) => <div class={`phone ${p.cls ?? ''}`}><img src={`/site/${p.img}.webp`} alt={p.alt} loading={p.eager ? 'eager' : 'lazy'} fetchpriority={p.eager ? 'high' : undefined} width="540" height="1169" /></div>
 /** A looping, silent clip of real app screens (public/site/clips, made by tests/e2e/social/render-clips.mjs). */
 const Clip = (p: { name: string; lang: 'en' | 'hi'; alt: string; eager?: boolean }) => (
-  <video autoplay muted loop playsinline preload={p.eager ? 'auto' : 'none'} poster={`/site/clips/${p.name}-${p.lang}.webp`} aria-label={p.alt} data-lazy={p.eager ? undefined : '1'}>
-    <source src={`/site/clips/${p.name}-${p.lang}.mp4`} type="video/mp4" />
-  </video>
+  p.eager
+    ? <video autoplay muted loop playsinline preload="auto" poster={`/site/clips/${p.name}-${p.lang}.webp`} aria-label={p.alt} title={p.alt}><source src={`/site/clips/${p.name}-${p.lang}.mp4`} type="video/mp4" /></video>
+    : <video muted loop playsinline preload="none" poster={`/site/clips/${p.name}-${p.lang}.webp`} aria-label={p.alt} title={p.alt} data-src={`/site/clips/${p.name}-${p.lang}.mp4`} />
 )
 // Clips below the fold start loading when they come near the screen; reduced-motion users get the still image.
 const CLIP_JS = `(function(){var v=[].slice.call(document.querySelectorAll('video'));if(matchMedia('(prefers-reduced-motion: reduce)').matches){v.forEach(function(x){x.removeAttribute('autoplay');x.pause()});return}
-if(!('IntersectionObserver' in window))return;var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var x=e.target;if(x.dataset.lazy){x.preload='auto';x.load();delete x.dataset.lazy}x.play().catch(function(){})}else e.target.pause()})},{rootMargin:'200px'});v.forEach(function(x){io.observe(x)})})();`
+function go(x){if(x.dataset.src){x.src=x.dataset.src;delete x.dataset.src}x.play().catch(function(){})}
+if(!('IntersectionObserver' in window)){v.forEach(go);return}var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting)go(e.target);else e.target.pause()})},{rootMargin:'150px'});v.forEach(function(x){io.observe(x)})})();
+// Phones: a "Get your shop" bar once the first screen is scrolled past (hidden again at the form).
+(function(){var bar=document.getElementById('stickycta'),hero=document.querySelector('[data-sec=hero]'),form=document.getElementById('get-started');if(!bar||!hero||!('IntersectionObserver' in window))return;var h=true,f=false;function u(){bar.classList.toggle('on',!h&&!f)}
+new IntersectionObserver(function(e){h=e[0].isIntersecting;u()}).observe(hero);if(form)new IntersectionObserver(function(e){f=e[0].isIntersecting;u()}).observe(form)})();`
 
-function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string; title?: string; children: Child }) {
+// Outline marks for the footer (same stroke style as the line icons).
+const SOCIAL_SVG = {
+  ig: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>',
+  fb: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.6 1.6-1.6h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.3H9v3h2.5V21"/></svg>',
+  yt: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor"/></svg>',
+}
+
+function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string; title?: string; desc?: string; children: Child }) {
   const origin = new URL(p.c.req.url).origin
   const title = p.title ?? p.k.title
   return (
@@ -575,14 +607,14 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
         <title>{title}</title>
-        <meta name="description" content={p.k.desc} />
+        <meta name="description" content={p.desc ?? p.k.desc} />
         <meta name="theme-color" content="#e2560c" />
         <link rel="icon" href="/icon-192.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="canonical" href={`${origin}${p.back === '/' ? '/' : p.back}`} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
-        <meta property="og:description" content={p.k.desc} />
+        <meta property="og:description" content={p.desc ?? p.k.desc} />
         <meta property="og:image" content={`${origin}/site/og.jpg`} />
         <meta property="og:url" content={`${origin}${p.back}`} />
         <meta name="twitter:card" content="summary_large_image" />
@@ -596,13 +628,30 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
+            <details class="menu">
+              <summary aria-label={p.k.menu}>{raw('<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>')}{p.k.menu}</summary>
+              <div class="panel">
+                {['how', 'jobs', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}
+                <small>{p.k.featNav}</small>
+                {SLUGS.map((s) => <a href={`/features/${s}`}>{svgIcon(FEATURES[s].icon, 18)}{FEATURES[s][p.lang].name}</a>)}
+                <small>NukkadSale</small>
+                <a href="/seller">{svgIcon('key', 18)}{p.k.login}</a>
+              </div>
+            </details>
             <a class="btn primary sm" href="/#get-started"><span class="long">{p.k.cta}</span><span class="short">{p.k.ctaShort}</span></a>
           </div>
         </header>
         <main>{p.children}</main>
+        <div class="stickycta" id="stickycta"><span>{p.k.stickyCta}</span><a class="btn primary" href="/#get-started" data-track="Sticky · Get your shop">{p.k.cta}</a></div>
         <footer>
           <div class="wrap">
-            <div><Logo /><p style="margin-top:6px">{p.k.footer}</p></div>
+            <div><Logo /><p style="margin-top:6px">{p.k.footer}</p>
+              <div class="social">
+                <a href="https://www.instagram.com/nukkadsale_official/" target="_blank" rel="noopener" aria-label="Instagram">{raw(SOCIAL_SVG.ig)}</a>
+                <a href="https://www.facebook.com/1416035184930328" target="_blank" rel="noopener" aria-label="Facebook">{raw(SOCIAL_SVG.fb)}</a>
+                <a href="https://www.youtube.com/@nukkadsale" target="_blank" rel="noopener" aria-label="YouTube">{raw(SOCIAL_SVG.yt)}</a>
+              </div>
+            </div>
             <nav>{SLUGS.map((s) => <a href={`/features/${s}`}>{FEATURES[s][p.lang].name}</a>)}</nav>
             <nav>{p.k.policies.map(([href, l]) => <a href={href}>{l}</a>)}<a href="/login">{p.k.login}</a></nav>
           </div>
@@ -712,6 +761,7 @@ site.get('/', async (c) => {
               <div class="fstep"><span class="n">{i + 1}</span><h3>{h}</h3><p>{p}</p><div class="clip"><Clip name={clip} lang={lang} alt={h} /></div></div>
             ))}
           </div>
+          <p class="swipehint">{k.swipe}</p>
         </div>
       </section>
 
@@ -737,7 +787,7 @@ site.get('/', async (c) => {
           <div class="center"><span class="eyebrow">{k.dayEyebrow}</span><h2>{k.dayH}</h2></div>
           <table class="daytbl">
             <thead><tr>{k.dayCols.map((x) => <th>{x}</th>)}</tr></thead>
-            <tbody>{k.day.map(([a, b, cc]) => <tr><td>{a}</td><td>{b}</td><td>{cc}</td></tr>)}</tbody>
+            <tbody>{k.day.map(([a, b, cc]) => <tr><td>{a}</td><td data-l={k.dayCols[1]}>{b}</td><td data-l={k.dayCols[2]}>{cc}</td></tr>)}</tbody>
           </table>
         </div>
       </section>
@@ -765,6 +815,7 @@ site.get('/', async (c) => {
 
 // ---------- "What it does" pages: one per job ----------
 site.get('/features', (c) => c.redirect('/#jobs', 301))
+site.get('/features/', (c) => c.redirect('/#jobs', 301))
 site.get('/features/:slug', (c) => {
   const slug = c.req.param('slug') as Slug
   const f = FEATURES[slug]
@@ -772,7 +823,7 @@ site.get('/features/:slug', (c) => {
   const lang = getLang(c), k = C[lang], bot = waBotEnabled(c.env), x = f[lang]
   const items = k.all(bot)[f.group][2]
   return c.html('<!doctype html>' + (
-    <Page c={c} k={k} lang={lang} back={`/features/${slug}`} title={`${x.name} – NukkadSale`}>
+    <Page c={c} k={k} lang={lang} back={`/features/${slug}`} title={`${x.name} – NukkadSale`} desc={x.sub}>
       <section class="feathero hero2" data-sec={`f-${slug}-hero`}>
         <div class="wrap">
           <div>
