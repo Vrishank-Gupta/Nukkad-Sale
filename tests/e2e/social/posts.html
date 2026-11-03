@@ -67,6 +67,22 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .mess i{font-style:normal;flex:none;width:36px;height:36px;border-radius:50%;background:#e03131;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
 .slot{position:absolute;left:60px;right:60px;border:4px dashed rgba(255,255,255,.55);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;opacity:.8;text-align:center;padding:20px}
 .cream .slot{border-color:rgba(29,26,22,.3)}
+
+.skyp{background:linear-gradient(180deg,#e7f5ff,#d0ebff);color:#14120f}
+.inkp{background:#101418;color:#fff}
+.roadp{background:#33383d;color:#fff}
+.mbucket{position:absolute;width:250px;height:262px}
+.mlab{position:absolute;font-size:17px;font-weight:800;padding:6px 10px;border-radius:10px;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.18)}
+.mlab.bad{background:#e03131;color:#fff}.mlab.good{background:#fff;color:#d9480f}
+.mdrop{position:absolute;width:12px;height:16px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#4dabf7}
+.mpatch{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:#d9480f;color:#fff;font-weight:900;font-size:19px;display:flex;align-items:center;justify-content:center;border:3px solid #fff}
+.mhole{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:#212529}
+.wchip{position:absolute;left:44px;width:230px;height:50px;border-radius:14px;display:flex;align-items:center;gap:10px;padding:0 12px;font-weight:800;font-size:18px;white-space:nowrap;color:#14120f;background:#fff}
+.wchip i{font-style:normal;width:30px;height:30px;border-radius:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex:none}
+.pcar{position:absolute;width:62px;height:98px;border-radius:18px 18px 12px 12px;box-shadow:0 6px 14px rgba(0,0,0,.45)}
+.pcar:before{content:"";position:absolute;left:8px;right:8px;top:12px;height:22px;border-radius:8px 8px 4px 4px;background:rgba(20,30,40,.75)}
+.pcar b{position:absolute;left:50%;top:-24px;transform:translateX(-50%);background:#fff;color:#2b8a3e;font-size:14px;padding:3px 7px;border-radius:7px;white-space:nowrap}
+.pbooth{position:absolute;width:150px;height:60px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:18px;line-height:1.05;text-align:center}
 </style>
 </head>
 <body>
@@ -319,6 +335,34 @@ p20: `<div class="f whitep">${B()}
     ${P('home', 0, 0, 210, 'position:relative;margin:0 auto')}</div>
   <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center;font-size:24px;font-weight:800">Shop link · orders · UPI payments · stock · khata <span class="o">– nukkadsale.in</span></div></div>`,
 
+
+// ─────── Metaphor posts (21 leaky bucket, 22 tangled wires, 23 fast lane) – a picture of the problem, NukkadSale as the fix ───────
+p21: `<div class="f skyp">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:92px;text-align:center"><div class="h" style="font-size:46px">Where is your WhatsApp<br>money <span class="o">leaking?</span></div></div>
+  <div style="position:absolute;left:40px;top:232px;width:300px;text-align:center;font-size:19px;font-weight:900;letter-spacing:2px;color:#8a7f73">TODAY</div>
+  <div style="position:absolute;left:380px;top:232px;width:300px;text-align:center;font-size:19px;font-weight:900;letter-spacing:2px;color:#d9480f">WITH NUKKADSALE</div>
+  ${MB(65, 270, false)}${MB(405, 270, true)}
+  <div style="position:absolute;left:52px;top:590px;width:276px;display:grid;gap:9px">${['Missed DMs', 'Unpaid orders', 'Same piece sold twice', 'Lost hisaab'].map((x) => `<div class="mlab bad" style="position:static;font-size:19px">✗ ${x}</div>`).join('')}</div>
+  <div style="position:absolute;left:392px;top:590px;width:276px;display:grid;gap:9px">${['Order links', 'Exact-amount UPI', 'Stock held while they pay', 'Khata writes itself'].map((x) => `<div class="mlab good" style="position:static;font-size:19px">✓ ${x}</div>`).join('')}</div>
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center"><div class="m" style="font-size:30px">Plug the holes. Keep every sale.</div><div class="s" style="font-size:21px;margin-top:4px;color:#5c5248">One app for your WhatsApp shop · nukkadsale.in</div></div></div>`,
+p22: `<div class="f inkp">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:100px"><div class="h" style="font-size:50px">Too many wires<br>running your shop?</div></div>
+  ${WIRES(244, false)}${WIRES(520, true)}
+  <div style="position:absolute;left:44px;top:226px;font-size:18px;font-weight:900;letter-spacing:2px;color:#868e96">TODAY</div>
+  <div style="position:absolute;left:44px;top:502px;font-size:18px;font-weight:900;letter-spacing:2px;color:#ff8a3d">WITH NUKKADSALE</div>
+  <div style="position:absolute;left:44px;right:44px;bottom:40px"><div class="s" style="font-size:22px;color:#ced4da">Orders, payments, stock and khata – one app on your phone. <b style="color:#ff8a3d">nukkadsale.in</b></div></div></div>`,
+p23: `<div class="f roadp">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:100px"><div class="h" style="font-size:52px">Give your buyers<br>a <span style="color:#69db7c">fast lane.</span></div></div>
+  <div style="position:absolute;left:360px;top:250px;bottom:110px;width:6px;background:repeating-linear-gradient(#f8f9fa 0 36px,transparent 36px 66px);opacity:.7"></div>
+  <div class="pbooth" style="left:110px;top:300px;background:#ffd43b;color:#14120f">YOU<small style="font-size:12px">replying to every DM</small></div>
+  <div style="position:absolute;left:110px;top:366px;width:150px;height:7px;border-radius:4px;background:repeating-linear-gradient(90deg,#e03131 0 16px,#fff 16px 32px)"></div>
+  ${['#e8590c', '#1971c2', '#c2255c', '#5f3dc4'].map((c, i) => `<div class="pcar" style="left:154px;top:${392 + i * 108}px;background:${c}"></div>`).join('')}
+  <div style="position:absolute;left:236px;top:410px;background:#fff;color:#14120f;font-weight:800;font-size:17px;padding:6px 12px;border-radius:14px 14px 14px 4px">Price?</div>
+  <div style="position:absolute;left:236px;top:520px;background:#fff;color:#14120f;font-weight:800;font-size:17px;padding:6px 12px;border-radius:14px 14px 14px 4px">Size M?</div>
+  <div style="position:absolute;left:236px;top:630px;background:#fff;color:#14120f;font-weight:800;font-size:17px;padding:6px 12px;border-radius:14px 14px 14px 4px">Payment kaise?</div>
+  <div class="pbooth" style="left:400px;top:560px;background:#2b8a3e;color:#fff">NukkadSale</div>
+  ${[['#2f9e44', '798.12', 270], ['#f08c00', '798.47', 390], ['#1098ad', '798.80', 660]].map(([c, a, y]) => `<div class="pcar" style="left:444px;top:${y}px;background:${c}"><b>₹${a} ✓</b></div>`).join('')}
+  <div style="position:absolute;left:44px;right:44px;bottom:36px"><div class="s" style="font-size:21px;color:#dee2e6">Buyers order and pay on their own – each with an exact amount, so you know who paid. <b style="color:#69db7c">nukkadsale.in</b></div></div></div>`,
 // ── Stories
 s1: `<div class="f story dark">${B()}
   <div style="position:absolute;left:50px;right:50px;top:260px;text-align:center"><div class="h" style="font-size:84px">Orders kaise<br>lete ho? 🤔</div></div></div>`,
@@ -331,6 +375,33 @@ s3: `<div class="f story orange">${B()}
 s4: `<div class="f story cream">${B()}
   <div style="position:absolute;left:50px;right:50px;top:130px;text-align:center"><div class="h" style="font-size:76px">हिंदी में भी ✓</div><div class="s" style="margin-top:12px;font-size:30px">One tap: English ⇄ हिंदी – for you and your buyers</div></div>
   ${P('home', 40, 360, 310, 'transform:rotate(-4deg)')}${P('home-hi', 370, 380, 310, 'transform:rotate(4deg)')}</div>`,
+}
+
+// Mini bucket for Post 21 (svg coords × 0.625 + (x, y)); patched = full with ✓ patches.
+function MB(x, y, patched) {
+  const holes = [[90, 340], [310, 320], [150, 390], [260, 392]].map(([hx, hy]) => [x + hx * .625, y + hy * .625])
+  return `<svg class="mbucket" style="left:${x}px;top:${y}px" viewBox="0 0 400 420"><defs><clipPath id="mb${x}"><path d="M40 40 L360 40 L320 400 L80 400 Z"/></clipPath></defs>
+    <path d="M40 40 L360 40 L320 400 L80 400 Z" fill="#f8f9fa" stroke="#adb5bd" stroke-width="7"/>
+    <g clip-path="url(#mb${x})"><rect x="0" y="${patched ? 70 : 320}" width="400" height="400" fill="#4dabf7" opacity=".85"/></g>
+    <ellipse cx="200" cy="40" rx="162" ry="24" fill="#dee2e6" stroke="#adb5bd" stroke-width="7"/>
+    <text x="200" y="215" text-anchor="middle" font-size="50" font-weight="900" fill="#343a40" font-family="system-ui,sans-serif">YOUR</text>
+    <text x="200" y="270" text-anchor="middle" font-size="50" font-weight="900" fill="#343a40" font-family="system-ui,sans-serif">SALES</text></svg>` +
+    holes.map(([hx, hy], i) => patched ? `<div class="mpatch" style="left:${hx}px;top:${hy}px">✓</div>`
+      : `<div class="mhole" style="left:${hx}px;top:${hy}px"></div>` + [18, 40, 62].map((d) => `<div class="mdrop" style="left:${hx - 6 + (i === 0 ? -d * .6 : i === 1 ? d * .6 : 0)}px;top:${hy + d}px;opacity:${1 - d / 90}"></div>`).join('')).join('')
+}
+// Four sources wired into one phone: tangled (today) or neat (with NukkadSale). Post 22.
+function WIRES(top, neat) {
+  const src = [['WhatsApp DMs', '#25d366', '✉'], ['Notebook', '#f08c00', '✎'], ['UPI screenshots', '#e03131', '₹'], ['Excel sheet', '#2f9e44', '▦']]
+  const ys = src.map((_, i) => top + 34 + i * 62), cols = ['#25d366', '#f08c00', '#ff6b6b', '#51cf66']
+  const px = 540, py = top + 126
+  const paths = ys.map((y, i) => neat
+    ? `<path d="M274 ${y} C 380 ${y}, 400 ${py - 30 + i * 20}, ${px} ${py - 30 + i * 20}" stroke="${cols[i]}" stroke-width="6" fill="none" stroke-linecap="round"/>`
+    : `<path d="M274 ${y} C ${330 + i * 40} ${y + 160 - i * 90}, ${300 + (3 - i) * 50} ${y - 140 + i * 60}, ${420 - i * 20} ${py + 40 - i * 30} S ${470 + i * 15} ${py - 60 + i * 50}, ${px} ${py - 30 + i * 20}" stroke="${cols[i]}" stroke-width="6" fill="none" stroke-linecap="round"/>`).join('')
+  return `<svg style="position:absolute;left:0;top:0" width="720" height="900">${paths}</svg>` +
+    src.map(([l, c, ic], i) => `<div class="wchip" style="top:${ys[i] - 26}px"><i style="background:${c}">${ic}</i>${l}</div>`).join('') +
+    (neat ? `<div class="phone" style="left:${px}px;top:${top + 10}px;width:110px;height:238px;padding:5px;border-radius:20px"><div class="scr" style="border-radius:16px"><img src="img/home.png"></div></div>
+             <div style="position:absolute;left:${px - 15}px;top:${top + 254}px;width:140px;text-align:center;font-weight:900;font-size:17px;color:#ff8a3d">NukkadSale</div>`
+          : `<div style="position:absolute;left:${px}px;top:${top + 36}px;width:120px;height:180px;border-radius:20px;background:#343a40;border:3px dashed #868e96;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#ced4da">YOU</div>`)
 }
 function sign(n, pain, sub, fix, img) {
   return `<div class="f cream">${B()}<div class="handle">${n}/5</div>

@@ -118,6 +118,50 @@ html,body{width:720px;height:1280px;overflow:hidden;font-family:system-ui,"Noto 
 .sheet img{width:100%;display:block;transform-origin:50% 20%}
 .stamp2{display:inline-block;background:#14120f;color:#fff;font-weight:900;padding:12px 24px;border-radius:12px;font-size:32px}
 .step i{font-style:normal;flex:none;width:70px;height:70px;border-radius:50%;background:#d9480f;color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px}
+
+/* ── Metaphor reels (18 leaky bucket, 19 fast lane, 20 juggler): illustrations, then the real app ── */
+.night2{background:radial-gradient(circle at 50% 35%,#163a63,#0b1a2e 75%)}
+.asphalt{background:#33383d}
+.teal{background:radial-gradient(circle at 50% 30%,#0f5a55,#062b29 75%)}
+.bucket{position:absolute;left:180px;top:430px;width:360px;height:378px;overflow:visible}
+.bucket .water{transform-box:fill-box;transform-origin:50% 100%}
+.drop{position:absolute;width:16px;height:22px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#4dabf7}
+.coin{position:absolute;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe066,#f59f00);color:#7a4a00;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.3)}
+.hole{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:#212529;box-shadow:inset 0 3px 6px rgba(0,0,0,.6)}
+.patch{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:#d9480f;color:#fff;font-size:34px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(0,0,0,.35);border:4px solid #fff}
+.lab{position:absolute;width:184px;text-align:center;font-size:24px;line-height:1.15;font-weight:800;padding:10px 12px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.lab.bad{background:#e03131;color:#fff}.lab.good{background:#fff;color:#1d1a16}.lab.good b{color:#d9480f}
+@keyframes leakL{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(-130px,190px) scale(.5)}}
+@keyframes leakR{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(130px,190px) scale(.5)}}
+@keyframes leakD{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(0,220px) scale(.5)}}
+@keyframes coinfall{0%{opacity:0;transform:translateY(-40px)}20%{opacity:1}80%{opacity:1}100%{opacity:0;transform:translateY(110px)}}
+@keyframes slosh{0%,100%{transform:scaleY(.22)}50%{transform:scaleY(.25)}}
+@keyframes fillup{from{transform:scaleY(.22)}to{transform:scaleY(.94)}}
+@keyframes glow{0%,100%{filter:drop-shadow(0 0 0 rgba(255,212,59,0))}50%{filter:drop-shadow(0 0 30px rgba(255,212,59,.9))}}
+/* road */
+.lane{position:absolute;top:0;bottom:0;width:8px;background:repeating-linear-gradient(#f8f9fa 0 60px,transparent 60px 110px);opacity:.7}
+.booth{position:absolute;width:250px;height:96px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-weight:900;font-size:26px;line-height:1.1;box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.booth.you{background:#ffd43b;color:#1d1a16}.booth.ns{background:#2b8a3e;color:#fff}
+.bar{position:absolute;height:10px;border-radius:5px;background:repeating-linear-gradient(90deg,#e03131 0 24px,#fff 24px 48px)}
+.car{position:absolute;width:118px;height:184px;border-radius:30px 30px 22px 22px;box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.car:before{content:"";position:absolute;left:14px;right:14px;top:24px;height:44px;border-radius:14px 14px 6px 6px;background:rgba(20,30,40,.75)}
+.car:after{content:"";position:absolute;left:18px;right:18px;bottom:20px;height:30px;border-radius:6px 6px 12px 12px;background:rgba(20,30,40,.55)}
+.car .who{position:absolute;left:0;right:0;top:84px;text-align:center;font-weight:900;font-size:20px;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.4)}
+.car .ptag{position:absolute;left:50%;top:-30px;transform:translateX(-50%);background:#fff;color:#2b8a3e;font-weight:900;font-size:20px;padding:6px 12px;border-radius:10px;white-space:nowrap;box-shadow:0 6px 14px rgba(0,0,0,.35)}
+.honk{position:absolute;background:#fff;color:#1d1a16;font-weight:800;font-size:28px;padding:10px 18px;border-radius:22px 22px 22px 6px;box-shadow:0 10px 24px rgba(0,0,0,.4);white-space:nowrap}
+@keyframes bump{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes switchzoom{0%{transform:none}30%{transform:translateX(240px)}100%{transform:translateX(240px) translateY(-1500px)}}
+/* juggler */
+.orbit{position:absolute;left:360px;top:680px;width:0;height:0}
+.orb{position:absolute;left:0;top:0;width:0;height:0}
+.jcard{position:absolute;width:214px;margin-left:-107px;margin-top:-44px;height:88px;border-radius:20px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;font-size:23px;color:#1d1a16;background:#fff;box-shadow:0 12px 26px rgba(0,0,0,.4)}
+.jcard i{font-style:normal;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;flex:none}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes unspin{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+@keyframes dropfall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(560px) rotate(38deg)}}
+@keyframes intoPhone{0%{transform:none;opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}}
+.hand{position:absolute;width:150px;height:110px;border-radius:70px 70px 40px 40px;background:#f1c39b;box-shadow:inset 0 -10px 0 rgba(0,0,0,.08)}
+.smash{position:absolute;font-size:30px;font-weight:900;color:#fff;background:#e03131;padding:10px 18px;border-radius:14px;transform:rotate(-6deg)}
 </style>
 </head>
 <body>
@@ -575,6 +619,100 @@ const REELS = {
 ], ding: [22.2], impact: [0, 6.4] },
 }
 
+
+// ───────────── Metaphor reels: one physical picture of the problem, NukkadSale as the fix, then the real app ─────────────
+// Bucket: svg coords × 0.9 + (180, 430) = page coords.
+const BUCKET = (fill) => `<svg class="bucket" viewBox="0 0 400 420">
+  <defs><clipPath id="bk"><path d="M40 40 L360 40 L320 400 L80 400 Z"/></clipPath></defs>
+  <path d="M40 40 L360 40 L320 400 L80 400 Z" fill="#dee2e6" stroke="#adb5bd" stroke-width="6"/>
+  <g clip-path="url(#bk)"><rect class="water" x="0" y="40" width="400" height="360" fill="#4dabf7" opacity=".85" style="${fill}"/></g>
+  <ellipse cx="200" cy="40" rx="162" ry="24" fill="#ced4da" stroke="#adb5bd" stroke-width="6"/>
+  <text x="200" y="215" text-anchor="middle" font-size="46" font-weight="900" fill="#343a40" font-family="system-ui,sans-serif">YOUR</text>
+  <text x="200" y="265" text-anchor="middle" font-size="46" font-weight="900" fill="#343a40" font-family="system-ui,sans-serif">SALES</text></svg>`
+const HOLES = [[261, 736, 'L'], [459, 718, 'R'], [315, 781, 'D'], [414, 783, 'D']]
+const leaks = (t0, d) => HOLES.map(([x, y, dir]) => `<div class="hole" style="left:${x}px;top:${y}px"></div>` +
+  [0, .25, .5].map((o) => `<div class="drop" style="left:${x - 8}px;top:${y - 6}px;animation:leak${dir} .75s linear ${t0 + o}s infinite"></div>`).join('')).join('')
+const coins = (t0, n = 6) => Array.from({ length: n }, (_, i) => `<div class="coin" style="left:${290 + (i * 47) % 140}px;top:380px;animation:coinfall 1.1s ease-in ${t0 + i * .19}s infinite">₹</div>`).join('')
+const CARS = [['#e8590c', 'Priya'], ['#1971c2', 'Sana'], ['#c2255c', 'Kavya'], ['#5f3dc4', 'Ritu'], ['#2f9e44', 'Neha'], ['#f08c00', 'Anjali']]
+const JCARDS = [['DMs', '#25d366', '✉'], ['Screenshots', '#e03131', '₹'], ['Notebook', '#f08c00', '✎'], ['Stock', '#1971c2', '▦'], ['Parcels', '#7048e8', '▣']]
+
+const MORE_REELS = {
+// 18 ── Leaky bucket: your sales leak through four holes; NukkadSale plugs each one and the bucket fills.
+18: { title: 'leaky-bucket', scenes: [
+  { d: 4.4, cls: 'night2', html: `
+    <div class="c h" style="top:70px;font-size:66px" data-a="hit" data-d=".5">Selling on WhatsApp<br>feels like this.</div>
+    ${coins(0)}${BUCKET('animation:slosh 1.2s ease-in-out 0s infinite')}${leaks(.3)}
+    <div class="lab bad" style="left:10px;top:680px" data-a="pop" data-t=".9" data-d=".3">Missed DMs</div>
+    <div class="lab bad" style="left:526px;top:668px" data-a="pop" data-t="1.5" data-d=".3">Unpaid orders</div>
+    <div class="lab bad" style="left:10px;top:830px" data-a="pop" data-t="2.1" data-d=".3">Sold twice</div>
+    <div class="lab bad" style="left:526px;top:830px" data-a="pop" data-t="2.7" data-d=".3">Lost hisaab</div>
+    <div class="c m y" style="top:1050px" data-a="slam" data-t="3.2" data-d=".4">Money comes in.<br>Money leaks out.</div>` },
+  { d: 4.8, cls: 'night2', html: `
+    <div class="c h" style="top:70px;font-size:66px" data-a="pop">NukkadSale<br><span class="o">plugs every hole.</span></div>
+    ${coins(4.4, 8)}${BUCKET('animation:fillup 3.2s ease-out 5.1s both')}
+    ${HOLES.map(([x, y], i) => `<div class="patch" style="left:${x}px;top:${y}px" data-a="stamp" data-t="${.5 + i * .6}" data-d=".35" data-f="both">✓</div>`).join('')}
+    <div class="lab good" style="left:10px;top:680px" data-a="pop" data-t=".6" data-d=".3"><b>Order links</b></div>
+    <div class="lab good" style="left:526px;top:668px" data-a="pop" data-t="1.2" data-d=".3"><b>Exact-amount UPI</b></div>
+    <div class="lab good" style="left:10px;top:830px" data-a="pop" data-t="1.8" data-d=".3"><b>Stock held</b> while they pay</div>
+    <div class="lab good" style="left:526px;top:830px" data-a="pop" data-t="2.4" data-d=".3"><b>Khata</b> writes itself</div>
+    <div class="c m" style="top:1050px" data-a="pop" data-t="3.4">Every sale stays in.</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">One app for your WhatsApp shop</span></div>
+    ${phone('home', 160, '', { a: 'rise', style: '--ox:50%;--oy:25%', zoom: [.6, 2.2], img: '--zs:1.25' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.0"><span class="tag o">Shop link · orders · UPI · khata</span></div>` },
+  { ...end('Stop the leaks.<br>Keep the sales.') },
+], ding: [5.3, 5.9, 6.5, 7.1], impact: [0, 4.4] },
+
+// 19 ── The fast lane: sale-day buyers stuck at one booth (you, replying to DMs); NukkadSale opens a fast lane.
+19: { title: 'fast-lane', scenes: [
+  { d: 4.6, cls: 'asphalt', html: `
+    <div class="lane" style="left:356px"></div>
+    <div class="c h" style="top:60px;font-size:64px;z-index:6" data-a="hit" data-d=".5">Sale day<br>on WhatsApp:</div>
+    <div class="bar" style="left:110px;top:440px;width:250px"></div>
+    <div class="booth you" style="left:110px;top:330px">YOU<br><small style="font-size:18px">replying to every DM</small></div>
+    ${CARS.slice(0, 4).map(([c, n], i) => `<div class="car" style="left:176px;top:${470 + i * 205}px;background:${c};animation:bump .5s ease-in-out ${i * .12}s infinite"><div class="who">${n}</div></div>`).join('')}
+    <div class="honk" style="left:330px;top:500px" data-a="pop" data-t=".7" data-d=".25">Price?</div>
+    <div class="honk" style="left:330px;top:700px" data-a="pop" data-t="1.1" data-d=".25">M size hai?</div>
+    <div class="honk" style="left:330px;top:900px" data-a="pop" data-t="1.5" data-d=".25">Payment kaise?</div>
+    <div class="honk" style="left:330px;top:1100px" data-a="pop" data-t="1.9" data-d=".25">Hold karo pls!</div>
+    <div class="c" style="top:1080px;z-index:7" data-a="slam" data-t="2.8" data-d=".4"><span style="display:inline-block;background:rgba(10,12,14,.88);border-radius:22px;padding:16px 30px;font-size:54px;font-weight:900;line-height:1.05;color:#ffd43b">One booth.<br>Fifty buyers.</span></div>` },
+  { d: 4.8, cls: 'asphalt', html: `
+    <div class="lane" style="left:356px"></div>
+    <div class="c h" style="top:60px;font-size:60px;z-index:6" data-a="pop">Open a <span class="g">fast lane</span><br>for your orders.</div>
+    <div class="booth you" style="left:110px;top:330px;opacity:.45">YOU<br><small style="font-size:18px">replying to every DM</small></div>
+    <div class="booth ns" style="left:370px;top:330px" data-a="flyR" data-t=".2" data-d=".5">NukkadSale</div>
+    ${CARS.map(([c, n], i) => `<div class="car" style="left:176px;top:${470 + i * 205}px;background:${c};animation:switchzoom 1.5s cubic-bezier(.5,0,.6,1) ${4.6 + .9 + i * .38}s both"><div class="who">${n}</div><div class="ptag">₹798.${['12', '47', '80', '33', '65', '21'][i]} ✓</div></div>`).join('')}
+    <div class="c" style="top:1100px;z-index:7" data-a="pop" data-t="3.6"><span style="display:inline-block;background:rgba(10,12,14,.88);border-radius:22px;padding:14px 26px;font-size:40px;font-weight:800;line-height:1.15">Everyone orders and pays<br>on their own.</span></div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Each buyer pays an exact amount</span></div>
+    ${phone('orders-check', 160, tapAt(41, 47, 2.0), { a: 'pop', style: '--ox:30%;--oy:40%', zoom: [.5, 1.6], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">You just tap “Yes, I got it”</span></div>` },
+  { ...end('Your orders,<br>in the fast lane.') },
+], ding: [6.0, 6.4, 6.8, 7.2, 7.6, 8.0], impact: [0, 4.6] },
+
+// 20 ── The juggler: a seller juggling DMs, screenshots, notebook, stock and parcels; one drops; NukkadSale catches them all.
+20: { title: 'juggler', scenes: [
+  { d: 4.8, cls: 'teal', html: `
+    <div class="c h" style="top:70px;font-size:64px;z-index:6" data-a="hit" data-d=".5">Your real job<br>on WhatsApp:</div>
+    <div class="c m y" style="top:250px;z-index:6" data-a="slam" data-t=".9" data-d=".4">Juggling.</div>
+    <div class="orbit" style="animation:spin 2.2s linear 0s infinite">
+      ${JCARDS.map(([l, col, ic], i) => { const a = i * 72 * Math.PI / 180; return `<div class="orb" style="transform:translate(${Math.round(Math.cos(a) * 215)}px,${Math.round(Math.sin(a) * 215)}px)"><div class="jcard" style="animation:unspin 2.2s linear 0s infinite${i === 3 ? ',out .05s linear 3.0s forwards' : ''}"><i style="background:${col}">${ic}</i>${l}</div></div>` }).join('')}
+    </div>
+    <div style="position:absolute;left:0;top:0" data-a="vis" data-t="3.0" data-d="1.8" data-f="forwards"><div class="jcard" style="left:575px;top:680px;animation:dropfall .8s ease-in 3.0s both"><i style="background:#1971c2">▦</i>Stock</div></div>
+    <div class="smash" style="left:240px;top:1140px;z-index:6" data-a="stamp" data-t="3.7" data-d=".3">Sold twice!</div>` },
+  { d: 4.6, cls: 'teal', html: `
+    <div class="c h" style="top:70px;font-size:62px;z-index:6" data-a="pop">NukkadSale<br><span class="o">catches it all.</span></div>
+    ${JCARDS.map(([l, col, ic], i) => { const a = i * 72 * Math.PI / 180, x = Math.round(Math.cos(a) * 230), y = Math.round(Math.sin(a) * 230); return `<div class="jcard" style="left:${360 + x}px;top:${600 + y}px;--dx:${-x}px;--dy:${-y}px;animation:intoPhone .5s ease-in ${4.8 + 1.0 + i * .35}s both"><i style="background:${col}">${ic}</i>${l}</div>` }).join('')}
+    ${phone('home', 380, '', { a: 'pop', t: .5, d: .5, style: 'width:260px;height:563px;margin-left:-130px;border-radius:36px' })}
+    <div class="c" style="top:1000px;z-index:6" data-a="pop" data-t="3.2"><span class="tag o">Orders · Payments · Stock · Labels · Khata</span></div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Everything in one app</span></div>
+    ${phone('home', 160, '', { a: 'rise', style: '--ox:50%;--oy:30%', zoom: [.6, 2], img: '--zs:1.25' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.0"><span class="tag o">On your phone · हिंदी + English</span></div>` },
+  { ...end('Stop juggling.<br>Start selling.') },
+], ding: [5.8, 6.15, 6.5, 6.85, 7.2], impact: [0, 3.7] },
+}
+Object.assign(REELS, MORE_REELS)
 const id = Number(location.hash.slice(1) || 1), R = REELS[id]
 let t = 0, html = ''
 for (const sc of R.scenes) {

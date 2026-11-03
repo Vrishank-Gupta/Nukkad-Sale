@@ -457,6 +457,60 @@ earlier post showed one feature or one pain, and none said what the product is. 
 >
 > #WhatsAppSeller #SmallBusinessIndia #SellerTips
 
+## Metaphor series – one picture of the problem, NukkadSale as the fix (reels 18–20, posts 21–23)
+
+Inspired by reels that show a business problem as a physical scene (a truck tipping over, a rescue). Each one is
+understood with the sound off, puts the seller in the picture ("YOUR SALES", "YOU"), makes NukkadSale the fix,
+and ends on the real app and what NukkadSale is. Photoreal AI versions: prompts in `AI-VIDEO-PROMPTS.md`.
+
+### Reel 18 – Leaky bucket (15 s) · `reel-18-leaky-bucket.mp4` · navy, illustrated bucket
+> Selling on WhatsApp feels like this. 🪣
+>
+> Money comes in… and leaks out through missed DMs, unpaid orders, the same piece sold twice and a lost hisaab.
+>
+> NukkadSale plugs every hole: order links, exact-amount UPI, stock held while buyers pay, and a khata that writes itself.
+> Keep every sale. Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia #BoutiqueOwner #SellerTips
+
+### Reel 19 – The fast lane (15 s) · `reel-19-fast-lane.mp4` · asphalt, top-down road
+> Sale day on WhatsApp: one booth (you), fifty buyers honking "Price?" "Size M?" "Payment kaise?" 🚗🚗🚗
+>
+> Open a fast lane. With NukkadSale every buyer orders and pays on their own – each with an exact amount, so you know who paid. You just tap "Yes, I got it".
+> Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #FlashSale #SmallBusinessIndia #UPI #ResellersOfIndia
+
+### Reel 20 – The juggler (15 s) · `reel-20-juggler.mp4` · deep teal
+> Your real job on WhatsApp? Juggling. 🤹 DMs, payment screenshots, the notebook, stock, parcels… and something always drops.
+>
+> NukkadSale catches it all – orders, payments, stock, labels and khata in one app on your phone, in English and हिंदी.
+> Stop juggling. Start selling. Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #HomeBusiness #SellerTips
+
+### Post 21 – "Where is your WhatsApp money leaking?" · `post-21-leaky-bucket.png`
+> Where is your WhatsApp money leaking? 🪣 Missed DMs, unpaid orders, the same piece sold twice, a lost hisaab.
+>
+> NukkadSale plugs all four – order links, exact-amount UPI, stock held while buyers pay, and a khata that writes itself. Save this 🔖
+> Get your shop → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #SellerTips
+
+### Post 22 – "Too many wires running your shop?" · `post-22-tangled-wires.png`
+> Too many wires running your shop? DMs, a notebook, UPI screenshots, an Excel sheet – all tangled into one tired seller. 🧶
+>
+> NukkadSale untangles it: orders, payments, stock and khata, one app on your phone.
+> Get your shop → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia
+
+### Post 23 – "Give your buyers a fast lane" · `post-23-fast-lane.png`
+> Give your buyers a fast lane. 🛣️ No queue at your DMs – buyers order and pay on their own, each with an exact amount, so you know who paid.
+> Get your shop → nukkadsale.in
+>
+> #WhatsAppSeller #FlashSale #SmallBusinessIndia
+
 ## Stories (add the sticker in the Instagram app – the empty space is left for it)
 
 | Story | File | Add in the app |
