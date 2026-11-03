@@ -44,6 +44,29 @@ export type ReserveInput = {
 export type ReserveFailure = 'closed' | 'qty' | 'device' | 'stock' | 'soon'
 export type ReserveResult = { ok: true; order: Order } | { ok: false; reason: ReserveFailure }
 
+/** An advance a few paise under the asked amount that no other open advance of this seller uses. */
+async function uniqueAdvance(db: D1Database, sellerId: string, base: number) {
+  const { results } = await db.prepare(`SELECT adv_paise FROM orders WHERE seller_id = ? AND adv_status IN ('due', 'claimed') AND status = 'pending' AND adv_paise BETWEEN ? AND ?`)
+    .bind(sellerId, base - 99, base).all<{ adv_paise: number }>()
+  const used = new Set(results.map((r) => base - r.adv_paise))
+  const free = Array.from({ length: 99 }, (_, i) => i + 1).filter((k) => !used.has(k))
+  return base - (free.length ? free[Math.floor(Math.random() * free.length)] : 0)
+}
+
+/** Buyer says the advance is paid: keep the piece until the seller checks. */
+export async function claimAdvance(db: D1Database, orderId: string) {
+  const r = await db.prepare(`UPDATE orders SET adv_status = 'claimed', hold_until = ? WHERE id = ? AND pay_mode = 'cod' AND status = 'pending' AND adv_status = 'due' AND hold_until > ?`)
+    .bind(COD_HOLD, orderId, Date.now()).run()
+  return r.meta.changes === 1
+}
+
+/** Seller saw the advance in their UPI app: the order is confirmed and goes to "To send". */
+export async function confirmAdvance(db: D1Database, orderId: string, sellerId: string) {
+  const r = await db.prepare(`UPDATE orders SET adv_status = 'paid', hold_until = ? WHERE id = ? AND seller_id = ? AND pay_mode = 'cod' AND status = 'pending' AND adv_status IN ('due', 'claimed')`)
+    .bind(COD_HOLD, orderId, sellerId).run()
+  return r.meta.changes === 1
+}
+
 /** Atomically take `qty` pieces from a variant. Returns false when not enough is left. */
 async function takeStock(db: D1Database, variantId: number, dropId: string, qty: number): Promise<boolean> {
   const row = await db
@@ -157,16 +180,22 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
   const cost = (drop.cost_paise || 0) * input.qty
   if (input.cod) {
     const ship = shipFor(drop, base)
-    // No payment step: the piece is the buyer's until the seller cancels or marks the cash received.
+    const total = base + ship + (drop.cod_fee_paise || 0) - cartOffer(seller, base)
+    // With an advance (seller's choice), the buyer pays a small part by UPI first – its own exact amount –
+    // and the piece is held only for the usual payment time until then. Without one there is no payment
+    // step: the piece is the buyer's until the seller cancels or marks the cash received.
+    const advBase = Math.min(drop.cod_advance_paise || 0, total)
+    const adv = advBase >= 100 ? await uniqueAdvance(db, seller.id, advBase) : 0
+    const hold = adv ? now + 15 * 60_000 : COD_HOLD
     try {
       const order = await db
         .prepare(
           `INSERT INTO orders (id, drop_id, seller_id, variant_id, qty, amount_paise, buyer_name, buyer_phone, address,
-                               pay_mode, ip_hash, hold_until, created_at, channel, assisted, ship_paise, unit_paise, cost_paise, offer_id, disc_paise)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cod', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+                               pay_mode, ip_hash, hold_until, created_at, channel, assisted, ship_paise, unit_paise, cost_paise, offer_id, disc_paise, adv_paise, adv_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'cod', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         )
-        .bind(randomId(14), drop.id, seller.id, input.variantId, input.qty, base + ship + (drop.cod_fee_paise || 0) - cartOffer(seller, base), input.name, input.phone, input.address,
-          input.ipHash, COD_HOLD, now, input.channel ?? 'web', input.assisted ? 1 : 0, ship, unit, cost, input.offerId ?? null, cartOffer(seller, base))
+        .bind(randomId(14), drop.id, seller.id, input.variantId, input.qty, total, input.name, input.phone, input.address,
+          input.ipHash, hold, now, input.channel ?? 'web', input.assisted ? 1 : 0, ship, unit, cost, input.offerId ?? null, cartOffer(seller, base), adv, adv ? 'due' : '')
         .first<Order>()
       if (!order) throw new Error('insert failed')
       return { ok: true, order }

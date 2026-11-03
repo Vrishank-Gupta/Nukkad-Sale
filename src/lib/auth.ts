@@ -31,7 +31,7 @@ export async function currentSeller(c: Context<AppEnv>): Promise<Seller | null> 
   if (!token) return null
   return c.env.DB
     .prepare(
-      `SELECT s.id, s.phone, s.name, s.shop_name, s.upi_vpa, s.pay_mode, s.rzp_key_id, s.rzp_secret_enc, s.rzp_webhook_enc, s.allowed_modes, s.account_status, s.gateway_request, s.temp_pin, s.last_seen_at, s.tools_off, s.slug, s.offer_min_paise, s.offer_off_paise, s.offer_pct, s.sr_email, s.sr_pickup, s.sr_pickup_pin, s.sr_box, s.plan
+      `SELECT s.id, s.phone, s.name, s.shop_name, s.upi_vpa, s.pay_mode, s.rzp_key_id, s.rzp_secret_enc, s.rzp_webhook_enc, s.allowed_modes, s.account_status, s.gateway_request, s.temp_pin, s.last_seen_at, s.tools_off, s.slug, s.offer_min_paise, s.offer_off_paise, s.offer_pct, s.sr_email, s.sr_pickup, s.sr_pickup_pin, s.sr_box, s.plan, s.size_chart_key, s.reviews_on
        FROM sessions x JOIN sellers s ON s.id = x.seller_id WHERE x.token_hash = ? AND x.expires_at > ?`,
     )
     .bind(await sha256(token), Date.now())

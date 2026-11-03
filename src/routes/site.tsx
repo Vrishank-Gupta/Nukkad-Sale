@@ -29,7 +29,7 @@ const C = {
   en: {
     title: 'NukkadSale – the app that runs your WhatsApp business',
     desc: 'An app for people who sell on WhatsApp: it takes your orders, collects UPI payments (and tells you who paid), books couriers and keeps your khata. हिंदी + English.',
-    nav: ['How it works', 'What it does', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
+    nav: ['How it works', 'What it does', 'For buyers', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
     badge: 'For people who sell on WhatsApp & Instagram',
     h1a: 'The app that runs', h1b: 'your WhatsApp business.',
     sub: 'You keep selling in your groups. NukkadSale takes the orders, collects the money, books the courier and writes your accounts – all on your phone.',
@@ -44,7 +44,7 @@ const C = {
       ['delivery', 'The parcel goes out', 'Compare courier rates, book the pickup and print the label. The buyer tracks it.'],
       ['accounts', 'Your accounts are done', 'Every sale lands in your khata, with your profit. No notebook.'],
     ],
-    jobsEyebrow: 'What it does', jobsH: 'Four jobs you do by hand today. One app does them.', jobsP: 'Tap any of them to see how it works.',
+    jobsEyebrow: 'For you · What it does', jobsH: 'Four jobs you do by hand today. One app does them.', jobsP: 'Tap any of them to see how it works.',
     jobs: [
       ['orders', 'bag', 'Orders & stock', 'Instead of answering every DM and a notebook of who ordered', ['Your own shop link with every product', 'An order link for each product, for your groups', 'Cart – many items, one payment', 'Stock held while buyers pay – never sold twice'], 'How orders work'],
       ['payments', 'wallet', 'Payments', 'Instead of checking payment screenshots', ['Money goes straight to your UPI ID', 'Each order has an exact amount – you see who paid', 'GPay, PhonePe, Paytm – any UPI app', 'Cash on delivery and automatic payments too'], 'How payments work'],
@@ -52,8 +52,19 @@ const C = {
       ['accounts', 'book', 'Accounts', 'Instead of an Excel sheet at month end', ['A khata that fills itself', 'Profit per piece and for the month', 'Your buyers list, repeat buyers marked', 'Excel download for your CA'], 'How accounts work'],
     ],
     grow: ['tag', 'Plus: tools to sell more', 'Discounts, a special price for one buyer, a back-in-stock list, launch countdowns and “spend more, save more”.', 'See the selling tools'],
+    buyEyebrow: 'For your buyers', buyH: 'Your buyers get what big online shops give.',
+    buyP: 'When buyers trust a link from your WhatsApp group, they pay – and come back. Every order comes with this, automatically.',
+    buyTiles: [
+      ['timeline', 'They always know where their order is', 'A timeline from “Order placed” to “Delivered” – with your photo of their packed parcel.'],
+      ['receipt', 'A proper payment receipt', 'Once you confirm, they get a receipt to save, print or forward. No more “did you get my money?”.'],
+      ['size', 'The right size, first time', 'Your size chart on the sale, a one-tap “Ask my size”, and their size remembered for next time.'],
+      ['reviews', 'Reviews from real buyers', 'After delivery they rate it and add a photo. Shown on your shop – and you choose what is shown.'],
+      ['advance', 'Cash on delivery, without the risk', 'Ask for a small UPI advance before you pack. Fewer fake orders and refused parcels.'],
+    ],
+    buyProtect: 'It protects you too: fewer “where is my order?” messages, proof of every step, and less money lost to cash on delivery.',
+    buyMore: 'See everything buyers get',
     newPill: 'New: Live drops and Ask your buyers',
-    newEyebrow: 'Only on NukkadSale', newH: 'Two things no other selling app does',
+    newEyebrow: 'To sell more · Only on NukkadSale', newH: 'Two ways to sell more that no other app has',
     newP: 'Made for how WhatsApp sellers really sell: big launches in the group, and buying stock from suppliers.',
     newCards: [
       ['live', 'Live drops', 'Make every sale an event.', 'Announce a time. Buyers get a countdown and a reminder, then watch the pieces run out live – “Only 4 left!”, “Pooja just bought one”. The whole group turns up, and the stock is gone in minutes.',
@@ -135,6 +146,7 @@ const C = {
     faq: (bot: boolean) => [
       ['What is NukkadSale, exactly?', 'An app for people who sell on WhatsApp and Instagram. It takes your orders, collects payments straight to your UPI (and tells you who paid), books couriers and keeps your khata. It is not a shopping site or a marketplace – your buyers stay yours.'],
       ['Do my buyers need to install anything?', bot ? 'No. They order inside WhatsApp, or from your link in any browser.' : 'No. They open your link in any browser, pick a size and pay. No app, no sign-up.'],
+      ['Will my buyers trust a link?', 'They see your shop name, your real WhatsApp number and reviews from your past buyers. After ordering they get a timeline of every step – with a photo of their packed parcel – and a proper payment receipt.'],
       ['Is my money safe?', 'NukkadSale never holds your money. Buyers pay your own UPI ID, or your own Razorpay account if you use automatic payments.'],
       ['Do I need a courier account?', 'No. Send parcels however you like and print address labels from NukkadSale. If you have a courier account, connect it to compare rates, book pickups and share tracking.'],
       ['Can I use it in Hindi?', 'Yes. Every screen, and everything your buyers see, works in Hindi and English.'],
@@ -152,7 +164,7 @@ const C = {
   hi: {
     title: 'NukkadSale – आपका WhatsApp बिज़नेस चलाने वाला ऐप',
     desc: 'WhatsApp पर बेचने वालों का ऐप: ऑर्डर लेता है, UPI पेमेंट लेता है (और बताता है किसने भेजा), कूरियर बुक करता है और खाता रखता है। हिंदी + English।',
-    nav: ['कैसे काम करता है', 'क्या करता है', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
+    nav: ['कैसे काम करता है', 'क्या करता है', 'ग्राहकों के लिए', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
     badge: 'WhatsApp और Instagram पर बेचने वालों के लिए',
     h1a: 'आपका WhatsApp बिज़नेस', h1b: 'चलाने वाला ऐप।',
     sub: 'आप अपने ग्रुप में बेचते रहें। NukkadSale ऑर्डर लेता है, पैसे लेता है, कूरियर बुक करता है और हिसाब लिखता है – सब आपके फ़ोन पर।',
@@ -167,7 +179,7 @@ const C = {
       ['delivery', 'पार्सल निकल जाए', 'कूरियर के रेट देखें, पिकअप बुक करें, लेबल प्रिंट करें। ग्राहक ख़ुद ट्रैक करे।'],
       ['accounts', 'हिसाब तैयार', 'हर बिक्री मुनाफ़े के साथ खाते में। कोई कॉपी नहीं।'],
     ],
-    jobsEyebrow: 'क्या करता है', jobsH: 'चार काम जो आप आज हाथ से करते हैं। एक ऐप करता है।', jobsP: 'किसी पर भी टैप करके देखें कैसे काम करता है।',
+    jobsEyebrow: 'आपके लिए · क्या करता है', jobsH: 'चार काम जो आप आज हाथ से करते हैं। एक ऐप करता है।', jobsP: 'किसी पर भी टैप करके देखें कैसे काम करता है।',
     jobs: [
       ['orders', 'bag', 'ऑर्डर और स्टॉक', 'हर DM का जवाब देने और कॉपी में ऑर्डर लिखने की जगह', ['हर प्रोडक्ट के साथ अपनी दुकान का लिंक', 'ग्रुप के लिए हर प्रोडक्ट का ऑर्डर लिंक', 'कार्ट – कई चीज़ें, एक पेमेंट', 'पेमेंट तक स्टॉक होल्ड – दो बार नहीं बिकता'], 'ऑर्डर कैसे होते हैं'],
       ['payments', 'wallet', 'पेमेंट', 'पेमेंट के स्क्रीनशॉट देखने की जगह', ['पैसा सीधे आपकी UPI ID में', 'हर ऑर्डर की सही रकम – पता चले किसने भेजा', 'GPay, PhonePe, Paytm – कोई भी UPI ऐप', 'कैश ऑन डिलीवरी और अपने आप पेमेंट भी'], 'पेमेंट कैसे होते हैं'],
@@ -175,8 +187,19 @@ const C = {
       ['accounts', 'book', 'हिसाब', 'महीने के आख़िर में Excel की जगह', ['अपने आप भरने वाला खाता', 'हर पीस और महीने का मुनाफ़ा', 'ग्राहकों की लिस्ट, बार-बार आने वाले अलग', 'CA के लिए Excel डाउनलोड'], 'हिसाब कैसे रहता है'],
     ],
     grow: ['tag', 'साथ में: ज़्यादा बेचने के टूल', 'छूट, एक ग्राहक के लिए ख़ास दाम, स्टॉक वापसी की लिस्ट, लॉन्च काउंटडाउन और “ज़्यादा ख़रीदें, ज़्यादा बचाएं”।', 'बेचने के टूल देखें'],
+    buyEyebrow: 'आपके ग्राहकों के लिए', buyH: 'आपके ग्राहकों को वो मिलता है जो बड़ी ऑनलाइन दुकानें देती हैं।',
+    buyP: 'जब ग्राहक को आपके WhatsApp ग्रुप के लिंक पर भरोसा होता है, वो पेमेंट करते हैं – और लौटते हैं। हर ऑर्डर के साथ यह सब, अपने आप।',
+    buyTiles: [
+      ['timeline', 'उन्हें हमेशा पता रहे ऑर्डर कहाँ है', '“ऑर्डर किया” से “पहुँच गया” तक की टाइमलाइन – पैक पार्सल की आपकी फ़ोटो के साथ।'],
+      ['receipt', 'असली पेमेंट रसीद', 'आपके पक्का करते ही उन्हें रसीद मिले – सेव, प्रिंट या फ़ॉरवर्ड करें। “पैसे मिले?” वाले मैसेज ख़त्म।'],
+      ['size', 'पहली बार में सही साइज़', 'सेल पर आपका साइज़ चार्ट, एक टैप में “मेरा साइज़ पूछें”, और अगली बार के लिए उनका साइज़ याद।'],
+      ['reviews', 'असली ग्राहकों के रिव्यू', 'डिलीवरी के बाद रेटिंग और फ़ोटो। आपकी दुकान पर दिखते हैं – और क्या दिखे, यह आप चुनें।'],
+      ['advance', 'बिना ख़तरे के कैश ऑन डिलीवरी', 'पैक करने से पहले थोड़ा UPI एडवांस लें। नकली ऑर्डर और लौटे पार्सल कम।'],
+    ],
+    buyProtect: 'यह आपको भी बचाता है: “ऑर्डर कहाँ है?” वाले मैसेज कम, हर कदम का सबूत, और कैश ऑन डिलीवरी में कम नुकसान।',
+    buyMore: 'ग्राहकों को क्या-क्या मिलता है',
     newPill: 'नया: लाइव ड्रॉप और ग्राहकों से पूछें',
-    newEyebrow: 'सिर्फ़ NukkadSale पर', newH: 'दो चीज़ें जो कोई और सेलिंग ऐप नहीं करता',
+    newEyebrow: 'ज़्यादा बेचने के लिए · सिर्फ़ NukkadSale पर', newH: 'ज़्यादा बेचने के दो तरीके जो किसी और ऐप में नहीं',
     newP: 'WhatsApp सेलर असल में जैसे बेचते हैं, उसी हिसाब से: ग्रुप में बड़े लॉन्च, और सप्लायर से स्टॉक ख़रीदना।',
     newCards: [
       ['live', 'लाइव ड्रॉप', 'हर सेल को इवेंट बनाएं।', 'समय बताएं। ग्राहकों को काउंटडाउन और याद दिलाने का मैसेज मिले, फिर वो लाइव देखें पीस ख़त्म होते – “सिर्फ़ 4 बचे!”, “पूजा ने अभी एक लिया”। पूरा ग्रुप आ जाता है, और स्टॉक मिनटों में ख़त्म।',
@@ -258,6 +281,7 @@ const C = {
     faq: (bot: boolean) => [
       ['NukkadSale असल में है क्या?', 'WhatsApp और Instagram पर बेचने वालों का ऐप। यह ऑर्डर लेता है, पैसे सीधे आपकी UPI में लेता है (और बताता है किसने भेजा), कूरियर बुक करता है और खाता रखता है। यह शॉपिंग साइट या मार्केटप्लेस नहीं है – आपके ग्राहक आपके ही रहते हैं।'],
       ['क्या ग्राहकों को कुछ इंस्टॉल करना होगा?', bot ? 'नहीं। वो WhatsApp में ही ऑर्डर करें, या किसी भी ब्राउज़र में आपके लिंक से।' : 'नहीं। वो किसी भी ब्राउज़र में आपका लिंक खोलें, साइज़ चुनें और पेमेंट करें। कोई ऐप नहीं, कोई साइन-अप नहीं।'],
+      ['क्या ग्राहक लिंक पर भरोसा करेंगे?', 'उन्हें आपकी दुकान का नाम, आपका असली WhatsApp नंबर और पुराने ग्राहकों के रिव्यू दिखते हैं। ऑर्डर के बाद हर कदम की टाइमलाइन – पैक पार्सल की फ़ोटो के साथ – और असली पेमेंट रसीद मिलती है।'],
       ['क्या मेरा पैसा सुरक्षित है?', 'NukkadSale आपका पैसा कभी नहीं रखता। ग्राहक सीधे आपकी UPI ID पर भेजते हैं, या अपने आप पेमेंट में आपके अपने Razorpay खाते में।'],
       ['क्या कूरियर खाता ज़रूरी है?', 'नहीं। पार्सल जैसे चाहें भेजें और पते के लेबल NukkadSale से प्रिंट करें। कूरियर खाता है तो जोड़ें – रेट देखें, पिकअप बुक करें और ट्रैकिंग भेजें।'],
       ['क्या हिंदी में चलेगा?', 'हाँ। हर स्क्रीन और जो भी आपके ग्राहक देखते हैं, हिंदी और English दोनों में।'],
@@ -297,6 +321,13 @@ const FEATURES = {
       steps: ['Sell as usual – every paid order lands in the khata.', 'Add cash sales and expenses with one tap.', 'See today, this month and your profit at a glance.'] },
     hi: { name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
       steps: ['आम तरह बेचें – हर पेड ऑर्डर खाते में।', 'कैश बिक्री और ख़र्च एक टैप में जोड़ें।', 'आज, इस महीने और मुनाफ़ा एक नज़र में।'] } },
+  buyers: { icon: 'lock', group: 3, clip: '', imgs: ['t-timeline', 't-receipt'],
+    en: { name: 'For your buyers', h1: 'Your buyers get what big online shops give.', sub: 'Buyers who trust your link pay faster and come back. Every order on NukkadSale comes with a timeline, a receipt, size help and reviews – and cash on delivery can start with a small advance.',
+      steps: ['The buyer orders from your link and pays you directly.', 'They follow every step: paid, packed (with your photo), sent, delivered – and get a receipt.', 'After delivery they review it, and the next buyer sees real reviews on your shop.'],
+      items: [['Order timeline', 'From “Order placed” to “Delivered”, with the time of each step and the courier’s tracking.'], ['Packed-parcel photo', 'Snap the parcel when you tap “Mark as packed” – the buyer sees it on their order.'], ['Payment receipt', 'Shop, items, total, how it was paid. Save as PDF, print or share on WhatsApp.'], ['Size chart', 'Upload it once in Settings and show it on the sales you choose.'], ['“Ask my size”', 'One tap opens WhatsApp to you with the product name ready. Their size is remembered for next time.'], ['Reviews with photos', 'After delivery only, first name only. Hide any review, or switch them all off.'], ['Advance on cash on delivery', 'Ask for, say, ₹100 by UPI first. The order is confirmed only once you see it; the rest is paid in cash.'], ['Proof for you', 'Every step has a time on it – useful when a buyer says “not received”.']] },
+    hi: { name: 'आपके ग्राहकों के लिए', h1: 'आपके ग्राहकों को वो मिलता है जो बड़ी ऑनलाइन दुकानें देती हैं।', sub: 'जिन ग्राहकों को आपके लिंक पर भरोसा है, वो जल्दी पेमेंट करते हैं और लौटते हैं। NukkadSale पर हर ऑर्डर के साथ टाइमलाइन, रसीद, साइज़ मदद और रिव्यू – और कैश ऑन डिलीवरी थोड़े एडवांस से शुरू हो सकता है।',
+      steps: ['ग्राहक आपके लिंक से ऑर्डर करे और सीधे आपको पेमेंट करे।', 'हर कदम देखे: पेमेंट, पैक (आपकी फ़ोटो के साथ), भेजा, पहुँचा – और रसीद पाए।', 'डिलीवरी के बाद रिव्यू दे, और अगला ग्राहक आपकी दुकान पर असली रिव्यू देखे।'],
+      items: [['ऑर्डर टाइमलाइन', '“ऑर्डर किया” से “पहुँच गया” तक, हर कदम के समय और कूरियर ट्रैकिंग के साथ।'], ['पैक पार्सल की फ़ोटो', '“पैक हुआ” दबाते समय फ़ोटो लें – ग्राहक अपने ऑर्डर पर देखे।'], ['पेमेंट रसीद', 'दुकान, सामान, कुल रकम, कैसे भुगतान हुआ। PDF सेव, प्रिंट या WhatsApp पर शेयर।'], ['साइज़ चार्ट', 'सेटिंग में एक बार डालें और चुनी हुई सेल पर दिखाएं।'], ['“मेरा साइज़ पूछें”', 'एक टैप में WhatsApp पर आपसे पूछें, प्रोडक्ट का नाम पहले से लिखा। अगली बार के लिए साइज़ याद।'], ['फ़ोटो वाले रिव्यू', 'सिर्फ़ डिलीवरी के बाद, सिर्फ़ पहला नाम। कोई भी रिव्यू छुपाएं, या सब बंद करें।'], ['कैश ऑन डिलीवरी पर एडवांस', 'पहले, जैसे ₹100, UPI से माँगें। आपके देखने पर ही ऑर्डर पक्का; बाकी कैश में।'], ['आपके लिए सबूत', 'हर कदम पर समय दर्ज – जब ग्राहक कहे “नहीं मिला” तब काम आता है।']] } },
   live: { icon: 'bell', group: 2, clip: '', imgs: ['live', 'soon'],
     en: { name: 'Live drops', h1: 'Make every sale an event.', sub: 'Announce a time in your groups. Buyers get a countdown and can ask to be reminded. When it opens, everyone sees the pieces running out and who just bought – and you see the whole group turn up.',
       steps: ['Add a product, tick “Live drop” and pick a start time.', 'Share it – buyers see a countdown and tap “Remind me”. When it opens, you message them in one tap.', 'Buyers watch stock fall live: “Only 4 left!”, “Pooja just bought one”, then “Sold out in 12 minutes”.'],
@@ -319,7 +350,7 @@ const FEATURES = {
 } as const
 type Slug = keyof typeof FEATURES
 // Screens captured in both languages (public/site/<name>-en.webp, -hi.webp).
-const LANG_IMGS = new Set(['live', 'soon', 'ask', 'askres'])
+const LANG_IMGS = new Set(['live', 'soon', 'ask', 'askres', 't-timeline', 't-receipt', 't-size', 't-reviews', 't-advance'])
 const SLUGS = Object.keys(FEATURES) as Slug[]
 
 const CSS = `
@@ -471,6 +502,19 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 .fgroup ul{list-style:none;padding:0;display:grid;gap:12px}
 .fgroup li{padding-left:16px;border-left:2px solid var(--line)}
 .fgroup li b{display:block;font-size:.98rem;margin-bottom:1px}.fgroup li span{color:var(--muted);font-size:.9rem;line-height:1.45}
+.cardshot{display:block;width:100%;max-width:360px;margin:0 auto;border-radius:18px;border:1px solid var(--line);box-shadow:0 20px 50px rgba(80,40,10,.15);background:#fff}
+.cardshots{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px;align-items:start}@media (max-width:900px){.cardshots{grid-template-columns:1fr}}
+.buysec{background:#fff;border-top:1px solid var(--line)}
+.buy5{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:36px}
+.btile{grid-column:span 2;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column}
+.btile.bt-reviews,.btile.bt-advance{grid-column:span 3}
+.btile .bimg{height:230px;overflow:hidden;border-radius:14px;background:#fff;border:1px solid var(--line);margin-bottom:14px;display:flex;align-items:flex-start;justify-content:center}
+.btile .bimg img{width:100%;max-width:300px;display:block}.btile h3{font-size:1.08rem;margin:0 0 4px}.btile p{color:var(--muted);font-size:.92rem}
+.protect{margin-top:20px;display:flex;gap:14px;align-items:center;background:var(--soft);border-radius:20px;padding:16px 20px}
+.protect .ic{width:44px;height:44px;border-radius:12px;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}.protect p{flex:1;font-weight:600}
+@media (max-width:1000px){.buy5{grid-template-columns:1fr 1fr}.btile,.btile.bt-reviews,.btile.bt-advance{grid-column:span 1}.btile.bt-advance{grid-column:span 2}}
+@media (max-width:560px){.buy5{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:30px -20px 0;padding:0 20px 6px;scrollbar-width:none}.buy5::-webkit-scrollbar{display:none}
+  .btile,.btile.bt-advance{flex:0 0 80%;scroll-snap-align:center}.protect{flex-wrap:wrap}}
 .newpill{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#1d1a16;color:#fff;border-radius:99px;padding:8px 14px 8px 8px;font-weight:700;font-size:.88rem;text-decoration:none;min-height:40px}
 .newpill span{background:var(--brand);border-radius:99px;padding:3px 9px;font-size:.75rem;font-weight:900;letter-spacing:.06em}
 .newsec{background:#16130f;color:#fff}.newsec .lead{color:#c9bfb3}
@@ -672,14 +716,14 @@ function Page(p: { c: Context<AppEnv>; k: Copy; lang: 'en' | 'hi'; back: string;
         <header>
           <div class="wrap">
             <Logo />
-            <nav class="links">{['how', 'jobs', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
+            <nav class="links">{['how', 'jobs', 'buyers', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}</nav>
             <span class="hgap" />
             <a class="lang" href={`/lang?to=${p.k.otherLang}&back=${encodeURIComponent(p.back)}`} lang={p.k.otherLang}>{p.k.other}</a>
             <a class="login" href="/seller"><span class="long">{p.k.login}</span><span class="short">{p.k.loginShort}</span></a>
             <details class="menu">
               <summary aria-label={p.k.menu}>{raw('<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>')}<span class="mt">{p.k.menu}</span></summary>
               <div class="panel">
-                {['how', 'jobs', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}
+                {['how', 'jobs', 'buyers', 'pricing', 'faq'].map((id, i) => <a href={`/#${id}`}>{p.k.nav[i]}</a>)}
                 <small>{p.k.featNav}</small>
                 {SLUGS.map((s) => <a href={`/features/${s}`}>{svgIcon(FEATURES[s].icon, 18)}{FEATURES[s][p.lang].name}</a>)}
                 <small>NukkadSale</small>
@@ -831,6 +875,18 @@ site.get('/', async (c) => {
         </div>
       </section>
 
+      <section id="buyers" class="buysec" data-sec="buyers">
+        <div class="wrap">
+          <div class="center"><span class="eyebrow">{k.buyEyebrow}</span><h2>{k.buyH}</h2><p class="lead">{k.buyP}</p></div>
+          <div class="buy5">
+            {k.buyTiles.map(([img, h, p]) => (
+              <div class={`btile bt-${img}`}><div class="bimg"><img src={`/site/t-${img}-${lang}.webp`} alt={h} loading="lazy" /></div><h3>{h}</h3><p>{p}</p></div>
+            ))}
+          </div>
+          <div class="protect"><span class="ic">{svgIcon('lock', 22)}</span><p>{k.buyProtect}</p><a class="btn sm" href="/features/buyers" data-track="Buyers · see all">{k.buyMore} →</a></div>
+        </div>
+      </section>
+
       <section id="new" class="newsec" data-sec="new">
         <div class="wrap">
           <div class="center"><span class="eyebrow" style="color:#ffb07a">{k.newEyebrow}</span><h2>{k.newH}</h2><p class="lead">{k.newP}</p></div>
@@ -904,7 +960,7 @@ site.get('/features/:slug', (c) => {
             <div class="ctas" style="margin-top:24px"><a class="btn primary" href="/#get-started">{k.cta}</a></div>
           </div>
           <div>
-            <div class="vphone">{f.clip ? <Clip name={f.clip} lang={lang} alt={x.name} eager /> : <img src={`/site/${f.imgs[0]}${LANG_IMGS.has(f.imgs[0]) ? `-${lang}` : ''}.webp`} alt={x.name} width="540" height="1169" />}</div>
+            {f.imgs[0].startsWith('t-') ? <img class="cardshot" src={`/site/${f.imgs[0]}-${lang}.webp`} alt={x.name} /> : <div class="vphone">{f.clip ? <Clip name={f.clip} lang={lang} alt={x.name} eager /> : <img src={`/site/${f.imgs[0]}${LANG_IMGS.has(f.imgs[0]) ? `-${lang}` : ''}.webp`} alt={x.name} width="540" height="1169" />}</div>}
           </div>
         </div>
       </section>
@@ -912,7 +968,7 @@ site.get('/features/:slug', (c) => {
         <div class="wrap">
           <h2>{k.featGet}</h2>
           <div class="fitems">{items.map(([t, d]) => <div class="fitem"><b>{t}</b><span>{d}</span></div>)}</div>
-          <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={LANG_IMGS.has(img) ? `${img}-${lang}` : img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>
+          {f.imgs[0].startsWith('t-') ? <div class="cardshots">{['t-size', 't-reviews', 't-advance'].map((img) => <img class="cardshot" src={`/site/${img}-${lang}.webp`} alt="" loading="lazy" />)}</div> : <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={LANG_IMGS.has(img) ? `${img}-${lang}` : img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>}
         </div>
       </section>
       <section data-sec={`f-${slug}-more`} style="padding-top:10px">

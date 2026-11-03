@@ -136,6 +136,21 @@ nav.bottom a.on{color:var(--brand)}
 @keyframes toastin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 .sticky-pay{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:14px 0 10px;margin:0 -2px;z-index:2}.paymore{margin-top:-2px}
 body.hasnav .sticky-pay{bottom:calc(59px + env(safe-area-inset-bottom))}   /* stay above the bottom tab bar */
+.sizechart{display:inline-block}.sizechart>summary{display:inline-flex;min-height:40px}.sizechart>summary::after{content:none}
+.sizechart[open]{display:block;width:100%}.sizechart img{display:block;width:100%;margin-top:8px;border-radius:12px;border:1px solid var(--line)}
+.revs{margin-top:22px}.rev{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.rev img{width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none}.rev p{margin:4px 0 0;font-size:.93rem}
+.stars{color:var(--warn);letter-spacing:1px}.stars i{font-style:normal;color:var(--line)}
+.starpick{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:4px}.starpick input{position:absolute;opacity:0;width:1px;height:1px;min-height:0}
+.starpick label{font-size:2.2rem;line-height:1;color:var(--line);cursor:pointer;margin:0;padding:2px;min-width:44px;text-align:center}
+.starpick input:checked~label,.starpick label:hover,.starpick label:hover~label{color:var(--warn)}.starpick input:focus-visible+label{outline:2px solid var(--brand);border-radius:8px}
+.tl{list-style:none;padding:0;margin:4px 0 0}.tl li{position:relative;padding:0 0 16px 30px}.tl li:before{content:"";position:absolute;left:6px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--line)}
+.tl li:after{content:"";position:absolute;left:11px;top:20px;bottom:0;width:2px;background:var(--line)}.tl li:last-child:after{display:none}.tl li:last-child{padding-bottom:0}
+.tl li.done:before{background:var(--ok)}.tl li.done:after{background:var(--ok)}.tl li.now:before{background:var(--warn);box-shadow:0 0 0 4px var(--warn-soft)}
+.tl b{display:block;font-size:.95rem}.tl li:not(.done):not(.now) b{color:var(--muted);font-weight:600}.tl small{color:var(--muted)}
+.tl img{display:block;width:140px;height:140px;object-fit:cover;border-radius:12px;margin-top:8px;border:1px solid var(--line)}
+.packpic{display:flex;gap:8px;align-items:center;border:1.5px dashed var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;position:relative}
+.packpic input{position:absolute;opacity:0;width:1px;height:1px;min-height:0}.packpic:has(input:valid:not([value=""])){border-color:var(--ok)}
 .askgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
 .askitem{position:relative;display:flex;flex-direction:column;gap:2px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:8px;cursor:pointer;font-weight:400}
 .askitem img,.askitem .ph{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--line);display:flex;align-items:center;justify-content:center;margin-bottom:6px}

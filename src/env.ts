@@ -74,6 +74,8 @@ export type Seller = {
   gateway_request: number
   temp_pin: number
   last_seen_at?: number
+  size_chart_key?: string | null
+  reviews_on?: number
 }
 
 export type Drop = {
@@ -103,6 +105,8 @@ export type Drop = {
   weight_g: number
   /** Live drop: buyers see pieces left, recent buyers and a reminder before it starts. */
   live_drop?: number
+  size_chart?: number
+  cod_advance_paise?: number
 }
 
 /** A personal price link for one buyer. */
@@ -164,6 +168,14 @@ export type Order = {
   disc_paise: number
   cost_paise: number
   offer_id: string | null
+  claimed_at?: number | null
+  packed_at?: number | null
+  shipped_at?: number | null
+  delivered_at?: number | null
+  pack_photo_key?: string | null
+  /** Advance on cash on delivery: amount (with its own paise) and '' | due | claimed | paid. */
+  adv_paise?: number
+  adv_status?: string
 }
 
 export type AppEnv = { Bindings: Bindings; Variables: { seller: Seller } }

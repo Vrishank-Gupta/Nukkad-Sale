@@ -4,7 +4,7 @@ import { raw } from 'hono/html'
 import type { AppEnv, Order, Seller } from '../env'
 import { courierDate, dictFor, tr, type Dict } from '../i18n'
 import { decrypt, sha256 } from '../lib/crypto'
-import { shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
+import { claimAdvance, shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
 import { confirmGateway, confirmRazorpay, startGatewayPayment } from '../lib/gateway'
 import { verifyCallback } from '../lib/razorpay'
 import { shopOpen } from '../lib/billing'
@@ -16,10 +16,11 @@ import { checkOffer, pctOff } from '../lib/offers'
 import { ACTIVE_SHIP, applyTracking, srToken, srTrack, type Scan, type ShipmentRow } from '../lib/shiprocket'
 import { toolOn } from '../lib/tools'
 import { Flash, Icon, Layout, PhoneInput, ShipSteps, StatusChip, Stepper } from '../views/layout'
+import type { FC } from 'hono/jsx'
 
 export const pub = new Hono<AppEnv>()
 
-const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off, slug, offer_min_paise, offer_off_paise, offer_pct`
+const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off, slug, offer_min_paise, offer_off_paise, offer_pct, size_chart_key, reviews_on`
 const getSeller = (db: D1Database, id: string) => db.prepare(`SELECT ${SELLER_COLS} FROM sellers WHERE id = ?`).bind(id).first<Seller>()
 
 export const imageUrl = (origin: string, key: string | null) => (key ? `${origin}/img/${key}` : undefined)
@@ -78,6 +79,31 @@ if(!v||!v.value){toast(document.querySelector('.sec')?document.querySelector('.s
 // Scheduled drop: count down to go-live, then reload into the normal sale page.
 const SOON_JS = `(function(){var e=document.getElementById('soon');if(!e)return;var at=+e.dataset.at;function f(){var s=Math.max(0,Math.round((at-Date.now())/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
 e.textContent=(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');if(s>0)setTimeout(f,1000);else setTimeout(function(){location.reload()},800)}f()})();`
+
+// ---------- Reviews (after delivery; the seller can switch them off or hide any one) ----------
+type ReviewRow = { name: string; stars: number; text: string; photo_key: string | null; created_at: number; title?: string }
+async function shopReviews(db: D1Database, seller: Seller, dropId?: string) {
+  if (!seller.reviews_on) return null
+  const agg = await db.prepare(`SELECT COUNT(*) AS n, AVG(stars) AS avg FROM reviews WHERE seller_id = ? AND hidden = 0`).bind(seller.id).first<{ n: number; avg: number | null }>()
+  if (!agg?.n) return null
+  // This product's reviews first, then the shop's latest.
+  const { results } = await db.prepare(`SELECT r.name, r.stars, r.text, r.photo_key, r.created_at, d.title FROM reviews r LEFT JOIN drops d ON d.id = r.drop_id
+      WHERE r.seller_id = ?1 AND r.hidden = 0 ORDER BY (r.drop_id = ?2) DESC, (r.photo_key IS NOT NULL) DESC, r.created_at DESC LIMIT 4`).bind(seller.id, dropId ?? '').all<ReviewRow>()
+  return { n: agg.n, avg: (agg.avg ?? 0).toFixed(1), list: results }
+}
+const Reviews: FC<{ t: Dict; r: Awaited<ReturnType<typeof shopReviews>> }> = ({ t, r }) => r ? (
+  <section class="revs">
+    <div class="row between" style="align-items:baseline"><h2 style="margin:0">{t.revSection}</h2><b style="color:var(--warn)">{t.revAvg(r.avg, r.n)}</b></div>
+    {r.list.map((x) => (
+      <div class="rev">
+        {x.photo_key && <img src={`/img/${x.photo_key}`} alt="" loading="lazy" />}
+        <div><b>{x.name}</b> <span class="stars" aria-label={`${x.stars}/5`}>{'★'.repeat(x.stars)}<i>{'★'.repeat(5 - x.stars)}</i></span>
+          <small style="display:block">{t.revVerified}{x.title ? ` · ${x.title}` : ''}</small>
+          {x.text && <p>{x.text}</p>}</div>
+      </div>
+    ))}
+  </section>
+) : null
 
 // ---------- Live drop: pieces left, how many just sold, who just bought ----------
 type LiveStats = { left: number; total: number; recent: number; feed: { n: string; l: string; at: number }[]; soldOutMin: number | null; waiting: number }
@@ -149,6 +175,7 @@ const SizeSheet = ({ t }: { t: Dict }) => (
 async function storefront(c: Context<AppEnv>, seller: Seller) {
   const t = tr(c)
   const open = await shopOpen(c.env, seller)
+  const reviews = await shopReviews(c.env.DB, seller)
   const { results: items } = open ? await c.env.DB.prepare(
     `SELECT d.id, d.title, d.price_paise, d.compare_paise, d.image_key, d.category, d.live_at, d.created_at, d.max_per_order,
             (SELECT COALESCE(SUM(stock), 0) FROM variants WHERE drop_id = d.id) AS stock, (SELECT COALESCE(SUM(available), 0) FROM variants WHERE drop_id = d.id) AS available
@@ -200,6 +227,7 @@ q&&q.addEventListener('input',f);cs.forEach(function(b){b.onclick=function(){cs.
         <a class="btn wa block" href={waLink(seller.phone, '')}>{t.msgSeller(seller.shop_name)}</a>
         <a class="btn block sm" href={waLink(null, `${seller.shop_name} – ${link}`)}><Icon n="share" s={16} />{t.shareShop}</a>
       </div>
+      <Reviews t={t} r={reviews} />
     </Layout>,
   )
 }
@@ -348,7 +376,11 @@ const BUYER_JS = `
   var sm=document.getElementById('saved'),det=document.getElementById('details');
   if(ok&&!/[?&]err=/.test(location.search)){sm.querySelector('[data-who]').textContent=saved.name+' · '+saved.phone;sm.querySelector('[data-where]').textContent=saved.address+' – '+saved.pincode;sm.hidden=false;det.hidden=true;
     sm.querySelector('button').onclick=function(){sm.hidden=true;det.hidden=false;f.name.focus()}}
-  f.addEventListener('submit',function(){try{localStorage.setItem(K,JSON.stringify({name:f.name.value,phone:f.phone.value,address:f.address.value,pincode:f.pincode.value}))}catch(e){}});
+  f.addEventListener('submit',function(){try{localStorage.setItem(K,JSON.stringify({name:f.name.value,phone:f.phone.value,address:f.address.value,pincode:f.pincode.value}))}catch(e){}
+    var sz=f.querySelector('[data-sizes]'),ch=f.querySelector('input[name=variant]:checked');if(sz&&ch){try{localStorage.setItem('kk_size_'+sz.dataset.sizes,document.querySelector('label[for='+ch.id+']').textContent.trim())}catch(e){}}});
+  // The size this buyer picked last time at this shop, if this sale has it.
+  (function(){var sz=f.querySelector('[data-sizes]');if(!sz)return;var last='';try{last=localStorage.getItem('kk_size_'+sz.dataset.sizes)||''}catch(e){}if(!last)return;
+    sz.querySelectorAll('input[name=variant]').forEach(function(r){var l=document.querySelector('label[for='+r.id+']');if(l&&l.textContent.trim()===last&&!r.disabled){r.checked=true;sz.querySelector('[data-remembered]').hidden=false}})})();
   var btn=document.getElementById('paybtn'),bar=document.getElementById('buybar'),price=+f.dataset.price,fmt=new Intl.NumberFormat('en-IN',{maximumFractionDigits:2});
   var ship=+f.dataset.ship||0,freeAbove=+f.dataset.freeabove||0;
   function total(){var q=Math.max(1,parseInt((f.qty||{}).value,10)||1),items=price*q,d=ship&&!(freeAbove&&items>=freeAbove)?ship:0;btn.textContent=f.dataset.paytpl.replace('{amt}','₹'+fmt.format((items+d)/100))}
@@ -393,6 +425,8 @@ pub.get('/d/:id', async (c) => {
   const maxQty = offer ? Math.min(drop.max_per_order, offer.max_qty) : drop.max_per_order
   const fast = sellingFast(counts)
   const live = drop.live_drop ? await liveStats(c.env.DB, drop) : null
+  const reviews = await shopReviews(c.env.DB, seller, drop.id)
+  const chart = hasSizes && drop.size_chart && seller.size_chart_key ? seller.size_chart_key : null
   const liveT = live ? JSON.stringify({ left: t.liveLeft(0).replace('0', '{n}'), only: t.liveOnlyLeft(0).replace('0', '{n}'), out: t.soldOutBtn, sold: t.liveSoldOf(0, 1).replace('0', '{n}').replace('1', '{t}'),
     recent: t.liveRecent(2).replace('2', '{n}'), just: t.liveJust, one: t.liveJustOne, now: t.liveJustNow, min: t.liveMin }) : ''
   const till = offer ? new Date(offer.expires_at).toLocaleString(t.lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : ''
@@ -476,7 +510,7 @@ pub.get('/d/:id', async (c) => {
           data-paytpl={t.payBtn('{amt}')} data-heldtxt={t.allReservedBtn} data-soldtxt={t.soldOutBtn}>
           {offer && <input type="hidden" name="offer" value={offer.id} />}
           {hasSizes ? (
-            <div>
+            <div data-sizes={seller.id}>
               <div class="sec">{t.pickSize}</div>
               <div class="pills">
                 {variants.map((v) => (
@@ -485,6 +519,11 @@ pub.get('/d/:id', async (c) => {
                     <label for={`v${v.id}`}>{v.label}</label>
                   </>
                 ))}
+              </div>
+              <small data-remembered hidden style="display:block;margin-top:6px;color:var(--ok);font-weight:700">{t.sizeRemembered}</small>
+              <div class="row wrap" style="gap:8px;margin-top:8px">
+                {chart && <details class="sizechart"><summary class="btn sm"><Icon n="receipt" s={16} />{t.sizeChartTitle}</summary><img src={`/img/${chart}`} alt={t.sizeChartTitle} loading="lazy" /></details>}
+                <a class="btn sm ghost" href={waLink(seller.phone, t.sizeAskMsg(drop.title))}><Icon n="chat" s={16} />{t.sizeAsk(seller.shop_name)}</a>
               </div>
             </div>
           ) : (
@@ -531,7 +570,7 @@ pub.get('/d/:id', async (c) => {
             {drop.cod_enabled ? (
               <>
                 <div class="or"><span>{t.codOr}</span></div>
-                <button type="submit" name="pay" value="cod" class="btn block"><Icon n="cash" s={18} />{drop.cod_fee_paise ? t.codBtnFee(rupees(drop.cod_fee_paise)) : t.codBtn}</button>
+                <button type="submit" name="pay" value="cod" class="btn block"><Icon n="cash" s={18} />{drop.cod_advance_paise ? t.advBtn(rupees(drop.cod_advance_paise)) : drop.cod_fee_paise ? t.codBtnFee(rupees(drop.cod_fee_paise)) : t.codBtn}</button>
               </>
             ) : null}
           </div>
@@ -542,6 +581,7 @@ pub.get('/d/:id', async (c) => {
         <a class="btn wa block sm" href={waLink(seller.phone, `${drop.title} – ${origin}/d/${drop.id}`)}>{t.askSeller(seller.shop_name)}</a>
         <a class="btn block sm" href={waLink(null, t.friendMsg(drop.title, rupees(drop.price_paise), `${origin}/d/${drop.id}`))}>{t.shareFriend}</a>
       </div>
+      <Reviews t={t} r={reviews} />
       {others.length > 0 && (
         <>
           <h2>{t.moreFrom(seller.shop_name)}</h2>
@@ -707,6 +747,30 @@ const TrackCard = ({ t, sh }: { t: Dict; sh: ShipmentRow }) => {
   )
 }
 
+const when = (ms: number, lang: string) => new Date(ms).toLocaleString(lang === 'hi' ? 'hi-IN' : 'en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+
+/** Everything that happened to the order, in order – done steps green, the current one amber, the rest grey. */
+const Timeline: FC<{ t: Dict; o: Order; ship?: ShipmentRow | null }> = ({ t, o, ship }) => {
+  const cod = o.pay_mode === 'cod', paid = o.status === 'paid'
+  const steps: { label: string; at?: number | null; done: boolean; extra?: unknown }[] = [{ label: t.tlPlaced, at: o.created_at, done: true }]
+  if (!cod && o.claimed_at) steps.push({ label: t.tlPaySent, at: o.claimed_at, done: true })
+  if (!cod) steps.push({ label: t.tlPaid, at: o.paid_at, done: paid })
+  if (cod && o.adv_paise) steps.push({ label: `${t.tlAdvance} · ${rupees(o.adv_paise)}`, done: o.adv_status === 'paid' || paid })
+  steps.push({ label: t.tlPacked, at: o.packed_at, done: Boolean(o.packed_at) || ['packed', 'shipped', 'delivered'].includes(o.ship_status),
+    extra: o.pack_photo_key ? <img src={`/img/${o.pack_photo_key}`} alt={t.tlPhoto} loading="lazy" /> : null })
+  steps.push({ label: t.tlSent, at: o.shipped_at, done: ['shipped', 'delivered'].includes(o.ship_status), extra: ship?.awb ? <small style="display:block">{t.tlCourier(ship.courier, ship.awb)}</small> : null })
+  steps.push({ label: t.tlDelivered, at: o.delivered_at, done: o.ship_status === 'delivered' })
+  if (cod) steps.push({ label: t.tlCash, at: o.paid_at, done: paid })
+  const now = steps.findIndex((x) => !x.done)
+  return (
+    <div class="card"><b style="display:block;margin-bottom:10px">{t.tlTitle}</b>
+      <ol class="tl">{steps.map((x, i) => (
+        <li class={x.done ? 'done' : i === now ? 'now' : ''}><b>{x.label}</b>{x.done && x.at ? <small>{when(x.at, t.lang)}</small> : i === now ? <small>{t.tlWaiting}</small> : null}{x.extra}</li>
+      ))}</ol>
+    </div>
+  )
+}
+
 pub.get('/o/:id', async (c) => {
   const t = tr(c)
   const order = await c.env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(c.req.param('id')).first<Order>()
@@ -737,6 +801,10 @@ pub.get('/o/:id', async (c) => {
   const codFee = order.pay_mode === 'cod' ? data.drop.cod_fee_paise || 0 : 0
   // Quick orders made by the seller may not have the address yet – ask for it here.
   const needDetails = !lines[0].address && ['pending', 'verifying', 'expired'].includes(status)
+  const askReview = status === 'paid' && order.ship_status === 'delivered' && seller.reviews_on
+  const myReview = askReview ? await c.env.DB.prepare(`SELECT stars FROM reviews WHERE order_key = ?`).bind(cartKeyOf(order)).first<{ stars: number }>() : null
+  const advDue = status === 'cod' && (order.adv_status === 'due' || order.adv_status === 'claimed')
+  const advUpi = advDue && payVpa ? upiLink(payVpa, seller.shop_name, order.adv_paise ?? 0, `${shortNo(order.id)} advance`) : null
 
   return c.html(
     <Layout t={t} path={here(c)} brand={seller.shop_name} title={`${t.orderNo(shortNo(order.id))} – ${seller.shop_name}`}
@@ -781,23 +849,57 @@ pub.get('/o/:id', async (c) => {
         <div class="bigok" aria-hidden="true">✓</div>
       )}
       {status === 'paid' && <h1 style="text-align:center;color:var(--ok);margin-top:0">{t.paidBig}</h1>}
-      {status === 'paid' && <div class="card"><ShipSteps t={t} ship={order.ship_status} /></div>}
-      {shipment && <TrackCard t={t} sh={shipment} />}
+      {status === 'paid' && <Timeline t={t} o={order} ship={shipment} />}
+      {status === 'paid' && (
+        <div class="row" style="gap:8px">
+          <a class="btn block grow" href={`/o/${order.id}/receipt`}><Icon n="receipt" s={18} />{t.rcptBtn}</a>
+        </div>
+      )}
+      {status === 'paid' && shipment && <TrackCard t={t} sh={shipment} />}
+      {askReview && (myReview ? <div class="alert ok">{t.revThanks} {'★'.repeat(myReview.stars)}</div> : (
+        <form method="post" action={`/o/${order.id}/review`} enctype="multipart/form-data" class="card stack" id="review" style="border:2px solid var(--warn)">
+          <div><b style="display:block;font-size:1.1rem">{t.revTitle}</b><small>{t.revSub(seller.shop_name)}</small></div>
+          <fieldset style="border:0;padding:0;margin:0"><legend class="sr" style="font-weight:700;margin-bottom:4px">{t.revStars}</legend>
+            <div class="starpick">{[5, 4, 3, 2, 1].map((n) => <><input type="radio" name="stars" id={`st${n}`} value={String(n)} required /><label for={`st${n}`} aria-label={`${n}/5`}>★</label></>)}</div>
+          </fieldset>
+          <div><label for="rtext">{t.revText}</label><textarea id="rtext" name="text" maxlength={500} placeholder={t.revTextPh} /></div>
+          <label class="packpic" for="rphoto"><Icon n="camera" s={18} /><span>{t.revPhoto}</span><input id="rphoto" type="file" name="photo" accept="image/*" /></label>
+          <button class="btn primary block" type="submit">{t.revSend}</button>
+        </form>
+      ))}
       {status === 'paid' && (
         <div class="alert ok">
           {order.ship_status === 'delivered' ? t.deliveredTo : order.ship_status === 'shipped' ? t.sentTo : t.paidOk}
           <div style="white-space:pre-line;font-weight:400;margin-top:6px">{order.buyer_name}{'\n'}{order.address}</div>
         </div>
       )}
-      {status === 'cod' && (
+      {advDue && (
+        <div class="card stack" style="text-align:center;border:2px solid var(--warn)">
+          <div style="color:var(--warn);display:flex;justify-content:center"><Icon n="cash" s={40} /></div>
+          <h1 style="margin:0">{t.advTitle(rupees(order.adv_paise ?? 0))}</h1>
+          {order.adv_status === 'claimed' ? <div class="alert info" style="margin:0">{t.advChecking(seller.shop_name)}</div> : (
+            <>
+              <p style="margin:0">{t.advBody(rupees(order.amount_paise - (order.adv_paise ?? 0)), seller.shop_name)}</p>
+              <p class="price" style="margin:4px 0">{rupees(order.adv_paise ?? 0)}</p>
+              {advUpi && <div data-os="android"><a class="btn primary block big" href={advUpi} data-paylink>{t.payWithApp(rupees(order.adv_paise ?? 0))}</a></div>}
+              {advUpi && <div data-os="ios" hidden><div class="appgrid">{upiAppLinks(payVpa!, seller.shop_name, order.adv_paise ?? 0, `${shortNo(order.id)} advance`).map((a) => <a class="btn" href={a.href} data-paylink>{a.name}</a>)}</div></div>}
+              {advUpi && <details id="qr"><summary>{t.scanQr}</summary><div class="qr">{raw(qrSvg(advUpi))}</div><p><small>UPI ID: <b>{payVpa}</b></small></p></details>}
+              <small style="display:block;margin-top:6px">{t.advHeld(Math.max(0, Math.ceil((order.hold_until - Date.now()) / 60000)))}</small>
+              <form method="post" action={`/o/${order.id}/advance`}><button class="btn ok block big" type="submit">{t.advPaidBtn}</button></form>
+            </>
+          )}
+        </div>
+      )}
+      {status === 'cod' && !advDue && (
         <>
           <div class="card stack" style="text-align:center;border-color:var(--warn)">
             <div style="color:var(--warn);display:flex;justify-content:center"><Icon n="cash" s={40} /></div>
             <h1 style="margin:0">{t.codPlacedTitle}</h1>
-            <p style="margin:0">{t.codPlacedBody(rupees(order.amount_paise), seller.shop_name)}</p>
+            <p style="margin:0">{t.codPlacedBody(rupees(order.amount_paise - (order.adv_status === 'paid' ? order.adv_paise ?? 0 : 0)), seller.shop_name)}</p>
             {data.drop.cod_fee_paise > 0 && <small>{t.codIncludesFee(rupees(data.drop.cod_fee_paise))}</small>}
+            {order.adv_status === 'paid' && order.adv_paise ? <b style="color:var(--ok)">{t.advConfirmed(rupees(order.adv_paise))}</b> : null}
           </div>
-          <div class="card"><ShipSteps t={t} ship={order.ship_status} labels={t.codSteps} /></div>
+          <Timeline t={t} o={order} ship={shipment} />
           {shipment && <TrackCard t={t} sh={shipment} />}
           <div class="card"><b>{t.yourDetails}</b><div style="white-space:pre-line;margin-top:6px">{order.buyer_name}{'\n'}{order.address}</div></div>
         </>
@@ -877,6 +979,92 @@ pub.get('/o/:id', async (c) => {
       <a class="btn wa block" style="margin-top:12px" href={waLink(seller.phone, t.aboutOrder(shortNo(order.id)))}>{t.msgSeller(seller.shop_name)}</a>
     </Layout>,
   )
+})
+
+// Cash on delivery with an advance: the buyer says the advance is paid.
+pub.post('/o/:id/advance', async (c) => {
+  const o = await c.env.DB.prepare(`SELECT id, seller_id, buyer_name, adv_paise FROM orders WHERE id = ?`).bind(c.req.param('id')).first<{ id: string; seller_id: string; buyer_name: string; adv_paise: number }>()
+  if (!o) return c.notFound()
+  if (await claimAdvance(c.env.DB, o.id)) c.executionCtx.waitUntil(pushToSeller(c.env, o.seller_id, (lang) => ({ title: dictFor(lang).advSeller(rupees(o.adv_paise)), body: o.buyer_name, url: '/app/orders?tab=check' })).then(() => {}, () => {}))
+  return c.redirect(`/o/${o.id}`, 303)
+})
+
+// A printable receipt once the shop has confirmed the payment.
+pub.get('/o/:id/receipt', async (c) => {
+  const t = tr(c)
+  const order = await c.env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(c.req.param('id')).first<Order>()
+  if (!order || order.status !== 'paid') return c.notFound()
+  const seller = await getSeller(c.env.DB, order.seller_id)
+  if (!seller) return c.notFound()
+  const lines = await cartOrders(c.env.DB, order)
+  const total = cartTotal(lines)
+  const ship = lines.reduce((n, l) => n + (l.ship_paise || 0), 0), disc = lines.reduce((n, l) => n + (l.disc_paise || 0), 0)
+  const drop = await c.env.DB.prepare(`SELECT upi_vpa, cod_fee_paise FROM drops WHERE id = ?`).bind(order.drop_id).first<{ upi_vpa: string | null; cod_fee_paise: number }>()
+  const codFee = order.pay_mode === 'cod' ? drop?.cod_fee_paise || 0 : 0
+  const paidOn = when(order.paid_at ?? order.created_at, t.lang)
+  // The few paise taken off so the seller could tell this payment apart (always under ₹1).
+  const listed = lines.reduce((n, l) => n + (l.unit_paise ?? l.price_paise) * l.qty, 0) + ship + codFee - disc
+  const exact = listed - total > 0 && listed - total < 100 ? listed - total : 0
+  const origin = new URL(c.req.url).origin
+  const link = `${origin}/o/${order.id}/receipt`
+  const no = shortNo(order.id)
+  return c.html('<!doctype html>' + (
+    <html lang={t.lang}><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><meta name="robots" content="noindex" />
+      <title>{`${t.rcptTitle} #${no} – ${seller.shop_name}`}</title>
+      <style>{raw(`*{box-sizing:border-box;margin:0}body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Devanagari",sans-serif;background:#f4efe9;color:#1d1a16;padding:16px}
+.r{max-width:520px;margin:0 auto;background:#fff;border-radius:18px;padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.08);position:relative;overflow:hidden}
+h1{font-size:1.3rem}h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:#8a7f73;margin:18px 0 6px}.m{color:#6b6258;font-size:.9rem}
+.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed #e6dfd2;font-size:.95rem}.row.t{border-bottom:0;border-top:2px solid #1d1a16;font-weight:800;font-size:1.1rem;margin-top:4px}
+.stamp{position:absolute;right:18px;top:22px;border:3px solid #2b8a3e;color:#2b8a3e;font-weight:900;letter-spacing:.12em;padding:4px 12px;border-radius:8px;transform:rotate(-8deg)}
+.ok{margin-top:16px;background:#e6f4ea;color:#2b8a3e;border-radius:12px;padding:12px;font-weight:700;font-size:.92rem}.f{margin-top:16px;font-size:.78rem;color:#8a7f73;text-align:center}
+.b{display:flex;gap:10px;max-width:520px;margin:14px auto 0}.b a,.b button{flex:1;min-height:48px;border-radius:12px;border:0;font:inherit;font-weight:800;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer}
+.b button{background:#1d1a16;color:#fff}.b a{background:#25d366;color:#fff}@media print{body{background:#fff;padding:0}.r{box-shadow:none}.b{display:none}}`)}</style></head>
+      <body>
+        <div class="r">
+          <span class="stamp">{t.rcptStamp} ✓</span>
+          <h1>{seller.shop_name}</h1>
+          <p class="m">{t.rcptTitle}</p>
+          <h2>{t.rcptNo}</h2><p>#{no}</p>
+          <h2>{t.rcptDate}</h2><p>{paidOn}</p>
+          <h2>{t.rcptTo}</h2><p style="white-space:pre-line">{order.buyer_name}{'\n'}{order.address}</p>
+          <h2>{t.rcptItems}</h2>
+          {lines.map((l) => <div class="row"><span>{l.title}{l.label ? ` (${l.label})` : ''} ×{l.qty}</span><span>{rupees((l.unit_paise ?? l.price_paise) * l.qty)}</span></div>)}
+          {ship > 0 && <div class="row"><span>{t.deliveryLine}</span><span>{rupees(ship)}</span></div>}
+          {codFee > 0 && <div class="row"><span>{t.codChargeLine}</span><span>{rupees(codFee)}</span></div>}
+          {disc > 0 && <div class="row"><span>{t.offerLine}</span><span>−{rupees(disc)}</span></div>}
+          {exact > 0 && <div class="row"><span>{t.rcptExact}</span><span>−{rupees(exact)}</span></div>}
+          {order.adv_paise ? <div class="row"><span>{t.rcptAdvance}</span><span>{rupees(order.adv_paise)}</span></div> : null}
+          <div class="row t"><span>{t.total}</span><span>{rupees(total)}</span></div>
+          <h2>{t.rcptMethod}</h2><p>{t.rcptVia[order.pay_mode] ?? order.pay_mode}{order.pay_mode === 'direct' && (drop?.upi_vpa ?? seller.upi_vpa) ? ` · ${drop?.upi_vpa ?? seller.upi_vpa}` : ''}</p>
+          {order.payment_ref && order.pay_mode === 'razorpay' && <><h2>{t.rcptRef}</h2><p>{order.payment_ref}</p></>}
+          <p class="ok">{t.rcptConfirmed(seller.shop_name, paidOn)}</p>
+          <p class="f">{t.rcptMade} · nukkadsale.in</p>
+        </div>
+        <div class="b"><button type="button" onclick="print()">{t.rcptPrint}</button><a href={waLink(null, t.rcptShareMsg(seller.shop_name, no, link))}>{t.rcptShare}</a></div>
+      </body></html>
+  ))
+})
+
+// Review after delivery (one per payment). Only while the seller shows reviews.
+pub.post('/o/:id/review', async (c) => {
+  const t = tr(c)
+  const order = await c.env.DB.prepare(`SELECT * FROM orders WHERE id = ?`).bind(c.req.param('id')).first<Order>()
+  if (!order || order.status !== 'paid' || order.ship_status !== 'delivered') return c.notFound()
+  const seller = await getSeller(c.env.DB, order.seller_id)
+  if (!seller?.reviews_on) return c.redirect(`/o/${order.id}`, 303)
+  const f = await c.req.parseBody()
+  const stars = Math.floor(Number(f.stars))
+  if (!(stars >= 1 && stars <= 5)) return c.redirect(`/o/${order.id}?err=${encodeURIComponent(t.revErr)}#review`, 303)
+  let photo: string | null = null
+  const p = f.photo
+  if (p instanceof File && p.size > 0 && p.size < 5 * 1024 * 1024 && p.type.startsWith('image/')) {
+    photo = `r/${randomId(16)}`
+    await c.env.IMAGES.put(photo, p.stream(), { httpMetadata: { contentType: p.type } })
+  }
+  const first = (order.buyer_name.trim().split(/\s+/)[0] ?? '').slice(0, 20) || '–'
+  await c.env.DB.prepare(`INSERT OR IGNORE INTO reviews (seller_id, order_key, drop_id, name, stars, text, photo_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(order.seller_id, cartKeyOf(order), order.drop_id, first, stars, String(f.text ?? '').trim().slice(0, 500), photo, Date.now()).run()
+  return c.redirect(`/o/${order.id}?ok=${encodeURIComponent(t.revThanks)}#review`, 303)
 })
 
 // Buyer adds name and address to a quick order the seller made from a chat.

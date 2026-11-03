@@ -37,7 +37,7 @@ export const nextMonthStart = (now = Date.now()) => {
 
 /** SQL counting this month's orders (one per payment). Bind: seller id, month start. */
 export const USED_SQL = `SELECT COUNT(DISTINCT COALESCE(cart_id, id)) AS n FROM orders
-  WHERE seller_id = ?1 AND ((status = 'paid' AND paid_at >= ?2) OR (pay_mode = 'cod' AND status = 'pending' AND created_at >= ?2))`
+  WHERE seller_id = ?1 AND ((status = 'paid' AND paid_at >= ?2) OR (pay_mode = 'cod' AND status = 'pending' AND adv_status IN ('', 'paid') AND created_at >= ?2))`
 
 export type Usage = { plan: PlanId; used: number; limit: number | null; left: number | null; reached: boolean; near: boolean; resetsAt: number }
 

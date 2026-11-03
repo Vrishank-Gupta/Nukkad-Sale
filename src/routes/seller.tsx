@@ -17,7 +17,7 @@ import { billingState, confirmInvoice, ensureInvoices, getSettings, onlineFeePay
 import { notifyBuyer } from '../lib/notify'
 import { asPlan, higherPlans, planUsage, PLANS, requestUpgrade, upgradePaid, type PlanId, type Usage } from '../lib/plans'
 import { upiAppLinks, upiLink } from '../lib/upi'
-import { cancelCod, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
+import { cancelCod, confirmAdvance, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
 import { isValidVpa } from '../lib/upi'
 import { clip, displayPhone, istDay, istDayStart, liveWhen, normalizePhone, parsePaise, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled, waEnabled } from '../lib/whatsapp'
@@ -119,7 +119,7 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const enc = encodeURIComponent
 
 const attentionCount = async (db: D1Database, sellerId: string) =>
-  (await db.prepare(`SELECT COUNT(DISTINCT COALESCE(cart_id, id)) AS n FROM orders WHERE seller_id = ? AND (status IN ('verifying', 'refund_due') OR (status = 'pending' AND pay_mode = 'cod' AND ship_status = 'new'))`).bind(sellerId).first<{ n: number }>())?.n ?? 0
+  (await db.prepare(`SELECT COUNT(DISTINCT COALESCE(cart_id, id)) AS n FROM orders WHERE seller_id = ? AND (status IN ('verifying', 'refund_due') OR (status = 'pending' AND pay_mode = 'cod' AND ((ship_status = 'new' AND adv_status IN ('', 'paid')) OR adv_status = 'claimed')))`).bind(sellerId).first<{ n: number }>())?.n ?? 0
 
 /** Go back to the page the seller tapped from, carrying a success message for the toast. */
 function backWith(c: Context<AppEnv>, fallback: string, ok: string) {
@@ -222,7 +222,7 @@ app.get('/', async (c) => {
     db.prepare(`SELECT COALESCE(SUM(amount_paise), 0) AS amt, COUNT(*) AS n FROM orders WHERE seller_id = ? AND status = 'paid' AND paid_at >= ?`)
       .bind(s.id, istDayStart(Date.now())).first<{ amt: number; n: number }>(),
     db.prepare(
-      `SELECT COUNT(DISTINCT CASE WHEN status = 'verifying' THEN COALESCE(cart_id, id) END) AS checkPay,
+      `SELECT COUNT(DISTINCT CASE WHEN status = 'verifying' OR (pay_mode = 'cod' AND status = 'pending' AND adv_status = 'claimed') THEN COALESCE(cart_id, id) END) AS checkPay,
               COUNT(DISTINCT CASE WHEN status = 'refund_due' THEN COALESCE(cart_id, id) END) AS refunds,
               COUNT(DISTINCT CASE WHEN ${TO_SEND} THEN COALESCE(o.cart_id, o.id) END) AS toSend,
               COUNT(DISTINCT CASE WHEN status = 'pending' AND hold_until > ?2 THEN COALESCE(cart_id, id) END) AS paying
@@ -257,8 +257,9 @@ app.get('/', async (c) => {
     db.prepare(`SELECT r.ask_id, COUNT(*) AS n FROM ask_reserves r WHERE r.seller_id = ? AND r.status = 'claimed' GROUP BY r.ask_id ORDER BY n DESC`).bind(s.id).all<{ ask_id: string; n: number }>(),
   ])
   const askN = askCheck.results.reduce((a, b) => a + b.n, 0)
+  const newRev = (await db.prepare(`SELECT COUNT(*) AS n FROM reviews r JOIN sellers s ON s.id = r.seller_id WHERE r.seller_id = ? AND r.created_at > s.reviews_seen_at`).bind(s.id).first<{ n: number }>())?.n ?? 0
   const shipN = shipAttn?.n ?? 0
-  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN + shipN + (starting?.n ?? 0) + askN > 0
+  const anyTask = n.checkPay + n.refunds + n.toSend + n.paying + backInN + shipN + (starting?.n ?? 0) + askN + newRev > 0
   // Getting started: shown until the first confirmed payment, then the money card takes over.
   const setup: { done: boolean; label: string; href?: string }[] = [
     { done: true, label: t.gsShop },
@@ -316,6 +317,7 @@ app.get('/', async (c) => {
           {n.paying > 0 && <Task href="/app/orders?tab=check" kind="" icon="clock" title={t.notPaid(n.paying)} sub={t.notPaidSub} />}
           {shipN > 0 && <Task href="/app/orders?tab=done" kind="bad" icon="box" title={t.shipAttn(shipN)} sub={t.shipAttnSub} />}
           {starting && <Task href={`/app/drops/${starting.drop_id}#remind`} kind="bad" icon="bell" title={t.startTask(starting.n)} sub={t.startTaskSub} />}
+          {newRev > 0 && <Task href="/app/reviews" kind="info" icon="users" title={t.revTask(newRev)} sub={t.revTaskSub} />}
           {askN > 0 && <Task href={`/app/asks/${askCheck.results[0].ask_id}#reserves`} kind="info" icon="search" title={t.askTask(askN)} sub={t.askTaskSub} />}
           {backInN > 0 && <Task href={`/app/drops/${backIn[0].drop_id}#waiting`} kind="warn" icon="users" title={t.taskWaiting(backInN)} sub={t.taskWaitingSub} />}
           {!anyTask && <p class="muted">{t.allDone}</p>}
@@ -470,6 +472,9 @@ app.get('/drops/new', async (c) => {
             </div>
           </template>
           <button type="button" id="addsize" class="btn sm block">{t.addSize}</button>
+          {c.get('seller').size_chart_key
+            ? <label class="choice" style="margin-top:12px"><input type="checkbox" name="size_chart" value="1" checked={pre ? Boolean(pre.drop.size_chart) : true} /><span class="grow"><b>{t.sizeChartShow}</b></span></label>
+            : <small style="display:block;margin-top:10px"><a href="/app/settings#sizechart">{t.sizeChartNone}</a></small>}
         </div>
 
         {upis.length > 1 && (
@@ -494,6 +499,9 @@ app.get('/drops/new', async (c) => {
             <span data-codfee hidden={!pre?.drop.cod_enabled} style="display:block;margin-top:10px;max-width:220px">
               <small style="display:block;margin-bottom:4px">{t.codFeeLabel}</small>
               <span class="money"><span>₹</span><input name="cod_fee" inputmode="decimal" placeholder="0" value={pre?.drop.cod_fee_paise ? String(pre.drop.cod_fee_paise / 100) : ''} aria-label={t.codFeeLabel} /></span>
+              <small style="display:block;margin:12px 0 4px">{t.advLabel}</small>
+              <span class="money"><span>₹</span><input name="cod_advance" inputmode="decimal" placeholder="0" value={pre?.drop.cod_advance_paise ? String(pre.drop.cod_advance_paise / 100) : ''} aria-label={t.advLabel} /></span>
+              <small style="display:block;margin-top:4px">{t.advHint}</small>
             </span>
           </span>
         </label>
@@ -587,11 +595,13 @@ app.post('/drops/new', async (c) => {
   const cost = Math.max(0, parsePaise(one(f.cost) || '0') ?? 0)
   const weightG = Math.max(0, Math.min(30000, Math.floor(Number(one(f.weight_g)) || 0)))
   const liveDrop = one(f.live_drop) === '1' ? 1 : 0
+  const codAdvance = cod ? Math.min(100_000, parsePaise(one(f.cod_advance) || '0') ?? 0) : 0
+  const sizeChart = one(f.size_chart) === '1' && s.size_chart_key ? 1 : 0
 
   const now = Date.now()
   await c.env.DB.batch([
-    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at, weight_g, live_drop) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt, weightG, liveDrop),
+    c.env.DB.prepare(`INSERT INTO drops (id, seller_id, title, description, price_paise, image_key, upi_vpa, max_per_order, created_at, cod_enabled, cod_fee_paise, ship_fee_paise, free_ship_above_paise, cost_paise, category, live_at, weight_g, live_drop, cod_advance_paise, size_chart) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, s.id, title, description, price, imageKey, upiVpa, maxPer, now, cod ? 1 : 0, codFee, shipFee, freeShipAbove, cost, category, liveAt, weightG, liveDrop, codAdvance >= 100 ? codAdvance : 0, sizeChart),
     ...imageKeys.map((k, i) => c.env.DB.prepare(`INSERT INTO drop_images (drop_id, image_key, position) VALUES (?, ?, ?)`).bind(id, k, i)),
     ...variants.map((v, i) =>
       c.env.DB.prepare(`INSERT INTO variants (drop_id, label, stock, available, position) VALUES (?, ?, ?, ?, ?)`).bind(id, v.label, v.qty, v.qty, i),
@@ -633,7 +643,7 @@ export function shareText(t: Dict, drop: Drop, variants: Variant[], seller: Sell
       : `💰 *${rupees(drop.price_paise)}*`,
     sizes.length ? `📏 ${t.shareSizes}: ${sizes.join(', ')}` : null,
     drop.ship_fee_paise ? `🚚 ${drop.free_ship_above_paise ? t.shareShipFree(rupees(drop.ship_fee_paise), rupees(drop.free_ship_above_paise)) : t.shareShip(rupees(drop.ship_fee_paise))}` : null,
-    drop.cod_enabled ? `💵 ${t.codBtn}` : null,
+    drop.cod_enabled ? `${drop.cod_advance_paise ? t.advShareLine(rupees(drop.cod_advance_paise)) : `💵 ${t.codBtn}`}` : null,
     drop.live_drop && (drop.live_at ?? 0) > Date.now() ? `*${t.shareLiveDrop(liveWhen(drop.live_at, t.lang))}*`
       : (drop.live_at ?? 0) > Date.now() ? `⏰ *${t.shareLiveAt(liveWhen(drop.live_at, t.lang))}*` : drop.live_drop ? `*${t.shareLiveNow}*` : null,
     `📦 ${t.shareLimited}`,
@@ -704,6 +714,12 @@ app.get('/drops/:id', async (c) => {
         <small>{t.costHint}</small>
       </details>}
 
+      {s.size_chart_key && sizes && (
+        <form method="post" action={`/app/drops/${drop.id}/size-chart`} class="card row between" style="gap:10px">
+          <span class="grow"><b style="font-size:.95rem">{t.sizeChartTitle}</b><br /><small>{drop.size_chart ? '✓ ' + t.sizeChartShow : t.sizeChartShow}</small></span>
+          <button class="btn sm" type="submit" name="on" value={drop.size_chart ? '' : '1'} style="flex:none">{drop.size_chart ? t.revHide : t.revShow}</button>
+        </form>
+      )}
       <form method="post" action={`/app/drops/${drop.id}/live`} class="card row between" style={`gap:10px;${drop.live_drop ? 'border:1.5px solid var(--bad)' : ''}`}>
         <span class="grow"><span class="livedot" style="margin-right:8px">{t.liveBadge}</span>{drop.live_drop ? <small>{t.liveIsOn}</small> : <small>{t.liveDropHint}</small>}</span>
         <button class="btn sm" type="submit" name="on" value={drop.live_drop ? '' : '1'} style="flex:none">{drop.live_drop ? t.liveTurnOff : t.liveTurnOn}</button>
@@ -1383,8 +1399,14 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
           <ShipBox t={t} o={o} ship={ship} sr={sr} origin={origin} shop={shop} />
           <div class="stack" style="margin-top:10px">
             {next && (
-              <form method="post" action={`/app/orders/${o.id}/ship`}>
+              <form method="post" action={`/app/orders/${o.id}/ship`} enctype="multipart/form-data">
+                {next === 'packed' && <label class="packpic"><Icon n="camera" s={18} /><span>{t.packPhotoLabel}</span><input type="file" name="photo" accept="image/*" capture="environment" /></label>}
                 <button class="btn primary block" type="submit">{t.markAs(t.ship[next])}</button>
+              </form>
+            )}
+            {o.ship_status !== 'new' && !o.pack_photo_key && (
+              <form method="post" action={`/app/orders/${o.id}/photo`} enctype="multipart/form-data" class="packpic-later">
+                <label class="btn sm block" style="margin:0"><Icon n="camera" s={16} />{t.packPhotoAdd}<input type="file" name="photo" accept="image/*" capture="environment" style="position:absolute;opacity:0;width:1px;height:1px;min-height:0" onchange="this.form.submit()" /></label>
               </form>
             )}
             <a class="btn wa sm block" href={waLink(o.buyer_phone, o.ship_status === 'new' ? t.paidMsg(o.buyer_name, item, no, shop) : t.shipMsg(o.buyer_name, no, item, t.ship[o.ship_status], shop))}>
@@ -1399,10 +1421,22 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
         </>
       )}
 
-      {status === 'cod' && (
+      {status === 'cod' && (o.adv_status === 'due' || o.adv_status === 'claimed') && (
+        <div class="ask" style={o.adv_status === 'claimed' ? '' : 'background:var(--warn-soft)'}>
+          <div class="q" style={o.adv_status === 'claimed' ? '' : 'color:var(--warn)'}>{o.adv_status === 'claimed' ? t.advSeller(rupees(o.adv_paise ?? 0)) : t.advWaiting(rupees(o.adv_paise ?? 0))}</div>
+          {o.adv_status === 'due' && <small style="color:inherit">{t.waitingPay(minsLeft)}</small>}
+          <div class="row" style="margin-top:12px">
+            <form method="post" action={`/app/orders/${o.id}/advance`} class="grow"><button class="btn ok block" type="submit">{t.advYes}</button></form>
+            {o.adv_status === 'due'
+              ? <a class="btn wa" href={waLink(o.buyer_phone, t.advRemind(o.buyer_name, item, rupees(o.adv_paise ?? 0), shop, `${origin}/o/${o.id}`))}>{t.remind}</a>
+              : <form method="post" action={`/app/orders/${o.id}/cancel-cod`}><button class="btn" type="submit" data-confirm={t.advCancelRefund}>{t.noDidnt}</button></form>}
+          </div>
+        </div>
+      )}
+      {status === 'cod' && !(o.adv_status === 'due' || o.adv_status === 'claimed') && (
         <>
           <div class="ask" style="background:var(--warn-soft)">
-            <div class="q" style="color:var(--warn);display:flex;gap:8px;align-items:center"><Icon n="cash" />{t.codCollect(amt)}</div>
+            <div class="q" style="color:var(--warn);display:flex;gap:8px;align-items:center"><Icon n="cash" />{o.adv_status === 'paid' && o.adv_paise ? t.advCollect(rupees(lines.reduce((n, l) => n + l.amount_paise, 0) - o.adv_paise), rupees(o.adv_paise)) : t.codCollect(amt)}</div>
           </div>
           <ShipSteps t={t} ship={o.ship_status} labels={t.codSteps} />
           <ShipBox t={t} o={o} ship={ship} sr={sr} origin={origin} shop={shop} />
@@ -1411,8 +1445,14 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
               <a class="btn wa block" href={waLink(o.buyer_phone, t.codConfirmMsg(o.buyer_name, item, amt, shop))}><Icon n="chat" s={18} />{t.codConfirmBtn}</a>
             )}
             {next && (
-              <form method="post" action={`/app/orders/${o.id}/ship`}>
+              <form method="post" action={`/app/orders/${o.id}/ship`} enctype="multipart/form-data">
+                {next === 'packed' && <label class="packpic"><Icon n="camera" s={18} /><span>{t.packPhotoLabel}</span><input type="file" name="photo" accept="image/*" capture="environment" /></label>}
                 <button class={`btn block ${o.ship_status === 'new' ? '' : 'primary'}`} type="submit">{t.markAs(t.ship[next])}</button>
+              </form>
+            )}
+            {o.ship_status !== 'new' && !o.pack_photo_key && (
+              <form method="post" action={`/app/orders/${o.id}/photo`} enctype="multipart/form-data" class="packpic-later">
+                <label class="btn sm block" style="margin:0"><Icon n="camera" s={16} />{t.packPhotoAdd}<input type="file" name="photo" accept="image/*" capture="environment" style="position:absolute;opacity:0;width:1px;height:1px;min-height:0" onchange="this.form.submit()" /></label>
               </form>
             )}
             <form method="post" action={`/app/orders/${o.id}/cash`}>
@@ -1444,10 +1484,10 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
 
 // "Check payment" = buyers who said they paid, refunds, and every open direct-UPI amount –
 // including holds that lapsed in the last day, since buyers often pay without telling anyone.
-const CHECK_WHERE = `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'direct' AND (o.status = 'pending' OR (o.status = 'expired' AND o.created_at > ?2 - 86400000))))`
+const CHECK_WHERE = `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'direct' AND (o.status = 'pending' OR (o.status = 'expired' AND o.created_at > ?2 - 86400000))) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status IN ('due', 'claimed')))`
 
 // Waiting to be sent: paid and not yet out, or cash on delivery – unless the parcel came back and went back into stock.
-const TO_SEND = `((o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod'))
+const TO_SEND = `((o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod' AND o.adv_status IN ('', 'paid')))
   AND NOT EXISTS (SELECT 1 FROM shipments sh WHERE sh.order_key = COALESCE(o.cart_id, o.id) AND sh.status = 'returned' AND sh.status_text = 'restocked')`
 
 const TABS = [
@@ -1519,7 +1559,7 @@ app.get('/orders', async (c) => {
   const counts = await c.env.DB
     // The "Check payment" number counts only what needs the seller (buyer says paid, refunds) – the same number
     // as "N payments to check" on home. Buyers still paying are listed in the tab, but not counted.
-    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.key === 'check' ? `o.status IN ('verifying', 'refund_due')` : x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')},
+    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.key === 'check' ? `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status = 'claimed'))` : x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')},
               COUNT(DISTINCT CASE WHEN ${CHECK_WHERE} THEN COALESCE(o.cart_id, o.id) END) AS anycheck FROM orders o WHERE o.seller_id = ?1`)
     .bind(s.id, now)
     .first<Record<string, number>>()
@@ -1601,7 +1641,8 @@ app.post('/orders/:id/ship', async (c) => {
   const next = o && NEXT_SHIP[o.ship_status]
   if (!o || !next) return c.redirect('/app/orders?tab=send', 303)
   // Items paid together are packed and sent together.
-  const r = await c.env.DB.prepare(`UPDATE orders SET ship_status = ?1 WHERE (id = ?2 OR cart_id = ?2) AND (status = 'paid' OR (status = 'pending' AND pay_mode = 'cod')) AND ship_status = ?3`).bind(next, cartKeyOf(o), o.ship_status).run()
+  const r = await c.env.DB.prepare(`UPDATE orders SET ship_status = ?1 WHERE (id = ?2 OR cart_id = ?2) AND (status = 'paid' OR (status = 'pending' AND pay_mode = 'cod' AND adv_status IN ('', 'paid'))) AND ship_status = ?3`).bind(next, cartKeyOf(o), o.ship_status).run()
+  if (r.meta.changes > 0) await savePackPhoto(c, cartKeyOf(o))
   if (r.meta.changes > 0) c.executionCtx.waitUntil(notifyBuyer(c.env, cartKeyOf(o), 'ship'))
   return backWith(c, '/app/orders?tab=send', t.markedShip(t.ship[next]))
 })
@@ -1611,6 +1652,30 @@ app.post('/orders/:id/cash', async (c) => {
   const o = await ownOrder(c, c.req.param('id'))
   if (o && shownStatus(o) === 'cod') await markPaid(c.env, o.id, 'cash-on-delivery', (p) => c.executionCtx.waitUntil(p), false)
   return backWith(c, '/app/orders?tab=send', tr(c).cashMarked)
+})
+
+/** Optional photo of the packed parcel, shown on the buyer's order page. */
+async function savePackPhoto(c: Context<AppEnv>, key: string) {
+  const ct = c.req.header('content-type') ?? ''
+  if (!ct.includes('multipart/form-data')) return false
+  const photo = (await c.req.parseBody()).photo
+  if (!(photo instanceof File) || !photo.size || photo.size > MAX_IMAGE_BYTES || !photo.type.startsWith('image/')) return false
+  const k = `k/${randomId(16)}`
+  await c.env.IMAGES.put(k, photo.stream(), { httpMetadata: { contentType: photo.type } })
+  await c.env.DB.prepare(`UPDATE orders SET pack_photo_key = ?1 WHERE id = ?2 OR cart_id = ?2`).bind(k, key).run()
+  return true
+}
+
+app.post('/orders/:id/photo', async (c) => {
+  const o = await ownOrder(c, c.req.param('id'))
+  if (!o) return c.notFound()
+  const ok = await savePackPhoto(c, cartKeyOf(o))
+  return backWith(c, '/app/orders?tab=send', ok ? tr(c).packPhotoSaved : tr(c).photoTooBig)
+})
+
+app.post('/orders/:id/advance', async (c) => {
+  await confirmAdvance(c.env.DB, c.req.param('id'), c.get('seller').id)
+  return backWith(c, '/app/orders?tab=send', tr(c).advYes)
 })
 
 app.post('/orders/:id/cancel-cod', async (c) => {
@@ -1909,6 +1974,16 @@ app.get('/settings', async (c) => {
         <button class="btn block" type="submit" style="margin:4px 0 12px">{t.save}</button>
       </form>
       <div style="margin-top:20px"><InstallCard t={t} always /></div>
+      <h2 id="sizechart">{t.sizeChartSetting}</h2>
+      <div class="card stack">
+        <small>{t.sizeChartHint}</small>
+        {s.size_chart_key && <img src={`/img/${s.size_chart_key}`} alt={t.sizeChartTitle} style="max-width:100%;border-radius:12px;border:1px solid var(--line)" />}
+        <form method="post" action="/app/settings/size-chart" enctype="multipart/form-data">
+          <label class="btn block" style="margin:0"><Icon n="image" s={18} />{t.sizeChartUpload}<input type="file" name="chart" accept="image/*" style="position:absolute;opacity:0;width:1px;height:1px;min-height:0" onchange="this.form.submit()" /></label>
+        </form>
+        {s.size_chart_key && <form method="post" action="/app/settings/size-chart"><input type="hidden" name="remove" value="1" /><button class="btn ghost block sm" type="submit">{t.sizeChartRemove}</button></form>}
+      </div>
+      <a class="btn block" href="/app/reviews" style="margin-top:16px"><Icon n="users" s={18} />{t.revSeller}</a>
       <a class="btn block" href="/app/billing" style="margin-top:24px">{t.billingLink}</a>
       <a class="btn block" href="/app/help" style="margin-top:10px"><Icon n="help" s={18} />{t.help}</a>
       <p class="muted" style="margin-top:20px;text-align:center"><small>{t.loggedInAs(s.name, displayPhone(s.phone))}</small></p>
@@ -2609,4 +2684,74 @@ app.post('/asks/:id/reserve/:rid/:act{yes|no|refunded}', async (c) => {
   const [to, from] = act === 'yes' ? ['paid', 'claimed'] : act === 'no' ? ['due', 'claimed'] : ['refunded', 'paid']
   await c.env.DB.prepare(`UPDATE ask_reserves SET status = ?, updated_at = ? WHERE id = ? AND ask_id = ? AND status = ?`).bind(to, Date.now(), Number(c.req.param('rid')), ask.id, from).run()
   return backWith(c, `/app/asks/${ask.id}#reserves`, tr(c).liveSaved)
+})
+
+// ---------- Size chart (shop-wide) ----------
+app.post('/settings/size-chart', async (c) => {
+  const t = tr(c)
+  const s = c.get('seller')
+  const f = await c.req.parseBody()
+  if (f.remove) {
+    await c.env.DB.prepare(`UPDATE sellers SET size_chart_key = NULL WHERE id = ?`).bind(s.id).run()
+    return c.redirect('/app/settings?ok=' + enc(t.sizeChartSaved) + '#sizechart', 303)
+  }
+  const file = f.chart
+  if (!(file instanceof File) || !file.size || !file.type.startsWith('image/')) return c.redirect('/app/settings?err=' + enc(t.needPhotoFile) + '#sizechart', 303)
+  if (file.size > MAX_IMAGE_BYTES) return c.redirect('/app/settings?err=' + enc(t.photoTooBig) + '#sizechart', 303)
+  const key = `c/${s.id}-${randomId(6)}`
+  await c.env.IMAGES.put(key, file.stream(), { httpMetadata: { contentType: file.type } })
+  await c.env.DB.prepare(`UPDATE sellers SET size_chart_key = ? WHERE id = ?`).bind(key, s.id).run()
+  return c.redirect('/app/settings?ok=' + enc(t.sizeChartSaved) + '#sizechart', 303)
+})
+
+app.post('/drops/:id/size-chart', async (c) => {
+  const drop = await c.env.DB.prepare(`SELECT id FROM drops WHERE id = ? AND seller_id = ?`).bind(c.req.param('id'), c.get('seller').id).first<{ id: string }>()
+  if (!drop) return c.notFound()
+  const on = String((await c.req.parseBody()).on ?? '') === '1' ? 1 : 0
+  await c.env.DB.prepare(`UPDATE drops SET size_chart = ? WHERE id = ?`).bind(on, drop.id).run()
+  return backWith(c, `/app/drops/${drop.id}`, tr(c).revSaved)
+})
+
+// ---------- Reviews ----------
+app.get('/reviews', async (c) => {
+  const t = tr(c)
+  const s = c.get('seller')
+  const { results } = await c.env.DB.prepare(`SELECT r.*, d.title FROM reviews r LEFT JOIN drops d ON d.id = r.drop_id WHERE r.seller_id = ? ORDER BY r.created_at DESC LIMIT 200`)
+    .bind(s.id).all<{ id: number; name: string; stars: number; text: string; photo_key: string | null; hidden: number; created_at: number; title: string | null }>()
+  // Seen: the "new reviews" home task clears once the seller opens this page.
+  await c.env.DB.prepare(`UPDATE sellers SET reviews_seen_at = ? WHERE id = ?`).bind(Date.now(), s.id).run().catch(() => {})
+  const shown = results.filter((r) => !r.hidden)
+  const avg = shown.length ? (shown.reduce((a, r) => a + r.stars, 0) / shown.length).toFixed(1) : ''
+  return page(c, 'settings', t.revSeller, (
+    <>
+      <a class="back" href="/app/settings">← {t.settingsTitle}</a>
+      <h1>{t.revSeller}</h1>
+      <p class="muted" style="margin-top:-6px">{t.revSellerSub}</p>
+      {avg && <p style="font-size:1.2rem;font-weight:800;margin:4px 0 10px">{t.revAvg(avg, shown.length)}</p>}
+      <form method="post" action="/app/reviews/toggle" class="card stack">
+        {s.reviews_on ? <small>✓ {t.revOnNote}</small> : <small style="color:var(--bad);font-weight:700">{t.revOff}</small>}
+        <button class={`btn block sm ${s.reviews_on ? '' : 'primary'}`} type="submit" name="on" value={s.reviews_on ? '' : '1'}>{s.reviews_on ? t.revHideAll : t.revShowAll}</button>
+      </form>
+      {results.length === 0 ? <Empty icon="users" title={t.revSeller} sub={t.revNone} /> : results.map((r) => (
+        <div class="card" style={r.hidden ? 'opacity:.6' : ''}>
+          <div class="row between"><b>{r.name} · <span style="color:var(--warn)">{'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}</span></b>{r.hidden ? <span class="chip closed">{t.revHiddenChip}</span> : null}</div>
+          <small>{r.title ?? ''} · {ago(t, r.created_at)}</small>
+          {r.text && <p style="margin:8px 0 0;white-space:pre-line">{r.text}</p>}
+          {r.photo_key && <img src={`/img/${r.photo_key}`} alt="" style="margin-top:8px;width:96px;height:96px;object-fit:cover;border-radius:10px" loading="lazy" />}
+          <form method="post" action={`/app/reviews/${r.id}/${r.hidden ? 'show' : 'hide'}`} style="margin-top:8px"><button class="btn sm" type="submit">{r.hidden ? t.revShow : t.revHide}</button></form>
+        </div>
+      ))}
+    </>
+  ))
+})
+
+app.post('/reviews/toggle', async (c) => {
+  const on = String((await c.req.parseBody()).on ?? '') === '1' ? 1 : 0
+  await c.env.DB.prepare(`UPDATE sellers SET reviews_on = ? WHERE id = ?`).bind(on, c.get('seller').id).run()
+  return backWith(c, '/app/reviews', tr(c).revSaved)
+})
+
+app.post('/reviews/:id/:act{hide|show}', async (c) => {
+  await c.env.DB.prepare(`UPDATE reviews SET hidden = ? WHERE id = ? AND seller_id = ?`).bind(c.req.param('act') === 'hide' ? 1 : 0, Number(c.req.param('id')), c.get('seller').id).run()
+  return backWith(c, '/app/reviews', tr(c).revSaved)
 })
