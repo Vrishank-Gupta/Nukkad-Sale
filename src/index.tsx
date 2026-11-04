@@ -3,6 +3,7 @@ import type { AppEnv, Bindings } from './env'
 import { tr } from './i18n'
 import { currentSeller, sameOrigin } from './lib/auth'
 import { billingCron } from './lib/billing'
+import { socialTrigger } from './lib/social-trigger'
 import { reconcileGateways } from './lib/gateway'
 import { expireHolds } from './lib/orders'
 import { auth } from './routes/auth'
@@ -178,6 +179,7 @@ export default {
         env.DB.prepare(`DELETE FROM webhook_events WHERE received_at < ?`).bind(Date.now() - 30 * 86_400_000).run(),
         cleanEvents(env.DB).catch(() => {}),
         refreshShipments(env).catch((e) => console.error('shipments', e)),
+        socialTrigger(env).catch((e) => console.error('social trigger', e)),
       ]),
     )
   },

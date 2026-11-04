@@ -11,6 +11,8 @@ export type Bindings = {
   WA_ORDER_TEMPLATE?: string
   WA_OTP_TEMPLATE?: string
   SUPPORT_PHONE?: string
+  /** GitHub token (Actions: read & write on the repo) – starts the 19:00 IST social-posting job. */
+  GH_DISPATCH_TOKEN?: string
   /** Business details shown on the Privacy / Terms / Refunds / Contact pages. */
   LEGAL_NAME?: string
   LEGAL_ADDRESS?: string

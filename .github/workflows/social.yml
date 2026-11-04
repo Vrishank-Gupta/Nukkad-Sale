@@ -9,6 +9,8 @@ name: Social – daily 7 pm posts
 
 on:
   schedule:
+    # Main trigger: the site's cron (src/lib/social-trigger.ts) starts this job through the API at 19:00 IST –
+    # GitHub's own schedule can start hours late or not at all. These are only a backup; a second start posts nothing.
     # GitHub often starts scheduled jobs late (once 6½ hours late), so three tries before 19:00 IST. The first to
     # start waits until 19:00 and posts; the others fetch the updated published.json and find nothing left to post.
     # publish.mjs refuses to post more than 3 h early or 2 h late, so a very late start posts nothing.
