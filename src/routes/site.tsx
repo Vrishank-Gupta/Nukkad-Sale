@@ -30,7 +30,7 @@ const C = {
     title: 'NukkadSale – the app that runs your WhatsApp business',
     desc: 'An app for people who sell on WhatsApp: it takes your orders, collects UPI payments (and tells you who paid), books couriers and keeps your khata. हिंदी + English.',
     nav: ['How it works', 'What it does', 'For buyers', 'Pricing', 'FAQ'], login: 'Seller login', loginShort: 'Login', ctaShort: 'Start', cta: 'Get your shop', other: 'हिंदी', otherLang: 'hi',
-    badge: 'For people who sell on WhatsApp & Instagram',
+    badge: 'For people who sell on WhatsApp',
     h1a: 'The app that runs', h1b: 'your WhatsApp business.',
     sub: 'You keep selling in your groups. NukkadSale takes the orders, collects the money, books the courier and writes your accounts – all on your phone.',
     heroJobs: [['bag', 'Orders', 'Buyers order themselves'], ['wallet', 'Payments', 'Straight to your UPI'], ['box', 'Delivery', 'Courier booked in a tap'], ['book', 'Accounts', 'Khata writes itself']],
@@ -80,7 +80,7 @@ const C = {
       ['Delivery', 'Calling couriers, writing every address', 'Best rate booked, labels printed'],
       ['Accounts', 'Notebook and Excel at month end', 'Khata and profit, already done'],
     ],
-    whoEyebrow: 'Who it is for', whoH: 'Made for sellers like you', whoP: 'If you sell in WhatsApp groups, on status or in Instagram DMs, NukkadSale is for you.',
+    whoEyebrow: 'Who it is for', whoH: 'Made for sellers like you', whoP: 'If you sell in WhatsApp groups, on your status or in WhatsApp chats, NukkadSale is for you.',
     who: [['shop', 'Boutiques & clothing', 'Kurtis, sarees, suits, kids’ wear'], ['tag', 'Jewellery & accessories', 'Earrings, bags, watches, perfume'], ['bag', 'Home food & bakers', 'Pickles, cakes, sweets, snacks'], ['users', 'Resellers & wholesalers', 'Many products, many buyers']],
     all: (bot: boolean): [string, string, [string, string][]][] => [
       ['bag', 'Taking orders', [
@@ -144,7 +144,7 @@ const C = {
     priceNote: 'No commission on your sales – money goes straight to your UPI ID or your own Razorpay account (Razorpay charges its own fee). We set up your shop with you on every plan.',
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
     faq: (bot: boolean) => [
-      ['What is NukkadSale, exactly?', 'An app for people who sell on WhatsApp and Instagram. It takes your orders, collects payments straight to your UPI (and tells you who paid), books couriers and keeps your khata. It is not a shopping site or a marketplace – your buyers stay yours.'],
+      ['What is NukkadSale, exactly?', 'An app for people who sell on WhatsApp. It takes your orders, collects payments straight to your UPI (and tells you who paid), books couriers and keeps your khata. It is not a shopping site or a marketplace – your buyers stay yours.'],
       ['Do my buyers need to install anything?', bot ? 'No. They order inside WhatsApp, or from your link in any browser.' : 'No. They open your link in any browser, pick a size and pay. No app, no sign-up.'],
       ['Will my buyers trust a link?', 'They see your shop name, your real WhatsApp number and reviews from your past buyers. After ordering they get a timeline of every step – with a photo of their packed parcel – and a proper payment receipt.'],
       ['Is my money safe?', 'NukkadSale never holds your money. Buyers pay your own UPI ID, or your own Razorpay account if you use automatic payments.'],
@@ -165,7 +165,7 @@ const C = {
     title: 'NukkadSale – आपका WhatsApp बिज़नेस चलाने वाला ऐप',
     desc: 'WhatsApp पर बेचने वालों का ऐप: ऑर्डर लेता है, UPI पेमेंट लेता है (और बताता है किसने भेजा), कूरियर बुक करता है और खाता रखता है। हिंदी + English।',
     nav: ['कैसे काम करता है', 'क्या करता है', 'ग्राहकों के लिए', 'क़ीमत', 'सवाल'], login: 'सेलर लॉग इन', loginShort: 'लॉग इन', ctaShort: 'शुरू करें', cta: 'अपनी दुकान पाएं', other: 'English', otherLang: 'en',
-    badge: 'WhatsApp और Instagram पर बेचने वालों के लिए',
+    badge: 'WhatsApp पर बेचने वालों के लिए',
     h1a: 'आपका WhatsApp बिज़नेस', h1b: 'चलाने वाला ऐप।',
     sub: 'आप अपने ग्रुप में बेचते रहें। NukkadSale ऑर्डर लेता है, पैसे लेता है, कूरियर बुक करता है और हिसाब लिखता है – सब आपके फ़ोन पर।',
     heroJobs: [['bag', 'ऑर्डर', 'ग्राहक ख़ुद ऑर्डर करें'], ['wallet', 'पेमेंट', 'सीधे आपकी UPI में'], ['box', 'डिलीवरी', 'एक टैप में कूरियर'], ['book', 'हिसाब', 'खाता अपने आप']],
@@ -215,7 +215,7 @@ const C = {
       ['डिलीवरी', 'कूरियर को फ़ोन, हर पता हाथ से', 'सबसे अच्छा रेट बुक, लेबल प्रिंट'],
       ['हिसाब', 'महीने के आख़िर में कॉपी और Excel', 'खाता और मुनाफ़ा, पहले से तैयार'],
     ],
-    whoEyebrow: 'किसके लिए', whoH: 'आप जैसे सेलर के लिए बना', whoP: 'अगर आप WhatsApp ग्रुप, स्टेटस या Instagram DM से बेचते हैं, तो NukkadSale आपके लिए है।',
+    whoEyebrow: 'किसके लिए', whoH: 'आप जैसे सेलर के लिए बना', whoP: 'अगर आप WhatsApp ग्रुप, स्टेटस या WhatsApp चैट से बेचते हैं, तो NukkadSale आपके लिए है।',
     who: [['shop', 'बुटीक और कपड़े', 'कुर्ती, साड़ी, सूट, बच्चों के कपड़े'], ['tag', 'ज्वेलरी और एक्सेसरी', 'झुमके, बैग, घड़ी, परफ़्यूम'], ['bag', 'घर का खाना और बेकरी', 'अचार, केक, मिठाई, नमकीन'], ['users', 'रीसेलर और होलसेलर', 'कई प्रोडक्ट, कई ग्राहक']],
     all: (bot: boolean): [string, string, [string, string][]][] => [
       ['bag', 'ऑर्डर लेना', [
@@ -279,7 +279,7 @@ const C = {
     priceNote: 'बिक्री पर कोई कमीशन नहीं – पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में (Razorpay अपनी फ़ीस लेता है)। हर प्लान में दुकान हम आपके साथ सेट करते हैं।',
     faqEyebrow: 'सवाल', faqH: 'सेलर अक्सर पूछते हैं',
     faq: (bot: boolean) => [
-      ['NukkadSale असल में है क्या?', 'WhatsApp और Instagram पर बेचने वालों का ऐप। यह ऑर्डर लेता है, पैसे सीधे आपकी UPI में लेता है (और बताता है किसने भेजा), कूरियर बुक करता है और खाता रखता है। यह शॉपिंग साइट या मार्केटप्लेस नहीं है – आपके ग्राहक आपके ही रहते हैं।'],
+      ['NukkadSale असल में है क्या?', 'WhatsApp पर बेचने वालों का ऐप। यह ऑर्डर लेता है, पैसे सीधे आपकी UPI में लेता है (और बताता है किसने भेजा), कूरियर बुक करता है और खाता रखता है। यह शॉपिंग साइट या मार्केटप्लेस नहीं है – आपके ग्राहक आपके ही रहते हैं।'],
       ['क्या ग्राहकों को कुछ इंस्टॉल करना होगा?', bot ? 'नहीं। वो WhatsApp में ही ऑर्डर करें, या किसी भी ब्राउज़र में आपके लिंक से।' : 'नहीं। वो किसी भी ब्राउज़र में आपका लिंक खोलें, साइज़ चुनें और पेमेंट करें। कोई ऐप नहीं, कोई साइन-अप नहीं।'],
       ['क्या ग्राहक लिंक पर भरोसा करेंगे?', 'उन्हें आपकी दुकान का नाम, आपका असली WhatsApp नंबर और पुराने ग्राहकों के रिव्यू दिखते हैं। ऑर्डर के बाद हर कदम की टाइमलाइन – पैक पार्सल की फ़ोटो के साथ – और असली पेमेंट रसीद मिलती है।'],
       ['क्या मेरा पैसा सुरक्षित है?', 'NukkadSale आपका पैसा कभी नहीं रखता। ग्राहक सीधे आपकी UPI ID पर भेजते हैं, या अपने आप पेमेंट में आपके अपने Razorpay खाते में।'],
