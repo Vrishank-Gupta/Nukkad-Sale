@@ -9,7 +9,12 @@ name: Social – daily 7 pm posts
 
 on:
   schedule:
-    - cron: '5 13 * * *'   # 18:35 IST – GitHub can start scheduled jobs late, so start early and wait until 19:00
+    # GitHub often starts scheduled jobs late (once 6½ hours late), so three tries before 19:00 IST. The first to
+    # start waits until 19:00 and posts; the others fetch the updated published.json and find nothing left to post.
+    # publish.mjs refuses to post more than 3 h early or 2 h late, so a very late start posts nothing.
+    - cron: '35 11 * * *'  # 17:05 IST
+    - cron: '35 12 * * *'  # 18:05 IST
+    - cron: '5 13 * * *'   # 18:35 IST
   workflow_dispatch:
     inputs:
       date:
@@ -30,7 +35,7 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 200   # may wait up to 3 h for 19:00, then post
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +61,11 @@ jobs:
             if [ -n "$FB_PAGE_TOKEN" ]; then echo "FB_PAGE_TOKEN=$FB_PAGE_TOKEN"; fi
           } > ~/.khatakhat/meta.env
           printf 'YT_CLIENT_ID=%s\nYT_CLIENT_SECRET=%s\nYT_REFRESH_TOKEN=%s\n' "$YT_CLIENT_ID" "$YT_CLIENT_SECRET" "$YT_REFRESH_TOKEN" > ~/.khatakhat/youtube.env
+
+      # A queued run checks out the commit from when it was triggered – fetch the latest published.json first,
+      # so items another run already posted are never posted twice.
+      - name: Latest posting log
+        run: git pull --ff-only origin main
 
       - name: Post
         env:
