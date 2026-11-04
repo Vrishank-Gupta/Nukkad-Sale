@@ -473,6 +473,11 @@ async function main() {
     if (flags.has('--wait') && !flags.has('--dry-run')) {
       const [h, m] = (sch.time ?? '19:00').split(':').map(Number)
       const at = Date.parse(`${day}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00+05:30`), wait = at - Date.now()
+      // GitHub can start scheduled jobs hours late (once at 1:30 am). Never post in the middle of the night:
+      // more than 2 hours after the posting time, skip – the day's items can be posted by hand instead.
+      // …and never early: a run that starts after midnight belongs to yesterday's slot, not today's 7 pm.
+      if (!id && wait > 3 * 3600_000 && !flags.has('--anyway')) { console.log(`Too early to post ${day}'s items (${Math.round(wait / 60000)} min before ${sch.time ?? '19:00'} IST) – skipping.`); return }
+      if (!id && wait < -2 * 3600_000 && !flags.has('--anyway')) { console.log(`Too late to post ${day}'s items (${Math.round(-wait / 60000)} min after ${sch.time ?? '19:00'} IST) – skipping.`); return }
       if (wait > 0 && wait < 3 * 3600_000) { console.log(`Waiting ${Math.round(wait / 60000)} min until ${sch.time ?? '19:00'} IST…`); await sleep(wait) }
     }
     console.log(`${day}: ${ids.join(', ')}`)
