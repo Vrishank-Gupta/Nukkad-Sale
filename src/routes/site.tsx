@@ -138,10 +138,15 @@ const C = {
     plans: [
       { name: 'Shuruaat', price: '₹0', per: 'free', limit: 'Up to 30 paid orders a month', tag: 'For trying it out', extra: 'Every feature included. Nothing to pay to start.', cta: 'Start free' },
       { name: 'Dukaan', price: '₹999', per: '/month', limit: 'Up to 300 paid orders a month', tag: 'For regular sellers', extra: 'Every feature, ten times the orders.', cta: 'Choose Dukaan' },
-      { name: 'Badi Dukaan', price: '₹1,999', per: '/month', limit: 'Unlimited orders', tag: 'For busy sellers', extra: 'Plus automatic payments with Razorpay and priority help on WhatsApp', cta: 'Choose Badi Dukaan' },
+      { name: 'Badi Dukaan', price: '₹1,999', per: '/month', limit: 'Unlimited orders', tag: 'For busy sellers', extra: 'Plus priority help on WhatsApp', cta: 'Choose Badi Dukaan' },
     ],
     planIncl: 'Every plan includes', incl: ['Your shop link and order links', 'Exact-amount UPI payments', 'Stock held while buyers pay', 'Khata and profit', 'Discounts, special prices, waitlist', 'Address labels and courier booking', 'Buyers list', 'हिंदी + English'],
     priceNote: 'No commission on your sales – money goes straight to your UPI ID or your own Razorpay account (Razorpay charges its own fee). We set up your shop with you on every plan.',
+    priceRules: [
+      ['The only difference is how many orders', 'Every plan has every feature, including automatic payments through your own Razorpay account – we switch it on with you.'],
+      ['What counts as an order', 'One payment from a buyer: a cart of several items is one order. Paid orders and cash-on-delivery orders count; unpaid, cancelled and expired ones don’t.'],
+      ['What happens at the limit', 'You get a warning at 80%. At the limit your shop stops taking new orders until you upgrade or the month resets – nothing is charged automatically, and orders already placed carry on.'],
+    ],
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
     faq: (bot: boolean) => [
       ['What is NukkadSale, exactly?', 'An app for people who sell on WhatsApp. It takes your orders, collects payments straight to your UPI (and tells you who paid), books couriers and keeps your khata. It is not a shopping site or a marketplace – your buyers stay yours.'],
@@ -153,11 +158,11 @@ const C = {
       ['How do I start?', 'Fill the short form below. We message you on WhatsApp, set up your shop with you and send your login. Most sellers post their first product the same day.'],
       ['What does it cost?', 'Shuruaat is free for up to 30 paid orders a month. Dukaan is ₹999 a month for up to 300 orders, and Badi Dukaan is ₹1,999 a month with unlimited orders. No commission on your sales.'],
     ],
-    menu: 'Menu', swipe: 'Swipe to see all four steps →', stickyCta: 'Free to start. We set it up with you.',
+    whatIf: 'What if…', menu: 'Menu', swipe: 'Swipe to see all four steps →', stickyCta: 'Free to start. We set it up with you.',
     featNav: 'What it does', allJobs: 'The four jobs', backHome: '← Home', featGet: 'What you get', featSteps: 'How it works', featMore: 'See the other jobs', featCtaH: 'Ready to try it?', featCtaP: 'Free to start. We set up your shop with you on WhatsApp.',
-    formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Leave your name and WhatsApp number. We’ll message you, set up your shop with you and send your login.',
-    f: { more: 'Tell us more about your business (optional)', name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Request a call back', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
-    errs: { fill: 'Please fill your name, business name and WhatsApp number.', phone: 'Please enter a valid 10-digit mobile number.', many: 'Too many requests from this device today. Please message us on WhatsApp instead.' },
+    formEyebrow: 'Get started', formH: 'Get your shop', formP: 'Just your name and WhatsApp number – free to start. We’ll message you on WhatsApp, set up your shop with you and send your login.',
+    f: { more: 'Tell us more about your business (optional)', name: 'Your name', business: 'Shop / business name', phone: 'WhatsApp number', city: 'City', sells: 'What do you sell?', sellsPh: 'e.g. kurtis, sarees, jewellery', channel: 'Where do you sell today?', volume: 'How many orders a month?', payments: 'How would you like to get paid?', message: 'Anything else? (optional)', choose: 'Choose…', submit: 'Get my free shop', consent: 'By sending this you agree to be contacted on WhatsApp or phone about NukkadSale. See our', privacy: 'privacy policy' },
+    errs: { fill: 'Please fill your name and WhatsApp number.', phone: 'Please enter a valid 10-digit mobile number.', many: 'Too many requests from this device today. Please message us on WhatsApp instead.' },
     thanksH: 'Thank you!', thanksP: (p: string) => `We got your request. We’ll message you on WhatsApp at ${p} soon to set up your shop.`, thanksWa: 'Message us now on WhatsApp', back: '← Back to home',
     footer: 'The app for people who sell on WhatsApp.', policies: [['/privacy', 'Privacy'], ['/terms', 'Terms'], ['/refunds', 'Refunds'], ['/contact', 'Contact']],
   },
@@ -273,9 +278,14 @@ const C = {
     plans: [
       { name: 'शुरुआत', price: '₹0', per: 'मुफ़्त', limit: 'महीने में 30 पेड ऑर्डर तक', tag: 'आज़माने के लिए', extra: 'हर फ़ीचर शामिल। शुरू करने के लिए कुछ नहीं देना।', cta: 'मुफ़्त शुरू करें' },
       { name: 'दुकान', price: '₹999', per: '/महीना', limit: 'महीने में 300 पेड ऑर्डर तक', tag: 'नियमित सेलर के लिए', extra: 'हर फ़ीचर, दस गुना ऑर्डर।', cta: 'दुकान चुनें' },
-      { name: 'बड़ी दुकान', price: '₹1,999', per: '/महीना', limit: 'अनलिमिटेड ऑर्डर', tag: 'ज़्यादा ऑर्डर वालों के लिए', extra: 'साथ में Razorpay से अपने आप पेमेंट और WhatsApp पर प्राथमिकता से मदद', cta: 'बड़ी दुकान चुनें' },
+      { name: 'बड़ी दुकान', price: '₹1,999', per: '/महीना', limit: 'अनलिमिटेड ऑर्डर', tag: 'ज़्यादा ऑर्डर वालों के लिए', extra: 'साथ में WhatsApp पर प्राथमिकता से मदद', cta: 'बड़ी दुकान चुनें' },
     ],
     planIncl: 'हर प्लान में', incl: ['दुकान का लिंक और ऑर्डर लिंक', 'सही रकम वाला UPI पेमेंट', 'पेमेंट तक स्टॉक होल्ड', 'खाता और मुनाफ़ा', 'छूट, ख़ास दाम, वेटलिस्ट', 'पते के लेबल और कूरियर बुकिंग', 'ग्राहकों की लिस्ट', 'हिंदी + English'],
+    priceRules: [
+      ['फ़र्क सिर्फ़ ऑर्डर की गिनती का है', 'हर प्लान में हर फ़ीचर, आपके अपने Razorpay खाते से अपने आप पेमेंट भी – हम आपके साथ चालू करते हैं।'],
+      ['ऑर्डर किसे गिनते हैं', 'ग्राहक का एक पेमेंट: कई चीज़ों वाला कार्ट एक ऑर्डर है। पेड और कैश ऑन डिलीवरी ऑर्डर गिने जाते हैं; बिना पेमेंट, रद्द या समय ख़त्म वाले नहीं।'],
+      ['लिमिट पूरी होने पर', '80% पर चेतावनी मिलती है। लिमिट पर दुकान नए ऑर्डर लेना बंद करती है, जब तक आप अपग्रेड न करें या महीना न बदले – अपने आप कोई पैसा नहीं कटता, और पहले के ऑर्डर चलते रहते हैं।'],
+    ],
     priceNote: 'बिक्री पर कोई कमीशन नहीं – पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में (Razorpay अपनी फ़ीस लेता है)। हर प्लान में दुकान हम आपके साथ सेट करते हैं।',
     faqEyebrow: 'सवाल', faqH: 'सेलर अक्सर पूछते हैं',
     faq: (bot: boolean) => [
@@ -288,11 +298,11 @@ const C = {
       ['शुरू कैसे करें?', 'नीचे छोटा फ़ॉर्म भरें। हम WhatsApp पर मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे। ज़्यादातर सेलर उसी दिन पहला प्रोडक्ट डाल देते हैं।'],
       ['इसका ख़र्च कितना है?', 'शुरुआत प्लान महीने में 30 पेड ऑर्डर तक मुफ़्त है। दुकान ₹999 महीना (300 ऑर्डर तक) और बड़ी दुकान ₹1,999 महीना (अनलिमिटेड ऑर्डर)। बिक्री पर कोई कमीशन नहीं।'],
     ],
-    menu: 'मेन्यू', swipe: 'चारों कदम देखने के लिए स्वाइप करें →', stickyCta: 'शुरुआत मुफ़्त। सेट-अप हम करेंगे।',
+    whatIf: 'अगर…', menu: 'मेन्यू', swipe: 'चारों कदम देखने के लिए स्वाइप करें →', stickyCta: 'शुरुआत मुफ़्त। सेट-अप हम करेंगे।',
     featNav: 'क्या करता है', allJobs: 'चारों काम', backHome: '← होम', featGet: 'आपको क्या मिलता है', featSteps: 'कैसे काम करता है', featMore: 'बाकी काम देखें', featCtaH: 'आज़माना चाहेंगे?', featCtaP: 'शुरुआत मुफ़्त। WhatsApp पर हम आपके साथ दुकान सेट करेंगे।',
     formEyebrow: 'शुरू करें', formH: 'अपनी दुकान पाएं', formP: 'अपना नाम और WhatsApp नंबर दें। हम मैसेज करेंगे, आपके साथ दुकान सेट करेंगे और लॉग इन भेजेंगे।',
-    f: { more: 'अपने काम के बारे में और बताएं (ज़रूरी नहीं)', name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'कॉल बैक माँगें', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
-    errs: { fill: 'कृपया नाम, बिज़नेस का नाम और WhatsApp नंबर भरें।', phone: 'कृपया सही 10 अंकों का मोबाइल नंबर डालें।', many: 'आज इस फ़ोन से बहुत सारे फ़ॉर्म आ चुके। कृपया WhatsApp पर मैसेज करें।' },
+    f: { more: 'अपने काम के बारे में और बताएं (ज़रूरी नहीं)', name: 'आपका नाम', business: 'दुकान / बिज़नेस का नाम', phone: 'WhatsApp नंबर', city: 'शहर', sells: 'आप क्या बेचते हैं?', sellsPh: 'जैसे कुर्ती, साड़ी, ज्वेलरी', channel: 'अभी कहाँ बेचते हैं?', volume: 'महीने में कितने ऑर्डर?', payments: 'पैसे कैसे लेना चाहेंगे?', message: 'कुछ और? (ज़रूरी नहीं)', choose: 'चुनें…', submit: 'मेरी मुफ़्त दुकान पाएं', consent: 'भेजकर आप NukkadSale के बारे में WhatsApp या फ़ोन पर संपर्क के लिए सहमत हैं। देखें हमारी', privacy: 'प्राइवेसी पॉलिसी' },
+    errs: { fill: 'कृपया अपना नाम और WhatsApp नंबर भरें।', phone: 'कृपया सही 10 अंकों का मोबाइल नंबर डालें।', many: 'आज इस फ़ोन से बहुत सारे फ़ॉर्म आ चुके। कृपया WhatsApp पर मैसेज करें।' },
     thanksH: 'धन्यवाद!', thanksP: (p: string) => `आपकी जानकारी मिल गई। दुकान सेट करने के लिए हम जल्द ही ${p} पर WhatsApp करेंगे।`, thanksWa: 'अभी WhatsApp पर मैसेज करें', back: '← होम पर वापस',
     footer: 'WhatsApp पर बेचने वालों का ऐप।', policies: [['/privacy', 'प्राइवेसी'], ['/terms', 'शर्तें'], ['/refunds', 'रिफ़ंड'], ['/contact', 'संपर्क']],
   },
@@ -307,19 +317,19 @@ const FEATURES = {
     hi: { name: 'ऑर्डर और स्टॉक', h1: 'ग्राहक ख़ुद ऑर्डर करें। आप दाम लिखना बंद करें।', sub: 'WhatsApp ग्रुप में एक लिंक शेयर करें। ग्राहक फ़ोटो देखें, साइज़ चुनें और ऑर्डर करें – पेमेंट तक पीस उनके लिए होल्ड रहता है, तो दो बार नहीं बिकता।',
       steps: ['प्रोडक्ट डालें: फ़ोटो, दाम, साइज़ और कितने हैं।', 'तैयार WhatsApp मैसेज ग्रुप और स्टेटस में शेयर करें।', 'ऑर्डर नाम, साइज़ और पते के साथ ऐप में आते हैं।'] } },
   payments: { icon: 'wallet', group: 1, clip: 'payments', imgs: ['orders-check', 'buyer-pay'],
-    en: { name: 'Payments', h1: 'Paid straight to your UPI. You see who paid.', sub: 'Every order gets its own exact amount – like ₹798.52 for a ₹799 kurta. When that amount shows in your UPI app, you know whose order it is. Tap “Yes, I got it”. No screenshots.',
+    en: { faq: [["What if two buyers order the same thing at the same time?", "Every open order gets a different amount – no two open orders of your shop ever share one – so each payment points to exactly one order."], ["What if a buyer pays the wrong amount?", "You will not see that order’s exact amount in your UPI app. Check the buyer’s name in your UPI app, then tap “Yes, I got it” or message them. The exact amount is a guide; you always confirm what really arrived."], ["What if they pay after the time runs out?", "Orders whose time ran out stay in “Check payment” for a day, so a late payment can still be confirmed. If the piece sold meanwhile, the order shows “Refund due” for you."], ["What if a buyer pays twice?", "You will see two amounts in your UPI app but only one order to confirm. Return the extra one from your UPI app – NukkadSale never holds the money."], ["Can it confirm payments by itself?", "Yes, with your own Razorpay account (on any plan): payments confirm themselves within about a minute. Razorpay charges its own fee."]], name: 'Payments', h1: 'Paid straight to your UPI. You see who paid.', sub: 'Every order gets its own exact amount – like ₹798.52 for a ₹799 kurta. When that amount shows in your UPI app, you know whose order it is. Tap “Yes, I got it”. No screenshots.',
       steps: ['The buyer pays your UPI ID from any UPI app.', 'The app asks: “Did you get ₹798.52?”', 'Check your UPI app and tap Yes. Or switch on automatic payments and skip even that.'] },
-    hi: { name: 'पेमेंट', h1: 'पैसा सीधे आपकी UPI में। पता चले किसने भेजा।', sub: 'हर ऑर्डर की अपनी सही रकम – जैसे ₹799 की कुर्ती के लिए ₹798.52। UPI ऐप में वो रकम दिखी तो पता चल गया किसका ऑर्डर है। “हाँ, पैसे आ गए” टैप करें। स्क्रीनशॉट नहीं।',
+    hi: { faq: [["दो ग्राहक एक साथ ऑर्डर करें तो?", "हर खुले ऑर्डर की अलग रकम होती है – आपकी दुकान के दो खुले ऑर्डर की रकम कभी एक नहीं – तो हर पेमेंट ठीक एक ऑर्डर बताता है।"], ["ग्राहक ग़लत रकम भेज दे तो?", "आपके UPI ऐप में उस ऑर्डर की सही रकम नहीं दिखेगी। UPI ऐप में ग्राहक का नाम देखें, फिर “हाँ, पैसे आ गए” दबाएं या मैसेज करें। सही रकम एक मदद है; पक्का आप ही करते हैं।"], ["समय ख़त्म होने के बाद भेजे तो?", "समय ख़त्म हुए ऑर्डर एक दिन तक “पेमेंट चेक करें” में रहते हैं, तो देर से आया पेमेंट भी पक्का हो सकता है। अगर पीस इस बीच बिक गया, तो ऑर्डर आपके लिए “रिफ़ंड बाकी” दिखाता है।"], ["ग्राहक दो बार भेज दे तो?", "UPI ऐप में दो रकम दिखेंगी पर पक्का करने को एक ऑर्डर। ज़्यादा वाली UPI ऐप से लौटा दें – NukkadSale पैसा कभी नहीं रखता।"], ["क्या पेमेंट अपने आप पक्का हो सकता है?", "हाँ, आपके अपने Razorpay खाते से (किसी भी प्लान में): पेमेंट लगभग एक मिनट में अपने आप पक्का। Razorpay अपनी फ़ीस लेता है।"]], name: 'पेमेंट', h1: 'पैसा सीधे आपकी UPI में। पता चले किसने भेजा।', sub: 'हर ऑर्डर की अपनी सही रकम – जैसे ₹799 की कुर्ती के लिए ₹798.52। UPI ऐप में वो रकम दिखी तो पता चल गया किसका ऑर्डर है। “हाँ, पैसे आ गए” टैप करें। स्क्रीनशॉट नहीं।',
       steps: ['ग्राहक किसी भी UPI ऐप से आपकी UPI ID पर भेजे।', 'ऐप पूछता है: “क्या ₹798.52 आए?”', 'UPI ऐप देखें और हाँ टैप करें। या अपने आप पेमेंट चालू करें, वो भी नहीं करना।'] } },
   delivery: { icon: 'box', group: 3, clip: 'delivery', imgs: ['ship-book', 'track'],
-    en: { name: 'Delivery', h1: 'Book the courier in a tap. Buyers track it.', sub: 'See courier rates and delivery dates for the buyer’s pincode, book the cheapest or the fastest, schedule the pickup and print the label – right from the order. Prefer your local courier? Print labels for every parcel at once.',
+    en: { faq: [["Do I need a courier account?", "No. You can send parcels any way you like and print address labels for all of them. To compare courier rates and book pickups from the app, connect your own courier account once – one account gives you several couriers."], ["Who pays the courier?", "You do, from your own courier account’s wallet. NukkadSale adds nothing on top."], ["What if a delivery fails?", "The order shows it. Ask for another attempt, take it back, send again, or put it back in stock."]], name: 'Delivery', h1: 'Book the courier in a tap. Buyers track it.', sub: 'See courier rates and delivery dates for the buyer’s pincode, book the cheapest or the fastest, schedule the pickup and print the label – right from the order. Prefer your local courier? Print labels for every parcel at once.',
       steps: ['Open a paid order and see courier prices for that pincode.', 'Book, print the label and schedule the pickup.', 'The buyer’s order page shows every scan until it is delivered.'] },
-    hi: { name: 'डिलीवरी', h1: 'एक टैप में कूरियर बुक। ग्राहक ख़ुद ट्रैक करें।', sub: 'ग्राहक के पिनकोड के लिए कूरियर रेट और पहुँचने की तारीख़ देखें, सबसे सस्ता या सबसे तेज़ बुक करें, पिकअप तय करें और लेबल प्रिंट करें – ऑर्डर से ही। लोकल कूरियर पसंद है? सारे लेबल एक साथ प्रिंट करें।',
+    hi: { faq: [["क्या कूरियर खाता ज़रूरी है?", "नहीं। पार्सल जैसे चाहें भेजें और सबके पते के लेबल प्रिंट करें। ऐप से कूरियर रेट देखने और पिकअप बुक करने के लिए एक बार अपना कूरियर खाता जोड़ें – एक खाते में कई कूरियर।"], ["कूरियर का पैसा कौन देता है?", "आप, अपने कूरियर खाते के वॉलेट से। NukkadSale ऊपर से कुछ नहीं जोड़ता।"], ["डिलीवरी फ़ेल हो तो?", "ऑर्डर पर दिखता है। फिर से कोशिश करवाएं, वापस मंगवाएं, दोबारा भेजें या स्टॉक में डालें।"]], name: 'डिलीवरी', h1: 'एक टैप में कूरियर बुक। ग्राहक ख़ुद ट्रैक करें।', sub: 'ग्राहक के पिनकोड के लिए कूरियर रेट और पहुँचने की तारीख़ देखें, सबसे सस्ता या सबसे तेज़ बुक करें, पिकअप तय करें और लेबल प्रिंट करें – ऑर्डर से ही। लोकल कूरियर पसंद है? सारे लेबल एक साथ प्रिंट करें।',
       steps: ['पेड ऑर्डर खोलें और उस पिनकोड के कूरियर रेट देखें।', 'बुक करें, लेबल प्रिंट करें, पिकअप तय करें।', 'पहुँचने तक ग्राहक के ऑर्डर पेज पर हर स्कैन।'] } },
   accounts: { icon: 'book', group: 4, clip: 'accounts', imgs: ['profit', 'home'],
-    en: { name: 'Accounts', h1: 'Your khata writes itself. With profit.', sub: 'Every paid order is added for you. Add a piece’s cost once and see profit per piece and for the month. Know your best buyers. Download it all for your CA.',
+    en: { faq: [["What does “profit” include?", "Money from paid orders, minus the product cost you entered for each piece, minus the expenses you add (courier, packing, ads – one tap each with “You gave ₹”)."], ["Are delivery and cash-on-delivery charges counted?", "Yes – they are part of what the buyer paid, so they count as money in. What the courier charges you is an expense you add."], ["Are discounts counted?", "Yes. Profit uses the price the buyer actually paid, after any discount or special price."], ["Are payment gateway fees taken off?", "Not automatically. If you use Razorpay, add its fee as an expense, or note it monthly."], ["What about refunds and returns?", "Add a refund as “You gave ₹” and it comes off the month’s money in."], ["When does a sale count?", "When it is paid – when you confirm the UPI payment, the gateway confirms it, or you mark cash on delivery received."]], name: 'Accounts', h1: 'Your khata writes itself. With profit.', sub: 'Every paid order is added for you. Add a piece’s cost once and see profit per piece and for the month. Know your best buyers. Download it all for your CA.',
       steps: ['Sell as usual – every paid order lands in the khata.', 'Add cash sales and expenses with one tap.', 'See today, this month and your profit at a glance.'] },
-    hi: { name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
+    hi: { faq: [["“मुनाफ़े” में क्या आता है?", "पेड ऑर्डर का पैसा, घटाकर हर पीस की आपकी डाली लागत, घटाकर आपके जोड़े ख़र्च (कूरियर, पैकिंग, विज्ञापन – “आपने दिए ₹” से एक टैप में)।"], ["डिलीवरी और COD चार्ज गिने जाते हैं?", "हाँ – ये ग्राहक के दिए पैसे का हिस्सा हैं, तो आमदनी में गिने जाते हैं। कूरियर आपसे जो लेता है, वो ख़र्च में जोड़ें।"], ["छूट गिनी जाती है?", "हाँ। मुनाफ़ा उसी दाम पर बनता है जो ग्राहक ने असल में दिया – छूट या ख़ास दाम के बाद।"], ["पेमेंट गेटवे की फ़ीस घटती है?", "अपने आप नहीं। Razorpay इस्तेमाल करें तो उसकी फ़ीस ख़र्च में जोड़ें, या महीने में एक बार।"], ["रिफ़ंड और वापसी?", "रिफ़ंड “आपने दिए ₹” में जोड़ें, वो महीने की आमदनी से घट जाता है।"], ["बिक्री कब गिनी जाती है?", "पेमेंट होने पर – जब आप UPI पेमेंट पक्का करें, गेटवे पक्का करे, या आप COD का पैसा मिला दर्ज करें।"]], name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
       steps: ['आम तरह बेचें – हर पेड ऑर्डर खाते में।', 'कैश बिक्री और ख़र्च एक टैप में जोड़ें।', 'आज, इस महीने और मुनाफ़ा एक नज़र में।'] } },
   buyers: { icon: 'lock', group: 3, clip: '', imgs: ['t-timeline', 't-receipt'],
     en: { name: 'For your buyers', h1: 'Your buyers get what big online shops give.', sub: 'Buyers who trust your link pay faster and come back. Every order on NukkadSale comes with a timeline, a receipt, size help and reviews – and cash on delivery can start with a small advance.',
@@ -504,6 +514,9 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 .fgroup li b{display:block;font-size:.98rem;margin-bottom:1px}.fgroup li span{color:var(--muted);font-size:.9rem;line-height:1.45}
 .cardshot{display:block;width:100%;max-width:360px;margin:0 auto;border-radius:18px;border:1px solid var(--line);box-shadow:0 20px 50px rgba(80,40,10,.15);background:#fff}
 .cardshots{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:30px;align-items:start}@media (max-width:900px){.cardshots{grid-template-columns:1fr}}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}.rules div{border-left:3px solid var(--brand);padding:2px 0 2px 14px}
+.rules b{display:block;margin-bottom:3px}.rules span{color:var(--muted);font-size:.92rem}@media (max-width:900px){.rules{grid-template-columns:1fr}}
+.whatif{margin-top:30px}.whatif details{margin-top:10px}
 .buysec{background:#fff;border-top:1px solid var(--line)}
 .buy5{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:36px}
 .btile{grid-column:span 2;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column}
@@ -775,12 +788,12 @@ const GetStarted = ({ k, lang, err }: { k: Copy; lang: 'en' | 'hi'; err?: string
         <div class="fields">
           <div><label for="name">{k.f.name}</label><input id="name" name="name" autocomplete="name" required maxlength={60} /></div>
           <div><label for="phone">{k.f.phone}</label><div class="tel"><span>+91</span><input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength={14} placeholder="98XXXXXXXX" required /></div></div>
-          <div><label for="business">{k.f.business}</label><input id="business" name="business" required maxlength={80} /></div>
-          <div><label for="sells">{k.f.sells}</label><input id="sells" name="sells" placeholder={k.f.sellsPh} maxlength={120} /></div>
         </div>
         <details class="more">
           <summary>{k.f.more}</summary>
           <div class="fields" style="margin-top:14px">
+            <div><label for="business">{k.f.business}</label><input id="business" name="business" maxlength={80} /></div>
+            <div><label for="sells">{k.f.sells}</label><input id="sells" name="sells" placeholder={k.f.sellsPh} maxlength={120} /></div>
             <div><label for="city">{k.f.city}</label><input id="city" name="city" autocomplete="address-level2" maxlength={60} /></div>
             <div><label for="channel">{k.f.channel}</label><select id="channel" name="channel"><Options map={CHANNELS} lang={lang} placeholder={k.f.choose} /></select></div>
             <div><label for="volume">{k.f.volume}</label><select id="volume" name="volume"><Options map={VOLUMES} lang={lang} placeholder={k.f.choose} /></select></div>
@@ -814,6 +827,7 @@ const Pricing = ({ k }: { k: Copy }) => (
         ))}
       </div>
       <div class="incl"><b>{k.planIncl}</b><ul>{k.incl.map((x) => <li>{x}</li>)}</ul></div>
+      <div class="rules">{k.priceRules.map(([h, p]) => <div><b>{h}</b><span>{p}</span></div>)}</div>
       <p class="note center">{k.priceNote}</p>
     </div>
   </section>
@@ -974,6 +988,7 @@ site.get('/features/:slug', (c) => {
       <section data-sec={`f-${slug}-more`} style="padding-top:10px">
         <div class="wrap">
           <div class="ctabox"><div><h2 style="margin:0 0 6px">{k.featCtaH}</h2><p>{k.featCtaP}</p></div><a class="btn" href="/#get-started">{k.cta}</a></div>
+          {'faq' in x && <div class="whatif"><h2>{k.whatIf}</h2>{(x.faq as unknown as [string, string][]).map(([q, a]) => <details><summary>{q}</summary><p>{a}</p></details>)}</div>}
           <h3 style="margin-top:34px">{k.featMore}</h3>
           <div class="othjobs">{SLUGS.filter((s) => s !== slug).map((s) => <a href={`/features/${s}`}>{svgIcon(FEATURES[s].icon, 18)}{FEATURES[s][lang].name}</a>)}</div>
         </div>
@@ -989,9 +1004,10 @@ site.post('/get-started', async (c) => {
   const str = (key: string, n: number) => String(f[key] ?? '').trim().slice(0, n)
   // Bots fill the hidden field; pretend it worked.
   if (str('website', 200)) return c.redirect('/thanks', 303)
-  const name = str('name', 60), business = str('business', 80)
+  // Only name and WhatsApp number are required; the rest can come later, on WhatsApp.
+  const name = str('name', 60), business = str('business', 80) || name
   const phone = normalizePhone(str('phone', 20))
-  if (!name || !business || !str('phone', 20)) return fail(k.errs.fill)
+  if (!name || !str('phone', 20)) return fail(k.errs.fill)
   if (!phone) return fail(k.errs.phone)
   const pick = (key: string, map: object) => (str(key, 40) in map ? str(key, 40) : '')
   const now = Date.now()

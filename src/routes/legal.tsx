@@ -40,7 +40,7 @@ const ContactLines = ({ c }: { c: Context<AppEnv> }) => {
   const b = biz(c)
   return (
     <ul>
-      <li><b>{b.name}</b></li>
+      <li><b>NukkadSale</b>{b.name !== 'NukkadSale' ? ` – operated by ${b.name}` : ''}</li>
       {b.address && <li>{b.address}</li>}
       {b.email && <li>Email: <a href={`mailto:${b.email}`}>{b.email}</a></li>}
       {b.phone && <li>WhatsApp: <a href={waLink(b.phone, 'Hi, I have a question about NukkadSale')}>+{b.phone}</a></li>}
@@ -139,18 +139,29 @@ legal.get('/terms', (c) => {
 legal.get('/refunds', (c) =>
   c.html(
     <Page c={c} title="Refund & cancellation policy">
-      <h2>Buyers</h2>
+      <p>NukkadSale is the software sellers use to run their shop. <b>Buyers pay the seller directly</b> – to the seller's UPI ID or the seller's own Razorpay account – so NukkadSale never holds a buyer's money. That is why product refunds come from the seller, while refunds of NukkadSale's own plan fee come from us.</p>
+      <h2>Buyers: orders and refunds</h2>
       <ul>
-        <li><b>Refunds are handled by the seller.</b> Your payment goes directly to the seller, so only the seller can refund it. Use the "Message seller" link on your order page.</li>
-        <li><b>Paid after an item sold out?</b> The order is marked "Refund due" for the seller, who must return your money.</li>
-        <li><b>Cancel before paying:</b> tap "Cancel" in the WhatsApp chat, or simply don't pay – the hold ends on its own and nothing is charged.</li>
-        <li><b>Razorpay payments</b> (when the seller uses automatic payments) are refunded by the seller through that gateway, usually back to the original payment method.</li>
+        <li><b>Refunds are given by the seller.</b> Use “Message seller” on your order page. The seller refunds to the UPI ID or card you paid from.</li>
+        <li><b>Cancel before paying:</b> simply don't pay, or tap “Cancel” in the WhatsApp chat. The piece is held only for a few minutes and nothing is charged.</li>
+        <li><b>Cancelled after paying:</b> ask the seller; once they cancel, they refund you in full. A cash-on-delivery advance is refunded the same way.</li>
+        <li><b>Paid after the item sold out:</b> the order is marked “Refund due” for the seller, who must return your money.</li>
+        <li><b>Paid twice or the wrong amount:</b> tell the seller – they see every payment in their UPI app and return anything extra.</li>
+        <li><b>Part of an order can't be sent:</b> the seller refunds the part they can't send.</li>
+        <li><b>Returns and exchanges</b> follow the seller's own policy – ask before you buy if it matters to you.</li>
+        <li><b>Gateway payments</b> (Razorpay) are refunded by the seller through the gateway, usually to the original payment method within a few working days.</li>
+        <li><b>Seller not replying?</b> Write to us (below) with your order number. We can't refund money we never received, but we will contact the seller, and a seller who doesn't settle refunds can have their shop paused.</li>
       </ul>
-      <h2>Sellers (NukkadSale plan)</h2>
+      <h2>If a shop is paused or closed</h2>
       <ul>
-        <li>If a monthly plan fee applies to your shop, it is billed per month as shown on your NukkadSale plan page.</li>
-        <li>You can stop using NukkadSale at any time by contacting us; no new invoices are created after that.</li>
-        <li>Fees already paid for a month are not refunded unless we agree otherwise in writing.</li>
+        <li>The shop stops taking new orders. Orders already placed stay open, so the seller can still confirm, send or refund them, and you can still see your order page.</li>
+      </ul>
+      <h2>Sellers: the NukkadSale plan fee</h2>
+      <ul>
+        <li>The Shuruaat plan is free. Paid plans are billed per month, as shown on your plan page – there is no commission on your sales.</li>
+        <li>Upgrading takes off anything you already paid for that month.</li>
+        <li>You can stop at any time by contacting us; no new invoices are created after that.</li>
+        <li>Fees already paid for a month are not refunded, except when we charged you twice or by mistake – then we refund the extra in full.</li>
       </ul>
       <h2>Contact</h2>
       <ContactLines c={c} />

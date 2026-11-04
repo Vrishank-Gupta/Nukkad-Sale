@@ -299,6 +299,18 @@ admin.get('/', async (c) => {
     getSettings(c.env),
   ])
   const x = r ?? {}
+  // From a request on the website to a seller who keeps selling – the numbers that matter, not just sign-ups.
+  const act = await db.prepare(
+    `SELECT (SELECT COUNT(*) FROM leads) AS leads, (SELECT COUNT(*) FROM leads WHERE status = 'onboarded') AS leads_won,
+            (SELECT COUNT(*) FROM sellers) AS shops,
+            (SELECT COUNT(*) FROM sellers s WHERE EXISTS (SELECT 1 FROM drops d WHERE d.seller_id = s.id)) AS first_sale,
+            (SELECT COUNT(*) FROM sellers s WHERE EXISTS (SELECT 1 FROM orders o WHERE o.seller_id = s.id AND o.status <> 'expired')) AS first_order,
+            (SELECT COUNT(*) FROM sellers s WHERE EXISTS (SELECT 1 FROM orders o WHERE o.seller_id = s.id AND o.status = 'paid')) AS first_paid,
+            (SELECT COUNT(*) FROM sellers s WHERE (SELECT COUNT(DISTINCT COALESCE(o.cart_id, o.id)) FROM orders o WHERE o.seller_id = s.id AND o.status = 'paid') >= 10) AS ten_paid,
+            (SELECT COUNT(*) FROM sellers s WHERE EXISTS (SELECT 1 FROM orders o WHERE o.seller_id = s.id AND o.status = 'paid' AND o.paid_at > ?1)) AS paid_30d`,
+  ).bind(now - 30 * 86_400_000).first<Record<string, number>>()
+  const funnel: [string, number][] = act ? [['Requests on the website', act.leads], ['Requests turned into shops', act.leads_won], ['Shops in total', act.shops], ['Put up a first sale', act.first_sale], ['Got a first order', act.first_order],
+    ['Got a first paid order', act.first_paid], ['10+ paid orders', act.ten_paid], ['Paid order in the last 30 days', act.paid_30d]] : []
   const byDay = new Map(daily.map((d) => [d.d, d]))
   const Kpi = (p: { label: string; value: string; href?: string; tone?: string }) => (
     <a class={`kpi ${p.tone ?? ''}`} href={p.href ?? '#'}><small class="muted">{p.label}</small><b>{p.value}</b></a>
@@ -332,6 +344,14 @@ admin.get('/', async (c) => {
       </div>
       <div class="cols">
         <div>
+          <div class="panel"><h2>Seller activation</h2>
+            {funnel.map(([label, n], i) => {
+              // Requests → shops from requests; then every step against all shops (admin also creates shops directly).
+              const base = i <= 1 ? funnel[0][1] : funnel[2][1], pctShown = i === 1 || i > 2
+              return <div class="row between" style={`padding:7px 0;border-top:1px solid var(--line);${i === 2 ? 'border-top:2px solid var(--line)' : ''}`}><span>{label}</span><span class="row" style="gap:10px"><span style={`display:inline-block;height:8px;border-radius:4px;background:var(--brand);opacity:.75;width:${Math.max(2, Math.round((Math.min(n, base) / Math.max(1, base)) * 120))}px`} /><b style="min-width:32px;text-align:right">{n}</b><small class="muted" style="min-width:38px;text-align:right">{pctShown ? `${Math.round((n / Math.max(1, base)) * 100)}%` : ''}</small></span></div>
+            })}
+            <small class="muted" style="display:block;margin-top:6px">“Turned into shops” is a share of requests; every step below “Shops in total” is a share of all shops.</small>
+          </div>
           <div class="panel"><h2>Sales through NukkadSale – last 30 days</h2><Bars values={days.map((d) => byDay.get(d)?.amt ?? 0)} days={days} fmt={rupees} /></div>
           <div class="panel">
             <h2>Top sellers – last 30 days</h2>
