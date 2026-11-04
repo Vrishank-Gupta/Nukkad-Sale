@@ -333,7 +333,19 @@ async function fbPublish(cfg, item, caption) {
   return { fb_id: r.post_id ?? r.id, permalink: `https://www.facebook.com/${r.post_id ?? r.id}` }
 }
 
-async function publishItem(cfg, ig, item, caption) {
+// Instagram sometimes says a finished upload "is not ready to be published" (2207027) – wait and publish again –
+// or loses a just-created item (2207006, "cannot be found") – start that item again from scratch.
+async function publishItem(cfg, ig, item, caption, tries = 0) {
+  try { return await publishOnce(cfg, ig, item, caption) } catch (e) {
+    if (tries < 2 && /2207006|cannot be found/.test(String(e.message))) {
+      console.log(`  Instagram lost the upload – trying again (${tries + 1}/2)…`); await sleep(10_000)
+      return publishItem(cfg, ig, item, caption, tries + 1)
+    }
+    throw e
+  }
+}
+
+async function publishOnce(cfg, ig, item, caption) {
   const abs = (f) => path.join(SOCIAL, f)
   let container
   if (item.type === 'reel' || (item.type === 'story' && item.file.endsWith('.mp4'))) {
@@ -358,7 +370,13 @@ async function publishItem(cfg, ig, item, caption) {
   }
   console.log('  waiting for Instagram to process…')
   await waitReady(cfg, container.id)
-  const { id } = await api(cfg, 'POST', `/${ig.id}/media_publish`, { creation_id: container.id })
+  let id
+  for (let i = 0; ; i++) {
+    try { ({ id } = await api(cfg, 'POST', `/${ig.id}/media_publish`, { creation_id: container.id })); break } catch (e) {
+      if (i >= 8 || !/2207027|not ready/.test(String(e.message))) throw e
+      console.log('  Instagram says not ready yet – waiting…'); await sleep(15_000)
+    }
+  }
   const info = await api(cfg, 'GET', `/${id}`, { fields: 'permalink' }).catch(() => ({}))
   return { media_id: id, permalink: info.permalink ?? null }
 }
