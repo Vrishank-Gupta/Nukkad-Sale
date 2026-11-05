@@ -511,6 +511,80 @@ and ends on the real app and what NukkadSale is. Photoreal AI versions: prompts 
 >
 > #WhatsAppSeller #FlashSale #SmallBusinessIndia
 
+## Formats series – POV, reply to a comment, myth vs fact, tier list, steal my template, mistakes, hot take
+
+Proven Instagram formats, each with a NukkadSale angle. On-camera formats (talking head, green screen, storytime,
+day in the life…) are scripted for the brand ambassador in `AMBASSADOR.md`.
+
+### Reel 21 – POV: sale night in 6 groups (19 s) · `reel-21-pov.mp4`
+> POV: you just posted a new kurti in 6 WhatsApp groups. 305 unread. 9:02 pm. 😵
+>
+> Same night with NukkadSale: buyers order from your link themselves, and the exact amount tells you who paid. Everything confirmed by 9:30.
+> Post once, let the link work. Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #POV #SmallBusinessIndia #ResellersOfIndia #BoutiqueOwner
+
+### Reel 22 – Reply to a comment: "who paid?" (17 s) · `reel-22-reply.mp4`
+> Someone asked: "If 5 people pay me ₹799 on GPay, how do I know who paid?" 👇
+>
+> Don't make them pay ₹799. Give each order its own paise – ₹798.12 is Priya, ₹798.47 is Sana. Your UPI app tells you who paid; one tap confirms it.
+> Got a question? Comment it – we'll answer the next one.
+>
+> #UPI #WhatsAppSeller #SellerTips #SmallBusinessIndia
+
+### Reel 23 – 4 myths about selling on WhatsApp (17 s) · `reel-23-myths.mp4`
+> 4 myths that keep WhatsApp sellers small ❌
+>
+> You need a website. UPI can't tell you who paid. COD means fake orders. Hisaab needs a CA. All four – busted, with one app.
+> Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #MythVsFact #SmallBusinessIndia #SellerTips
+
+### Post 24 – Carousel "4 myths that keep you small" · `post-24-myths-a…f.png`
+> 4 myths every WhatsApp seller has heard 👉 swipe for the truth.
+>
+> 1. You need a website → you need a link
+> 2. UPI can't tell who paid → each order gets its own exact amount
+> 3. COD means fake orders → ask a small UPI advance first
+> 4. Hisaab needs a CA → your khata writes itself
+>
+> Save this for the next time someone says it 🔖 Get your free shop → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #SellerTips
+
+### Post 25 – Tier list "Every way to take WhatsApp orders, ranked" · `post-25-tier-list.png`
+> Every way to take WhatsApp orders, ranked worst to best 📊
+>
+> F – answering every DM · D – notebook + screenshots · C – an online form · B – Excel at night · S – one link that takes the order, the payment and the stock.
+>
+> Where are you right now? Comment your tier 👇 Get your free shop → nukkadsale.in
+>
+> #WhatsAppSeller #SmallBusinessIndia #ResellersOfIndia
+
+### Post 26 – Carousel "Steal my WhatsApp sale post template" · `post-26-template-a…c.png`
+> Steal my WhatsApp sale post template 📋 – the format that answers "price? size?" before anyone asks.
+>
+> Price, sizes, how many pieces, a deadline – then one link instead of "DM me". Save it and copy it for your next drop 🔖
+> Want it written for you every time? NukkadSale does it → nukkadsale.in
+>
+> #WhatsAppSeller #SellerTips #ResellersOfIndia #SmallBusinessIndia
+
+### Post 27 – Carousel "Stop doing these if you want repeat buyers" · `post-27-mistakes-a…c.png`
+> 5 mistakes that cost you repeat buyers 👇
+>
+> Not saving who bought · no receipt · going silent after dispatch · never asking for a review · changing the price for everyone.
+> Fix all five without extra work → nukkadsale.in
+>
+> #WhatsAppSeller #RepeatCustomers #SmallBusinessIndia #SellerTips
+
+### Post 28 – Hot take "You don't need a website" · `post-28-hot-take.png`
+> Unpopular opinion: you don't need a website. You need a link. 🔥
+>
+> Your buyers are already in your WhatsApp group – give them one link to order and pay. Agree or disagree? 👇
+> nukkadsale.in
+>
+> #WhatsAppSeller #UnpopularOpinion #SmallBusinessIndia
+
 ## Stories (add the sticker in the Instagram app – the empty space is left for it)
 
 | Story | File | Add in the app |

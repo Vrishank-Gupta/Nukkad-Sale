@@ -162,6 +162,18 @@ html,body{width:720px;height:1280px;overflow:hidden;font-family:system-ui,"Noto 
 @keyframes intoPhone{0%{transform:none;opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}}
 .hand{position:absolute;width:150px;height:110px;border-radius:70px 70px 40px 40px;background:#f1c39b;box-shadow:inset 0 -10px 0 rgba(0,0,0,.08)}
 .smash{position:absolute;font-size:30px;font-weight:900;color:#fff;background:#e03131;padding:10px 18px;border-radius:14px;transform:rotate(-6deg)}
+
+/* ── Formats reels (21 POV, 22 reply to a comment, 23 myth vs fact) ── */
+.paperbg{background:#fbf8f1;color:#1d1a16}
+.cmt{position:absolute;left:50px;right:50px;background:#fff;color:#1d1a16;border-radius:24px;padding:22px 26px;box-shadow:0 18px 44px rgba(0,0,0,.25);display:flex;gap:16px;align-items:flex-start}
+.cmt .av{flex:none;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#f783ac,#e64980);color:#fff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center}
+.cmt b{display:block;font-size:24px}.cmt p{margin:4px 0 0;font-size:32px;font-weight:700;line-height:1.25}.cmt small{display:block;margin-top:8px;color:#868e96;font-size:20px;font-weight:700}
+.mv{position:absolute;left:60px;right:60px;border-radius:28px;padding:30px 34px}.mv small{display:block;font-size:24px;font-weight:900;letter-spacing:3px;margin-bottom:10px}
+.mv.my{background:#fff0f0;border:3px solid #ffc9c9;color:#5c5248}.mv.my small{color:#e03131}.mv.my b{text-decoration:line-through;text-decoration-color:#e03131;text-decoration-thickness:4px}
+.mv.fa{background:#ebfbee;border:3px solid #b2f2bb;color:#1d1a16}.mv.fa small{color:#2b8a3e}.mv b{display:block;font-size:46px;line-height:1.15}
+.grp{position:absolute;left:60px;right:60px;height:92px;background:#1f2c34;border-radius:18px;display:flex;align-items:center;gap:16px;padding:0 20px;color:#e9edef}
+.grp i{font-style:normal;flex:none;width:58px;height:58px;border-radius:50%;background:#00a884;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff}
+.grp b{font-size:26px}.grp span{margin-left:auto;background:#25d366;color:#0b141a;font-weight:900;font-size:24px;border-radius:99px;padding:4px 14px}
 </style>
 </head>
 <body>
@@ -713,6 +725,67 @@ const MORE_REELS = {
 ], ding: [5.8, 6.15, 6.5, 6.85, 7.2], impact: [0, 3.7] },
 }
 Object.assign(REELS, MORE_REELS)
+
+const GROUPS = [['Kurti Lovers Pune', 47], ['Saree Deals Daily', 63], ['Meera Boutique VIP', 38], ['Resellers Mumbai', 91], ['Ethnic Wear Offers', 54], ['Family & Friends', 12]]
+const FORMAT_REELS = {
+// 21 ── POV: sale night in six groups – chaos, then the same night with NukkadSale.
+21: { title: 'pov', scenes: [
+  { d: 3.6, cls: 'dark', html: `
+    <div class="c h" style="top:90px;font-size:62px" data-a="hit" data-d=".5">POV: you just posted<br>a new kurti in<br><span class="y">6 WhatsApp groups</span></div>
+    ${GROUPS.map(([g, n], i) => `<div class="grp" style="top:${430 + i * 110}px" data-a="flyL" data-t="${.6 + i * .22}" data-d=".3"><i>${g[0]}</i><b>${g}</b><span>${n}</span></div>`).join('')}
+    <div class="c m y" style="top:1130px" data-a="slam" data-t="2.4" data-d=".4">305 unread. 9:02 pm.</div>` },
+  { d: 3.2, cls: 'dark', html: `
+    ${DMS.map(([who, msg, x, y], i) => `<div class="bub" style="left:${x}px;top:${y}px;font-size:32px" data-a="pop" data-t="${i * .08}" data-d=".22"><small>${who}</small>${msg}</div>`).join('')}
+    <div class="veil" style="background:rgba(10,9,8,.55)" data-a="vis" data-t="1.6" data-d="1.6"></div>
+    <div class="c h" style="top:520px;font-size:70px" data-a="slam" data-t="1.7" data-d=".4">…and you<br>answer each one.</div>` },
+  { d: 2.2, cls: 'orange', html: `
+    <div class="c h" style="top:440px;font-size:76px" data-a="hit" data-d=".5">Same night.<br>With NukkadSale:</div>` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">Buyers order from the link themselves</span></div>
+    ${phone('buyer-sale', 160, tapAt(50, 88, 1.6), { a: 'rise', style: '--ox:50%;--oy:80%', zoom: [.5, 2], img: '--zs:1.2' })}` },
+  { d: 3.0, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">You just check the exact amount</span></div>
+    ${phone('orders-check', 160, tapAt(41, 47, 1.8), { a: 'pop', style: '--ox:30%;--oy:40%', zoom: [.5, 1.6], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.0"><span class="tag o">9:30 pm – everything confirmed</span></div>` },
+  { ...end('Post once.<br>Let the link work.') },
+], ding: [13.2], impact: [0, 6.8] },
+
+// 22 ── Reply to a comment: "How do I know who paid if 5 people pay ₹799?"
+22: { title: 'reply', scenes: [
+  { d: 3.4, cls: 'paperbg', html: `
+    <div class="c" style="top:120px;font-size:30px;font-weight:900;letter-spacing:3px;color:#d9480f" data-a="vis" data-d="3.4">SOMEONE ASKED</div>
+    <div class="cmt" style="top:220px" data-a="hit" data-d=".5"><span class="av">P</span><div><b>priya_kurtis</b><p>If 5 people pay me ₹799 on GPay, how do I know who paid? 😩</p><small>Reply · 2h</small></div></div>
+    <div class="c h" style="top:640px;font-size:68px;color:#1d1a16;text-shadow:none" data-a="slam" data-t="1.4" data-d=".4">Here’s my answer.</div>` },
+  { d: 3.2, cls: 'dark', html: `
+    <div class="c m" style="top:120px" data-a="pop">Don’t make them pay ₹799.</div>
+    ${[['798.12', 'Priya'], ['798.47', 'Sana'], ['798.80', 'Kavya'], ['798.33', 'Anjali'], ['798.65', 'Ritu']].map(([a, n], i) => `<div class="notif" style="top:${330 + i * 118}px" data-a="pop" data-t="${.3 + i * .22}" data-d=".35"><i>₹</i><div><b>₹${a}</b><small>UPI · just now</small></div><div class="who">= ${n}</div></div>`).join('')}
+    <div class="c m y" style="top:1000px" data-a="pop" data-t="1.8">Give each order its own paise.</div>` },
+  { d: 3.2, cls: 'cream', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">The amount tells you who paid</span></div>
+    ${phone('orders-check', 160, tapAt(41, 47, 2.0), { a: 'rise', style: '--ox:30%;--oy:40%', zoom: [.6, 1.6], img: '--zs:1.3' })}
+    <div class="cap" style="top:1080px" data-a="pop" data-t="1.2"><span class="tag o">Tap “Yes, I got it” ✓</span></div>` },
+  { d: 2.6, cls: 'paperbg', html: `
+    <div class="c h" style="top:430px;font-size:64px;color:#1d1a16;text-shadow:none" data-a="pop">No screenshots.<br><span class="o">No guessing.</span></div>
+    <div class="c s" style="top:720px;color:#5c5248" data-a="pop" data-t=".6">Got a question? Comment it –<br>I’ll answer the next one.</div>` },
+  { ...end('Every order,<br>its own amount.') },
+], ding: [4.2, 4.4, 4.6, 4.9, 5.1], impact: [0, 3.4] },
+
+// 23 ── Myth vs fact: four quick flips.
+23: { title: 'myths', scenes: [
+  { d: 2.4, cls: 'paperbg', html: `
+    <div class="c h" style="top:400px;font-size:84px;color:#1d1a16;text-shadow:none" data-a="hit" data-d=".5">4 myths about<br>selling on<br><span class="o">WhatsApp</span></div>` },
+  ...[['You need a website to sell online.', 'You need a link. Buyers order from it right in your group.', 'buyer-sale'],
+      ['With UPI you can’t tell who paid.', 'Each order gets its own exact amount – ₹798.52 is Priya.', 'orders-check'],
+      ['Cash on delivery means fake orders.', 'Ask a small UPI advance first. Fake buyers never pay it.', ''],
+      ['Hisaab needs a CA every month.', 'Every paid order lands in your khata – profit included.', 'feat-khata-profit']].map(([m, f, img], i) => ({ d: 3.0, cls: 'paperbg', html: `
+    <div class="c" style="top:90px;font-size:28px;font-weight:900;letter-spacing:3px;color:#d9480f" data-a="vis" data-d="3">MYTH ${i + 1} OF 4</div>
+    <div class="mv my" style="top:170px" data-a="hit" data-d=".45"><small>MYTH</small><b>${m}</b></div>
+    <div class="mv fa" style="top:${img ? 470 : 560}px" data-a="flyR" data-t=".9" data-d=".35"><small>FACT</small><b style="font-size:40px">${f}</b></div>
+    ${img ? `<div style="position:absolute;left:0;top:0;width:100%;height:100%" data-a="rise" data-t="1.5" data-d=".5">${phone(img, 820, '', { style: 'width:300px;height:650px;margin-left:-150px' })}</div>` : ''}` })),
+  { ...end('All four, fixed<br>in one app.') },
+], ding: [4.0, 7.0, 10.0, 13.0], impact: [0, 2.4] },
+}
+Object.assign(REELS, FORMAT_REELS)
 const id = Number(location.hash.slice(1) || 1), R = REELS[id]
 let t = 0, html = ''
 for (const sc of R.scenes) {

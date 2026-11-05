@@ -83,6 +83,19 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .pcar:before{content:"";position:absolute;left:8px;right:8px;top:12px;height:22px;border-radius:8px 8px 4px 4px;background:rgba(20,30,40,.75)}
 .pcar b{position:absolute;left:50%;top:-24px;transform:translateX(-50%);background:#fff;color:#2b8a3e;font-size:14px;padding:3px 7px;border-radius:7px;white-space:nowrap}
 .pbooth{position:absolute;width:150px;height:60px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:18px;line-height:1.05;text-align:center}
+
+.paperp{background:#fbf8f1;color:#1d1a16}
+.mvf{display:grid;grid-template-columns:1fr;gap:26px}
+.mbox{border-radius:26px;padding:28px 30px}.mbox small{font-size:20px!important}.mbox.myth{background:#fff0f0;border:2px solid #ffc9c9}.mbox.fact{background:#ebfbee;border:2px solid #b2f2bb}
+.mbox small{display:block;font-size:17px;font-weight:900;letter-spacing:2px;margin-bottom:6px}.mbox.myth small{color:#e03131}.mbox.fact small{color:#2b8a3e}
+.mbox b{display:block;font-size:40px;line-height:1.18}.mbox.myth b{text-decoration:line-through;text-decoration-color:#e03131;text-decoration-thickness:3px;color:#5c5248}
+.tier{display:flex;align-items:stretch;margin-bottom:10px;border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.tier i{font-style:normal;flex:none;width:84px;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:900;color:#fff}
+.tier{margin-bottom:14px}.tier span{padding:18px 18px;font-size:25px;font-weight:800;line-height:1.2}.tier span small{display:block;font-size:16px;font-weight:600;color:#6b6258;margin-top:2px}
+.tpl{background:#dcf8c6;border-radius:22px 22px 6px 22px;padding:22px 26px;font-size:22px;line-height:1.5;font-family:system-ui,sans-serif;white-space:pre-line;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.tpl u{text-decoration:none;background:#ffd43b;border-radius:6px;padding:0 6px}
+.mstk{display:flex;gap:16px;align-items:flex-start;margin-bottom:22px}.mstk i{font-style:normal;flex:none;width:46px;height:46px;border-radius:50%;background:#e03131;color:#fff;font-weight:900;font-size:24px;display:flex;align-items:center;justify-content:center}
+.mstk b{display:block;font-size:27px;line-height:1.15}.mstk span{display:block;font-size:20px;color:#5c5248;margin-top:4px}.mstk em{font-style:normal;color:#2b8a3e;font-weight:800}
 </style>
 </head>
 <body>
@@ -363,6 +376,82 @@ p23: `<div class="f roadp">${B()}
   <div class="pbooth" style="left:400px;top:560px;background:#2b8a3e;color:#fff">NukkadSale</div>
   ${[['#2f9e44', '798.12', 270], ['#f08c00', '798.47', 390], ['#1098ad', '798.80', 660]].map(([c, a, y]) => `<div class="pcar" style="left:444px;top:${y}px;background:${c}"><b>₹${a} ✓</b></div>`).join('')}
   <div style="position:absolute;left:44px;right:44px;bottom:36px"><div class="s" style="font-size:21px;color:#dee2e6">Buyers order and pay on their own – each with an exact amount, so you know who paid. <b style="color:#69db7c">nukkadsale.in</b></div></div></div>`,
+
+// ─────── Formats series (myth vs fact, tier list, steal my template, mistakes, hot take) ───────
+// Post 24 · Myth vs fact – carousel
+p24a: `<div class="f paperp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:200px">
+    <div class="s" style="color:#6b6258">Selling on WhatsApp?</div>
+    <div class="h" style="font-size:84px;margin-top:10px">4 myths<br>that keep you<br><span class="o">small.</span></div>
+    <div class="s" style="margin-top:26px;font-size:27px;color:#5c5248">Everyone says them. Here’s the truth. Swipe →</div></div></div>`,
+p24b: mvf(1, 'You need a website to sell online.', 'You need a link. Buyers order from it in your WhatsApp group – no website, no app.'),
+p24c: mvf(2, 'With UPI you can’t tell who paid.', 'Give every order its own exact amount – ₹798.52 is Priya. Your UPI app tells you.'),
+p24d: mvf(3, 'Cash on delivery means fake orders.', 'Ask for a small UPI advance first. Serious buyers pay it; the rest never place the order.'),
+p24e: mvf(4, 'Hisaab needs a CA every month.', 'If every paid order is added for you, the khata – and your profit – is already done.'),
+p24f: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:240px;text-align:center">
+    <div class="h" style="font-size:62px">All four, fixed<br>in one app.</div>
+    <div class="s" style="margin-top:18px;font-size:27px">Order links · exact-amount UPI · COD advance · khata</div>
+    <div style="margin-top:44px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get your free shop · nukkadsale.in</span></div></div></div>`,
+// Post 25 · Tier list – single image
+p25: `<div class="f paperp">${B()}
+  <div style="position:absolute;left:44px;right:44px;top:96px"><div class="h" style="font-size:42px">Every way to take WhatsApp orders,<br>ranked <span class="o">worst to best</span></div></div>
+  <div style="position:absolute;left:44px;right:44px;top:240px">
+    ${[['#868e96', 'F', 'Answering every DM by hand', '“Price?” “Size?” – 50 times a day'], ['#e03131', 'D', 'A notebook + payment screenshots', 'Screenshots can be fake'],
+       ['#f08c00', 'C', 'An online form', 'Orders, but no stock or payments'], ['#fab005', 'B', 'An Excel sheet you update at night', 'Works until the last piece sells twice'],
+       ['#2b8a3e', 'S', 'One link: order, pay, stock, khata', 'Each buyer’s exact amount tells you who paid']].map(([c, l, t, d]) => `<div class="tier"><i style="background:${c}">${l}</i><span>${t}<small>${d}</small></span></div>`).join('')}
+  </div>
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center;font-size:24px;font-weight:800">S tier is NukkadSale <span class="o">– nukkadsale.in</span></div></div>`,
+// Post 26 · Steal my template – the sale post that gets orders
+p26a: `<div class="f yellowp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:200px">
+    <div class="h" style="font-size:80px">Steal my<br>WhatsApp sale<br>post template.</div>
+    <div class="s" style="margin-top:22px;font-size:28px">The format that answers every “price? size?” before anyone asks. Save it. Swipe →</div></div></div>`,
+p26b: `<div class="f paperp">${B()}
+  <div style="position:absolute;left:56px;right:56px;top:120px">
+    <div style="font-size:20px;font-weight:900;letter-spacing:2px;color:#d9480f">COPY · FILL THE YELLOW · POST</div>
+    <div class="tpl" style="margin-top:18px"><b>*<u>Product name</u>*</b>
+<u>One line about fabric / material</u>
+
+💰 *₹<u>price</u>*
+📏 Sizes: <u>S, M, L</u>
+📦 Only <u>10</u> pieces – first come, first served
+⏰ Order till <u>9 pm tonight</u>
+
+👉 Tap to order & pay: <u>your link</u>
+
+*<u>Your shop name</u>*</div>
+    <div class="s" style="margin-top:22px;font-size:22px;color:#5c5248">Price, sizes, how many and a deadline – in that order. Then one link instead of “DM me”.</div></div></div>`,
+p26c: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:220px">
+    <div class="h" style="font-size:58px">Don’t want to<br>type it every time?</div>
+    <div class="s" style="margin-top:18px;font-size:27px">NukkadSale writes this message for every product you add – with the order link already in it.</div>
+    <div style="margin-top:40px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get your free shop · nukkadsale.in</span></div></div></div>`,
+// Post 27 · Mistakes – carousel
+p27a: `<div class="f dark">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:200px">
+    <div class="h" style="font-size:78px">Stop doing these<br>if you want<br><span class="y">repeat buyers.</span></div>
+    <div class="s" style="margin-top:24px;font-size:27px;opacity:.85">5 mistakes WhatsApp sellers make after the sale. Swipe →</div></div></div>`,
+p27b: `<div class="f paperp">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:120px">
+    ${[['Not saving who bought', 'Your best buyers are lost in chats.', 'A buyers list, ranked by spend.'],
+       ['No receipt after payment', '“Did you get my money?” – again.', 'A proper receipt once you confirm.'],
+       ['Going silent after dispatch', '“Where is my parcel?” every day.', 'A timeline with tracking they can open.'],
+       ['Never asking for a review', 'New buyers have no proof you’re real.', 'Reviews with photos after delivery.'],
+       ['Changing the price for everyone', 'One bargain becomes everyone’s price.', 'A special price link for one buyer.']].map(([m, w, f], i) => `<div class="mstk"><i>${i + 1}</i><div><b>${m}</b><span>${w}</span><span><em>Do this:</em> ${f}</span></div></div>`).join('')}
+  </div></div>`,
+p27c: `<div class="f orange">${B()}
+  <div style="position:absolute;left:50px;right:50px;top:240px;text-align:center">
+    <div class="h" style="font-size:60px">All five happen<br>by themselves<br>on NukkadSale.</div>
+    <div style="margin-top:44px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get your free shop · nukkadsale.in</span></div></div></div>`,
+// Post 28 · Hot take – typographic
+p28: `<div class="f blackp">${B()}
+  <div style="position:absolute;left:56px;right:56px;top:170px">
+    <div style="font-size:22px;font-weight:900;letter-spacing:3px;color:#ff8a3d">UNPOPULAR OPINION</div>
+    <div class="h" style="font-size:72px;margin-top:20px;line-height:1.05;white-space:nowrap">You don’t need<br>a website.<br><span style="color:#ffd43b">You need a link.</span></div>
+    <div class="s" style="margin-top:30px;font-size:26px;color:#d8d0c6">Your buyers are already in your WhatsApp group. Give them one link to order and pay – and stop paying for a website nobody visits.</div>
+    <div style="margin-top:34px;font-size:24px;font-weight:800;color:#ff8a3d">nukkadsale.in</div></div></div>`,
+
 // ── Stories
 s1: `<div class="f story dark">${B()}
   <div style="position:absolute;left:50px;right:50px;top:260px;text-align:center"><div class="h" style="font-size:84px">Orders kaise<br>lete ho? 🤔</div></div></div>`,
@@ -451,6 +540,12 @@ function get(n, title, body, img) {
     <div class="h" style="font-size:52px;margin-top:10px">${title}</div>
     <div class="s" style="margin-top:18px;font-size:24px;color:#5c5248">${body}</div></div>
   ${P(img, 430, 130, 260)}<div class="swipe">Swipe →</div></div>`
+}
+function mvf(n, myth, fact) {
+  return `<div class="f paperp">${B()}<div class="handle">${n}/4</div>
+  <div style="position:absolute;left:50px;right:50px;top:130px"><div style="font-size:26px;font-weight:900;letter-spacing:3px;color:#d9480f;margin-bottom:22px">MYTH ${n} OF 4</div>
+    <div class="mvf"><div class="mbox myth"><small>MYTH</small><b>${myth}</b></div><div class="mbox fact"><small>FACT</small><b>${fact}</b></div></div></div>
+  <div class="swipe">Swipe →</div></div>`
 }
 function step(n, title, body, img) {
   return `<div class="f cream">${B()}
