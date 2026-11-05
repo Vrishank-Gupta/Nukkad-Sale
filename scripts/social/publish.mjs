@@ -122,6 +122,26 @@ const ITEMS = {
   'faq-4': { type: 'story', file: 'stories/series/faq-4.png' },
   'faq-5': { type: 'story', file: 'stories/series/faq-5.png' },
   'faq-6': { type: 'story', file: 'stories/series/faq-6.png' },
+  // Formats stories (tests/e2e/social/stories.html): myth quiz, tier list, template, hot take, POV.
+  'myth-1': { type: 'story', file: 'stories/series/myth-1.png' },
+  'myth-2': { type: 'story', file: 'stories/series/myth-2.png' },
+  'myth-3': { type: 'story', file: 'stories/series/myth-3.png' },
+  'myth-4': { type: 'story', file: 'stories/series/myth-4.png' },
+  'myth-5': { type: 'story', file: 'stories/series/myth-5.png' },
+  'myth-6': { type: 'story', file: 'stories/series/myth-6.png' },
+  'tier-1': { type: 'story', file: 'stories/series/tier-1.png' },
+  'tier-2': { type: 'story', file: 'stories/series/tier-2.png' },
+  'tier-3': { type: 'story', file: 'stories/series/tier-3.png' },
+  'tier-4': { type: 'story', file: 'stories/series/tier-4.png' },
+  'tpl-1': { type: 'story', file: 'stories/series/tpl-1.png' },
+  'tpl-2': { type: 'story', file: 'stories/series/tpl-2.png' },
+  'tpl-3': { type: 'story', file: 'stories/series/tpl-3.png' },
+  'hot-1': { type: 'story', file: 'stories/series/hot-1.png' },
+  'hot-2': { type: 'story', file: 'stories/series/hot-2.png' },
+  'hot-3': { type: 'story', file: 'stories/series/hot-3.png' },
+  'pov-1': { type: 'story', file: 'stories/series/pov-1.png' },
+  'pov-2': { type: 'story', file: 'stories/series/pov-2.png' },
+  'pov-3': { type: 'story', file: 'stories/series/pov-3.png' },
 }
 // Every reel and feed post can also go out as a story the same day: "<id>-story". A reel story is the reel itself;
 // a post story is a 9:16 version of the post (first slide for carousels) made by `make-stories`.

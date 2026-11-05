@@ -52,6 +52,18 @@ body{font-family:system-ui,"Noto Sans","Noto Sans Devanagari",sans-serif;overflo
 .list{display:grid;gap:18px}
 .list div{display:flex;gap:16px;align-items:center;font-size:30px;font-weight:700}
 .list svg{flex:none}
+.mcard{background:#fff;color:#1d1a16;border-radius:30px;padding:40px 36px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.mcard b{display:block;font-size:46px;line-height:1.12;letter-spacing:-1px}
+.tag{display:inline-block;font-size:24px;font-weight:900;letter-spacing:3px;padding:10px 20px;border-radius:12px;margin-bottom:20px}
+.tag.m{background:#ffe3e3;color:#c92a2a}.tag.t{background:#d3f9d8;color:#2b8a3e}.tag.q{background:#fff3bf;color:#7a5b00}
+.trow{display:flex;gap:18px;align-items:center;background:#fff;color:#1d1a16;border-radius:22px;padding:18px 22px;margin-bottom:14px;box-shadow:0 10px 26px rgba(0,0,0,.15)}
+.trow i{font-style:normal;flex:none;width:70px;height:70px;border-radius:16px;color:#fff;font-size:40px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.trow span{font-size:27px;font-weight:800;line-height:1.2}.trow small{display:block;font-size:21px;font-weight:600;color:#6b6258;margin-top:4px}
+.tplb{background:#fff;color:#1d1a16;border-radius:24px;padding:30px 32px;font-size:26px;line-height:1.5;white-space:pre-line;box-shadow:0 20px 50px rgba(0,0,0,.18)}
+.tplb u{text-decoration:none;background:#ffe066;padding:0 6px;border-radius:6px}
+.bubble{background:#fff;color:#1d1a16;border-radius:22px 22px 22px 6px;padding:18px 24px;font-size:27px;font-weight:600;margin-bottom:14px;max-width:520px;box-shadow:0 10px 24px rgba(0,0,0,.2)}
+.bubble small{display:block;font-size:19px;color:#2b8a3e;font-weight:800;margin-bottom:4px}
+.reply{display:inline-block;border:3px solid currentColor;border-radius:99px;padding:16px 30px;font-size:28px;font-weight:900}
 </style>
 </head>
 <body>
@@ -147,6 +159,59 @@ S['new-3'] = step('greyb', W, 3, wn, 2, 'Special price<br>for one buyer', 'Agree
 S['new-4'] = step('navy', W, 4, wn, 3, 'Restock waitlist', 'Sold out? Buyers tap “Notify me”. Message them when it’s back.', 'feat-home-waiting')
 S['new-5'] = step('receipt', W, 5, wn, 4, 'Profit, not just sales', 'Add your cost once – see profit per piece and this month.', 'feat-khata-profit')
 S['new-6'] = step('kraft', W, 6, wn, 5, 'Shipping labels', 'One tap on “To send” prints a label for every parcel.', 'feat-labels-btn')
+
+// ── Formats stories: myth quiz, tier list, template, hot take, POV (tap-through; replies via DM)
+const MQ = 'Myth or fact?', mn = 6
+const claim = (i, c) => frame('navy', MQ, i, mn, `<div class="txt" style="top:300px"><span class="tag q">MYTH OR FACT?</span><div class="mcard"><b>${c}</b></div>
+  <div class="s" style="margin-top:40px;text-align:center">Guess – then tap for the answer →</div></div>`)
+const reveal = (i, c, a) => frame('cream', MQ, i, mn, `<div class="txt" style="top:260px"><span class="tag m">MYTH</span><div class="h" style="font-size:46px;opacity:.45;text-decoration:line-through">${c}</div>
+  <span class="tag t" style="margin-top:44px">FACT</span><div class="h" style="font-size:50px">${a}</div></div>`)
+S['myth-1'] = cover('navy', MQ, 'help', 'WhatsApp selling:<br>myth or fact?', '2 things sellers believe.<br>Guess before you tap.', mn).replace('Tap to see how →', 'Tap to play →')
+S['myth-2'] = claim(2, '“If 6 buyers pay the same ₹799 on UPI, you can’t tell who paid.”')
+S['myth-3'] = reveal(3, 'You can’t tell who paid.', 'Give every order its own amount. <span class="o">₹798.52 is Priya.</span> Your UPI app tells you.')
+S['myth-4'] = claim(4, '“Cash on delivery always means fake orders.”')
+S['myth-5'] = reveal(5, 'COD always means fake orders.', 'Ask for a small UPI advance first. <span class="o">Serious buyers pay it.</span> The rest never order.')
+S['myth-6'] = end('orange', MQ, 6, mn, 'Both are built in<br>to NukkadSale.', 'The app for WhatsApp sellers.<br>Free for your first 30 orders.')
+
+const TL = 'Tier list', tn = 4
+const tr = ([c, l, t, d]) => `<div class="trow"><i style="background:${c}">${l}</i><span>${t}<small>${d}</small></span></div>`
+S['tier-1'] = cover('dark', TL, 'chat', 'How do you take<br>WhatsApp orders?', 'Find your tier. Be honest.', tn)
+S['tier-2'] = frame('dark', TL, 2, tn, `<div class="txt" style="top:250px"><div class="h" style="font-size:50px;margin-bottom:30px">The bottom three</div>
+  ${[['#868e96', 'F', 'Every DM by hand', '“Price?” “Size?” – 50 times a day'], ['#e03131', 'D', 'Notebook + screenshots', 'Screenshots can be fake'], ['#f08c00', 'C', 'An online form', 'Orders, but no stock or payments']].map(tr).join('')}</div>`)
+S['tier-3'] = frame('dark', TL, 3, tn, `<div class="txt" style="top:250px"><div class="h" style="font-size:50px;margin-bottom:30px">The top two</div>
+  ${[['#fab005', 'B', 'Excel you update at night', 'Works until a piece sells twice'], ['#2b8a3e', 'S', 'One link: order, pay, stock, khata', 'The exact amount tells you who paid']].map(tr).join('')}
+  <div class="s" style="margin-top:30px">Which one are you? <b class="y">Reply with your letter.</b></div></div>`)
+S['tier-4'] = end('orange', TL, 4, tn, 'Get to S tier<br>in 10 minutes.', 'NukkadSale – the app for WhatsApp sellers.')
+
+const TP = 'Template', pn = 3
+S['tpl-1'] = frame('yellow', TP, 1, pn, `<div class="txt" style="top:300px"><span class="series">Screenshot this</span><div class="h" style="font-size:76px;margin-top:26px">The WhatsApp<br>sale post that<br>gets orders.</div>
+  <div class="s" style="margin-top:24px">Answers “price? size?” before anyone asks. Tap →</div></div>`)
+S['tpl-2'] = frame('greyb', TP, 2, pn, `<div class="txt" style="top:240px"><div style="font-size:22px;font-weight:900;letter-spacing:2px;color:#d9480f;margin-bottom:16px">SCREENSHOT · FILL THE YELLOW · POST</div>
+  <div class="tplb"><b>*<u>Product name</u>*</b>
+<u>One line about the fabric</u>
+
+*₹<u>price</u>*
+Sizes: <u>S, M, L</u>
+Only <u>10</u> pieces – first come, first served
+Order till <u>9 pm tonight</u>
+
+Tap to order &amp; pay: <u>your link</u></div></div>`)
+S['tpl-3'] = end('orange', TP, 3, pn, 'Or let the app<br>write it for you.', 'NukkadSale makes this message for every product – with the order link in it.')
+
+const HT = 'Hot take', htn = 3
+S['hot-1'] = frame('black', HT, 1, htn, `<div class="txt" style="top:320px"><div style="font-size:24px;font-weight:900;letter-spacing:3px;color:#ff8a3d">UNPOPULAR OPINION</div>
+  <div class="h" style="font-size:68px;margin-top:22px;white-space:nowrap">You don’t need<br>a website.<br><span class="y">You need a link.</span></div></div>`)
+S['hot-2'] = frame('black', HT, 2, htn, `<div class="txt" style="top:300px"><div class="h" style="font-size:52px">Your buyers are already<br>in your WhatsApp group.</div>
+  <div class="s" style="margin-top:26px;color:#d8d0c6">They won’t visit a website. They will tap a link in the group – pick a size, pay you on UPI, done.</div>
+  <div style="margin-top:60px;text-align:center"><span class="reply">Agree? Reply “YES” or “NO”</span></div></div>`)
+S['hot-3'] = end('orange', HT, 3, htn, 'One link per<br>product.', 'NukkadSale – the app for WhatsApp sellers.')
+
+const PV = 'POV', vn = 3
+S['pov-1'] = frame('green', PV, 1, vn, `<div class="txt" style="top:260px"><div class="h" style="font-size:60px">POV: you posted<br>one kurti in<br>3 groups at 9 pm.</div>
+  <div style="margin-top:40px">${['“Price?”', '“Size M hai?”', '“Kitne ka?”', '“Mine! Mine!”'].map((m, i) => `<div class="bubble"><small>+91 98xxx xx${41 + i * 7}</small>${m}</div>`).join('')}</div></div>`)
+S['pov-2'] = frame('green', PV, 2, vn, `<div class="txt" style="top:300px;text-align:center"><div class="h" style="font-size:64px">Midnight.<br>Still replying.</div>
+  <div class="s" style="margin-top:26px">And two people paid for the last piece.</div></div>`)
+S['pov-3'] = end('orange', PV, 3, vn, 'Or: post one link.<br>Go to sleep.', 'Buyers pick a size and pay you on UPI. NukkadSale – the app for WhatsApp sellers.')
 
 document.getElementById('root').innerHTML = S[location.hash.slice(1)] || ''
 window.IDS = Object.keys(S)
