@@ -174,6 +174,7 @@ html,body{width:720px;height:1280px;overflow:hidden;font-family:system-ui,"Noto 
 .grp{position:absolute;left:60px;right:60px;height:92px;background:#1f2c34;border-radius:18px;display:flex;align-items:center;gap:16px;padding:0 20px;color:#e9edef}
 .grp i{font-style:normal;flex:none;width:58px;height:58px;border-radius:50%;background:#00a884;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff}
 .grp b{font-size:26px}.grp span{margin-left:auto;background:#25d366;color:#0b141a;font-weight:900;font-size:24px;border-radius:99px;padding:4px 14px}
+.offer{font-size:27px;font-weight:800;line-height:1.35;opacity:.92}
 </style>
 </head>
 <body>
@@ -184,11 +185,12 @@ const phone = (img, top, extra = '', o = {}) => `<div class="phone" style="top:$
   <img src="img/${img}.png" style="${o.img || ''}" ${o.zoom ? `data-a="zoom" data-t="${o.zoom[0]}" data-d="${o.zoom[1]}" data-e="ease-in-out"` : ''}>${extra}</div></div>`
 const tapAt = (x, y, t) => `<div class="ripple" style="left:${x}%;top:${y}%" data-a="tap" data-t="${t}" data-d=".8" data-e="ease-out"></div>`
 const SHOP = (w, c = 'currentColor') => `<svg class="shop" viewBox="0 0 24 24" width="${w}" height="${w}" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3h13.6L21 9a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" fill="${c}" stroke-width="1.4"/><path d="M5 12.6V21h14v-8.4M10 21v-5h4v5"/></svg>`
-const end = (line, sub = 'Link in bio · nukkadsale.in') => ({ d: 2.6, cls: 'orange', html: `
+const end = (line, sub = 'Start free · nukkadsale.in') => ({ d: 3.2, cls: 'orange', html: `
   <div class="c" style="top:380px" data-a="slam" data-d=".6"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
   <div class="c" style="top:490px;font-size:28px;font-weight:800;letter-spacing:${/[\u0900-\u097F]/.test(line) ? 0 : 3}px;opacity:.85" data-a="pop" data-t=".2">${/[\u0900-\u097F]/.test(line) ? 'WhatsApp पर बेचने वालों का ऐप' : 'THE APP FOR WHATSAPP SELLERS'}</div>
   <div class="c m" style="top:580px" data-a="pop" data-t=".35">${line}</div>
-  <div class="c" style="top:780px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f">${sub}</span></div>` })
+  <div class="c" style="top:780px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f">${sub}</span></div>
+  <div class="c offer" style="top:890px" data-a="pop" data-t="1.0">${/[\u0900-\u097F]/.test(line) ? 'हर महीने 30 ऑर्डर तक मुफ़्त<br>कोई कमीशन नहीं' : 'Free up to 30 orders a month<br>No commission'}</div>` })
 
 const DMS = [['Priya', 'Price?', 40, 120], ['Sana', 'M size hai??', 330, 210], ['Ritu', 'Kitne ka hai', 70, 330], ['Neha', 'Mera hold karo pls', 300, 430],
   ['Kavya', 'L available?', 30, 540], ['Anjali', 'Payment kaise karu?', 270, 650], ['Pooja', 'COD hai?', 60, 760], ['Simran', 'Still available??', 300, 860],
@@ -299,7 +301,7 @@ const REELS = {
   { d: 2.8, cls: 'cream', html: `
     <div class="cap" style="top:60px" data-a="pop"><span class="tag">आज की कमाई, एक नज़र में</span></div>
     ${phone('home-hi', 160, '', { a: 'rise', style: '--ox:0%;--oy:18%', zoom: [.6, 2], img: '--zs:1.4' })}` },
-  { ...end('WhatsApp पर बेचिए,<br>हिसाब हम रखेंगे।', 'लिंक बायो में · nukkadsale.in') },
+  { ...end('WhatsApp पर बेचिए,<br>हिसाब हम रखेंगे।', 'मुफ़्त शुरू करें · nukkadsale.in') },
 ], ding: [8.3] },
 
 // 6 ── The DM flood after every deal (resolved with the website order link – live today)
@@ -428,7 +430,8 @@ const REELS = {
     <div class="c" style="top:330px;color:#d9480f" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c m" style="top:480px;color:#14120f" data-a="pop" data-t=".35">Start on UPI.<br><span class="ul">Go automatic</span> when you’re busy.</div>
     <div class="c s" style="top:700px;color:#6f675d" data-a="pop" data-t=".7">Razorpay charges its own fee.<br>Your money, your account.</div>
-    <div class="c" style="top:850px" data-a="pop" data-t="1"><span class="pill" style="background:#d9480f;color:#fff">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:850px" data-a="pop" data-t="1"><span class="pill" style="background:#d9480f;color:#fff">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:960px" data-a="pop" data-t="1.3">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [1.4, 7.6, 10.4], impact: [0, 3.0] },
 // ───────────── Feature reels (discount, special price, waitlist, profit, labels) – each its own look ─────────────
 // Real numbers from the captured screens: the demo kurta is ₹799, 20% off = ₹639, Meena's special price ₹650.
@@ -454,11 +457,12 @@ const REELS = {
   { d: 2.6, cls: 'ink', html: `
     <div class="c h" style="top:330px;font-size:72px" data-a="slam" data-d=".4">Orders already placed<br>keep their price.</div>
     <div class="c m" style="top:640px;color:#fff" data-a="pop" data-t=".7">End the sale any time.</div>` },
-  { d: 2.8, cls: 'yellow', html: `
+  { d: 3.2, cls: 'yellow', html: `
     <div class="c" style="top:330px;color:#14120f" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c" style="top:435px;font-size:26px;font-weight:800;letter-spacing:3px;opacity:.8;color:#14120f" data-a="pop" data-t=".2">THE APP FOR WHATSAPP SELLERS</div>
     <div class="c h" style="top:514px;font-size:68px;color:#14120f" data-a="pop" data-t=".3">Sale lagao.<br>Sale badhao.</div>
-    <div class="c" style="top:794px" data-a="pop" data-t=".8"><span class="pill" style="background:#14120f;color:#ffd43b">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:794px" data-a="pop" data-t=".8"><span class="pill" style="background:#14120f;color:#ffd43b">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:904px" data-a="pop" data-t="1.1">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [1.25, 4.4], impact: [0, .9] },
 
 13: { title: 'special-price', scenes: [
@@ -482,11 +486,12 @@ const REELS = {
   { d: 3.0, cls: 'greyc', html: `
     ${[['Only her number works.', 'lock'], ['One order at that price.', 'check'], ['Ends on time.', 'clock']].map(([txt], i) => `<div class="lockrow" style="top:${330 + i * 190}px" data-a="flyL" data-t="${.15 + i * .55}" data-d=".35"><i>✓</i><span>${txt}</span></div>`).join('')}
     <div class="c s" style="top:930px;color:#6f675d" data-a="pop" data-t="1.9">Everyone else still sees your regular price.</div>` },
-  { d: 2.8, cls: 'orange', html: `
+  { d: 3.2, cls: 'orange', html: `
     <div class="c" style="top:340px" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c" style="top:445px;font-size:26px;font-weight:800;letter-spacing:3px;opacity:.8" data-a="pop" data-t=".2">THE APP FOR WHATSAPP SELLERS</div>
     <div class="c h" style="top:524px;font-size:64px" data-a="pop" data-t=".3">Bargain in the chat.<br>Not on your price list.</div>
-    <div class="c" style="top:850px" data-a="pop" data-t=".8"><span class="pill" style="background:#fff;color:#d9480f">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:850px" data-a="pop" data-t=".8"><span class="pill" style="background:#fff;color:#d9480f">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:960px" data-a="pop" data-t="1.1">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [8.0], impact: [0, 1.9] },
 
 14: { title: 'waitlist', scenes: [
@@ -503,11 +508,12 @@ const REELS = {
   { d: 3.2, cls: 'navy', html: `
     <div class="cap" style="top:60px" data-a="pop"><span class="tag" style="background:#ffd43b;color:#0b1426">One tap. One WhatsApp each.</span></div>
     ${phone('feat-waitlist', 160, tapAt(76, 30, 1.6), { a: 'pop', style: '--ox:70%;--oy:30%', zoom: [.5, 1.7], img: '--zs:1.3' })}` },
-  { d: 2.8, cls: 'navy', html: `
+  { d: 3.2, cls: 'navy', html: `
     <div class="c" style="top:300px" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em', '#ffd43b')}NukkadSale</span></div></div>
     <div class="c" style="top:405px;font-size:26px;font-weight:800;letter-spacing:3px;opacity:.8" data-a="pop" data-t=".2">THE APP FOR WHATSAPP SELLERS</div>
     <div class="c h" style="top:500px;font-size:68px" data-a="pop" data-t=".3">Sold out today.<br><span style="color:#ffd43b">Sold again tomorrow.</span></div>
-    <div class="c" style="top:790px" data-a="pop" data-t=".8"><span class="pill" style="background:#ffd43b;color:#0b1426">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:790px" data-a="pop" data-t=".8"><span class="pill" style="background:#ffd43b;color:#0b1426">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:900px" data-a="pop" data-t="1.1">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [9.0], impact: [0, .9] },
 
 15: { title: 'profit', scenes: [
@@ -530,11 +536,12 @@ const REELS = {
     <div class="cap" style="top:60px" data-a="pop"><span class="tag">Profit this month – done for you</span></div>
     ${phone('feat-khata-profit', 160, '', { a: 'pop', style: '--ox:50%;--oy:30%', zoom: [.5, 1.8], img: '--zs:1.4' })}
     <div class="cap" style="top:1080px" data-a="pop" data-t="1.3"><span class="tag o">Money in − cost − expenses</span></div>` },
-  { d: 2.8, cls: 'receipt', html: `
+  { d: 3.2, cls: 'receipt', html: `
     <div class="c" style="top:330px;color:#d9480f" data-a="slam" data-d=".5"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c" style="top:435px;font-size:26px;font-weight:800;letter-spacing:3px;opacity:.8;color:#d9480f" data-a="pop" data-t=".2">THE APP FOR WHATSAPP SELLERS</div>
     <div class="c h" style="top:514px;font-size:66px;color:#1d1a16" data-a="pop" data-t=".3">Stop guessing.<br>Know your profit.</div>
-    <div class="c" style="top:794px" data-a="pop" data-t=".8"><span class="pill" style="background:#1d1a16;color:#fffdf6">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:794px" data-a="pop" data-t=".8"><span class="pill" style="background:#1d1a16;color:#fffdf6">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:904px" data-a="pop" data-t="1.1">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [10.6], impact: [0, 1.3] },
 
 16: { title: 'labels', scenes: [
@@ -553,12 +560,13 @@ const REELS = {
     <div class="sheet" style="top:230px;height:420px;transform:rotate(-2deg)" data-a="rise" data-d=".6"><img src="img/feat-labels-sheet.png" data-a="zoom" data-t=".8" data-d="2.6" data-e="ease-in-out" style="--zs:1.35;transform-origin:50% 0"></div>
     <div class="c m" style="top:740px;color:#1d1a16" data-a="pop" data-t="1.2">Name · address · items<br>· COD amount · your shop</div>
     ` },
-  { d: 2.8, cls: 'kraft', html: `
+  { d: 3.2, cls: 'kraft', html: `
     <div class="c" style="top:300px" data-a="slam" data-d=".45"><span class="stamp2">PRINT · CUT · STICK · SHIP</span></div>
     <div class="c" style="top:430px;color:#1d1a16" data-a="pop" data-t=".3"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c" style="top:535px;font-size:26px;font-weight:800;letter-spacing:3px;opacity:.8;color:#1d1a16" data-a="pop" data-t=".2">THE APP FOR WHATSAPP SELLERS</div>
     <div class="c h" style="top:614px;font-size:60px;color:#1d1a16" data-a="pop" data-t=".6">Pack in minutes,<br>not hours.</div>
-    <div class="c" style="top:864px" data-a="pop" data-t=".9"><span class="pill" style="background:#1d1a16;color:#c9a26b">Link in bio · nukkadsale.in</span></div>` },
+    <div class="c" style="top:864px" data-a="pop" data-t=".9"><span class="pill" style="background:#1d1a16;color:#c9a26b">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:974px" data-a="pop" data-t="1.2">Free up to 30 orders a month<br>No commission</div>` },
 ], ding: [], impact: [0, 1.7] },
 // 17 ── Explainer: "What is NukkadSale?" – answers it in one go (pin it). White "definition" look, same as Posts 18–20.
 17: { title: 'what-is', scenes: [
@@ -626,8 +634,9 @@ const REELS = {
   { d: 3.4, cls: 'orange', html: `
     <div class="c" style="top:300px" data-a="slam" data-d=".45"><div class="logo"><span style="display:inline-flex;align-items:center;gap:.22em">${SHOP('.9em')}NukkadSale</span></div></div>
     <div class="c m" style="top:450px" data-a="pop" data-t=".3">For sellers in<br>WhatsApp groups</div>
-    <div class="c" style="top:700px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f;font-size:40px;padding:22px 40px">Get started · nukkadsale.in</span></div>
-    <div class="c s" style="top:860px" data-a="pop" data-t="1.1">Works in your phone’s browser. No app to install.</div>` },
+    <div class="c" style="top:700px" data-a="pop" data-t=".7"><span class="pill" style="background:#fff;color:#d9480f;font-size:34px;padding:20px 34px;white-space:nowrap">Start free · nukkadsale.in</span></div>
+    <div class="c offer" style="top:820px" data-a="pop" data-t="1.0">Free up to 30 orders a month<br>No commission</div>
+    <div class="c s" style="top:940px" data-a="pop" data-t="1.3">Works in your phone’s browser. No app to install.</div>` },
 ], ding: [22.2], impact: [0, 6.4] },
 }
 

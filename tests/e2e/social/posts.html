@@ -209,7 +209,7 @@ p10g: `<div class="f orange">${B()}
     <div class="h" style="font-size:58px">Your WhatsApp<br>group, now a shop.</div>
     <div class="s" style="margin-top:18px;font-size:27px;opacity:.95">NukkadSale fixes all 5 – on your phone, in English and हिंदी.</div>
     <div style="margin-top:34px;display:grid;gap:14px">
-      ${['One order link per sale', 'Exact-amount UPI – no screenshots', 'Never oversell', 'Khata writes itself'].map((x) => `<div style="display:flex;gap:14px;align-items:center;font-size:30px;font-weight:800"><span style="width:44px;height:44px;border-radius:50%;background:#fff;color:#d9480f;display:inline-flex;align-items:center;justify-content:center;font-size:26px;flex:none">✓</span>${x}</div>`).join('')}
+      ${['One order link per sale', 'Exact-amount UPI – no screenshots', 'Never oversell', 'Auto khata'].map((x) => `<div style="display:flex;gap:14px;align-items:center;font-size:30px;font-weight:800"><span style="width:44px;height:44px;border-radius:50%;background:#fff;color:#d9480f;display:inline-flex;align-items:center;justify-content:center;font-size:26px;flex:none">✓</span>${x}</div>`).join('')}
     </div>
     <div style="margin-top:46px"><span class="chip" style="background:#fff;color:#d9480f;border:0;font-size:32px;padding:18px 32px">Get started · nukkadsale.in</span></div>
     <div class="s" style="margin-top:16px;font-size:23px;opacity:.85">We set it up with you on WhatsApp.</div></div></div>`,
@@ -324,7 +324,7 @@ p19a: `<div class="f whitep">${B()}
     <div class="h" style="font-size:78px;margin-top:10px">Here’s exactly<br>what you get<br>with <span class="o">NukkadSale.</span></div>
     <div class="s" style="margin-top:22px;font-size:27px;color:#5c5248">One app for your whole selling business. Swipe →</div></div>
   ${P('storefront', 60, 620, 150, 'transform:rotate(-6deg)')}${P('buyer-sale', 215, 645, 150, 'transform:rotate(-2deg)')}${P('orders-check', 370, 645, 150, 'transform:rotate(2deg)')}${P('home', 525, 620, 150, 'transform:rotate(6deg)')}</div>`,
-p19b: get(1, 'Your own <span class="o">shop link</span>', 'nukkadsale.in/your-shop. Every product with photos, price and sizes. Share it in your groups, on status and in your Instagram bio.', 'storefront'),
+p19b: get(1, 'Your own <span class="o">shop link</span>', 'nukkadsale.in/your-shop. Every product with photos, price and sizes. Share it in your WhatsApp groups and on your status.', 'storefront'),
 p19c: get(2, 'Orders, <span class="o">taken for you</span>', 'Buyers tap your post, pick a size, add their address and order. No app for them. The piece is held while they pay, so it’s never sold twice.', 'buyer-sale'),
 p19d: get(3, 'Money straight<br>to <span class="o">your UPI</span>', 'Each order gets its own exact amount, so you see who paid. Tap “Yes, I got it”. We never touch your money.', 'orders-check'),
 p19e: get(4, 'Packing, buyers<br>&amp; <span class="o">khata</span>', 'A to-send list, address labels, your buyers list and a khata that writes itself. In English and हिंदी.', 'home'),
@@ -356,14 +356,14 @@ p21: `<div class="f skyp">${B()}
   <div style="position:absolute;left:380px;top:232px;width:300px;text-align:center;font-size:19px;font-weight:900;letter-spacing:2px;color:#d9480f">WITH NUKKADSALE</div>
   ${MB(65, 270, false)}${MB(405, 270, true)}
   <div style="position:absolute;left:52px;top:590px;width:276px;display:grid;gap:9px">${['Missed DMs', 'Unpaid orders', 'Same piece sold twice', 'Lost hisaab'].map((x) => `<div class="mlab bad" style="position:static;font-size:19px">✗ ${x}</div>`).join('')}</div>
-  <div style="position:absolute;left:392px;top:590px;width:276px;display:grid;gap:9px">${['Order links', 'Exact-amount UPI', 'Stock held while they pay', 'Khata writes itself'].map((x) => `<div class="mlab good" style="position:static;font-size:19px">✓ ${x}</div>`).join('')}</div>
-  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center"><div class="m" style="font-size:30px">Plug the holes. Keep every sale.</div><div class="s" style="font-size:21px;margin-top:4px;color:#5c5248">One app for your WhatsApp shop · nukkadsale.in</div></div></div>`,
+  <div style="position:absolute;left:392px;top:590px;width:276px;display:grid;gap:9px">${['Order links', 'Exact UPI', 'Stock held while they pay', 'Auto khata'].map((x) => `<div class="mlab good" style="position:static;font-size:19px">✓ ${x}</div>`).join('')}</div>
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center"><div class="m" style="font-size:30px">Plug the holes. Keep every sale.</div><div class="s" style="font-size:21px;margin-top:4px;color:#5c5248">One app for your WhatsApp shop · Start free at nukkadsale.in</div></div></div>`,
 p22: `<div class="f inkp">${B()}
   <div style="position:absolute;left:44px;right:44px;top:100px"><div class="h" style="font-size:50px">Too many wires<br>running your shop?</div></div>
   ${WIRES(244, false)}${WIRES(520, true)}
   <div style="position:absolute;left:44px;top:226px;font-size:18px;font-weight:900;letter-spacing:2px;color:#868e96">TODAY</div>
   <div style="position:absolute;left:44px;top:502px;font-size:18px;font-weight:900;letter-spacing:2px;color:#ff8a3d">WITH NUKKADSALE</div>
-  <div style="position:absolute;left:44px;right:44px;bottom:40px"><div class="s" style="font-size:22px;color:#ced4da">Orders, payments, stock and khata – one app on your phone. <b style="color:#ff8a3d">nukkadsale.in</b></div></div></div>`,
+  <div style="position:absolute;left:44px;right:44px;bottom:40px"><div class="s" style="font-size:22px;color:#ced4da">Orders, payments, stock and khata – one app. <b style="color:#ff8a3d">Start free · nukkadsale.in</b></div></div></div>`,
 p23: `<div class="f roadp">${B()}
   <div style="position:absolute;left:44px;right:44px;top:100px"><div class="h" style="font-size:52px">Give your buyers<br>a <span style="color:#69db7c">fast lane.</span></div></div>
   <div style="position:absolute;left:360px;top:250px;bottom:110px;width:6px;background:repeating-linear-gradient(#f8f9fa 0 36px,transparent 36px 66px);opacity:.7"></div>
@@ -375,7 +375,7 @@ p23: `<div class="f roadp">${B()}
   <div style="position:absolute;left:236px;top:630px;background:#fff;color:#14120f;font-weight:800;font-size:17px;padding:6px 12px;border-radius:14px 14px 14px 4px">Payment kaise?</div>
   <div class="pbooth" style="left:400px;top:560px;background:#2b8a3e;color:#fff">NukkadSale</div>
   ${[['#2f9e44', '798.12', 270], ['#f08c00', '798.47', 390], ['#1098ad', '798.80', 660]].map(([c, a, y]) => `<div class="pcar" style="left:444px;top:${y}px;background:${c}"><b>₹${a} ✓</b></div>`).join('')}
-  <div style="position:absolute;left:44px;right:44px;bottom:36px"><div class="s" style="font-size:21px;color:#dee2e6">Buyers order and pay on their own – each with an exact amount, so you know who paid. <b style="color:#69db7c">nukkadsale.in</b></div></div></div>`,
+  <div style="position:absolute;left:44px;right:44px;bottom:36px"><div class="s" style="font-size:21px;color:#dee2e6">Buyers order and pay on their own – each with an exact amount, so you know who paid. <b style="color:#69db7c">Start free · nukkadsale.in</b></div></div></div>`,
 
 // ─────── Formats series (myth vs fact, tier list, steal my template, mistakes, hot take) ───────
 // Post 24 · Myth vs fact – carousel
@@ -401,7 +401,7 @@ p25: `<div class="f paperp">${B()}
        ['#f08c00', 'C', 'An online form', 'Orders, but no stock or payments'], ['#fab005', 'B', 'An Excel sheet you update at night', 'Works until the last piece sells twice'],
        ['#2b8a3e', 'S', 'One link: order, pay, stock, khata', 'Each buyer’s exact amount tells you who paid']].map(([c, l, t, d]) => `<div class="tier"><i style="background:${c}">${l}</i><span>${t}<small>${d}</small></span></div>`).join('')}
   </div>
-  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center;font-size:24px;font-weight:800">S tier is NukkadSale <span class="o">– nukkadsale.in</span></div></div>`,
+  <div style="position:absolute;left:44px;right:44px;bottom:40px;text-align:center;font-size:24px;font-weight:800">S tier is NukkadSale <span class="o">– start free at nukkadsale.in</span></div></div>`,
 // Post 26 · Steal my template – the sale post that gets orders
 p26a: `<div class="f yellowp">${B()}
   <div style="position:absolute;left:50px;right:50px;top:200px">
@@ -450,7 +450,7 @@ p28: `<div class="f blackp">${B()}
     <div style="font-size:22px;font-weight:900;letter-spacing:3px;color:#ff8a3d">UNPOPULAR OPINION</div>
     <div class="h" style="font-size:72px;margin-top:20px;line-height:1.05;white-space:nowrap">You don’t need<br>a website.<br><span style="color:#ffd43b">You need a link.</span></div>
     <div class="s" style="margin-top:30px;font-size:26px;color:#d8d0c6">Your buyers are already in your WhatsApp group. Give them one link to order and pay – and stop paying for a website nobody visits.</div>
-    <div style="margin-top:34px;font-size:24px;font-weight:800;color:#ff8a3d">nukkadsale.in</div></div></div>`,
+    <div style="margin-top:34px;font-size:24px;font-weight:800;color:#ff8a3d">Start free · nukkadsale.in</div></div></div>`,
 
 // ── Stories
 s1: `<div class="f story dark">${B()}
@@ -480,7 +480,8 @@ function MB(x, y, patched) {
 }
 // Four sources wired into one phone: tangled (today) or neat (with NukkadSale). Post 22.
 function WIRES(top, neat) {
-  const src = [['WhatsApp DMs', '#25d366', '✉'], ['Notebook', '#f08c00', '✎'], ['UPI screenshots', '#e03131', '₹'], ['Excel sheet', '#2f9e44', '▦']]
+  const src = neat ? [['Link orders', '#25d366', '✓'], ['Stock held', '#f08c00', '✓'], ['Exact UPI', '#e03131', '₹'], ['Auto khata', '#2f9e44', '▦']]
+    : [['WhatsApp DMs', '#25d366', '✉'], ['Notebook', '#f08c00', '✎'], ['UPI screenshots', '#e03131', '₹'], ['Excel sheet', '#2f9e44', '▦']]
   const ys = src.map((_, i) => top + 34 + i * 62), cols = ['#25d366', '#f08c00', '#ff6b6b', '#51cf66']
   const px = 540, py = top + 126
   const paths = ys.map((y, i) => neat

@@ -191,6 +191,7 @@ function loadConfig() {
 // ---------- captions ----------
 const ABOUT_MARK = 'the app for people who sell on WhatsApp'
 const ABOUT = `NukkadSale is ${ABOUT_MARK}: your own shop link, orders taken for you, UPI payments straight to you, and stock, packing and khata in one place.`
+const OFFER = 'Free up to 30 orders a month, no commission – start at nukkadsale.in'
 function captionFor(heading) {
   const md = fs.readFileSync(path.join(SOCIAL, 'CAPTIONS.md'), 'utf8').split('\n')
   const start = md.findIndex((l) => l.startsWith(`### ${heading} `) || l === `### ${heading}`)
@@ -206,6 +207,11 @@ function captionFor(heading) {
   if (!out.some((l) => l.includes(ABOUT_MARK))) {
     const tags = out.findIndex((l) => l.trim().startsWith('#'))
     out.splice(tags < 0 ? out.length : tags, 0, ...(tags > 0 && out[tags - 1].trim() === '' ? [ABOUT, ''] : ['', ABOUT, '']))
+  }
+  // …and what it costs (same words as the pricing on the landing page).
+  if (!out.some((l) => /30 (paid )?orders/.test(l))) {
+    const i = out.findIndex((l) => l.includes(ABOUT_MARK))
+    out[i] = `${out[i].trimEnd()} ${OFFER}`
   }
   const caption = out.join('\n').replace(/\n{3,}/g, '\n\n').trim()
   if (caption.length > 2200) throw new Error(`Caption for ${heading} is ${caption.length} characters; Instagram allows 2,200`)
