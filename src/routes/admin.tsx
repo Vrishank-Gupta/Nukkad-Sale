@@ -683,7 +683,7 @@ admin.get('/sellers/:id', async (c) => {
           <table class="data">
             <thead><tr><th>Sale</th><th>Status</th><th class="r">Sold / stock</th><th>Created</th></tr></thead>
             <tbody>
-              {sales.map((d) => <tr><td><a class="rowlink" href={`/d/${d.id}`} target="_blank" rel="noopener">{clip(d.title, 36)}</a>{d.cod_enabled ? <span class="chip cod" style="margin-left:6px">COD</span> : null}</td><td><span class={`chip ${d.status === 'live' ? 'live' : 'closed'}`}>{d.status === 'live' ? 'Live' : 'Closed'}</span></td><td class="r">{d.sold} / {d.stock ?? 0}</td><td><small>{istDay(d.created_at).split('-').reverse().join('/')}</small></td></tr>)}
+              {sales.map((d) => <tr><td><a class="rowlink" href={`/d/${d.id}`} target="_blank" rel="noopener">{clip(d.title, 36)}</a></td><td><span class={`chip ${d.status === 'live' ? 'live' : 'closed'}`}>{d.status === 'live' ? 'Live' : 'Closed'}</span></td><td class="r">{d.sold} / {d.stock ?? 0}</td><td><small>{istDay(d.created_at).split('-').reverse().join('/')}</small></td></tr>)}
               {sales.length === 0 && <tr><td colspan={4} class="muted">No sales yet.</td></tr>}
             </tbody>
           </table>

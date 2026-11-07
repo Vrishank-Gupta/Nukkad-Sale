@@ -568,12 +568,6 @@ pub.get('/d/:id', async (c) => {
             {!offer && <button type="button" class="btn block" style="margin-top:8px" data-addsale={JSON.stringify({ d: drop.id, t: drop.title, p: drop.price_paise, img: drop.image_key, max: drop.max_per_order, labels: Object.fromEntries(variants.map((v) => [v.id, v.label])) })}><Icon n="bag" s={18} />{t.addToCart}</button>}
             <small style="display:block;text-align:center;margin-top:6px">{t.upiApps}</small>
             <small style="display:block;text-align:center">{t.heldWhilePay} {seller.pay_mode === 'direct' ? t.payTo(seller.shop_name) : ''}</small>
-            {drop.cod_enabled ? (
-              <>
-                <div class="or"><span>{t.codOr}</span></div>
-                <button type="submit" name="pay" value="cod" class="btn block"><Icon n="cash" s={18} />{drop.cod_advance_paise ? t.advBtn(rupees(drop.cod_advance_paise)) : drop.cod_fee_paise ? t.codBtnFee(rupees(drop.cod_fee_paise)) : t.codBtn}</button>
-              </>
-            ) : null}
           </div>
         </form>
         </>

@@ -630,7 +630,6 @@ export function shareText(t: Dict, drop: Drop, variants: Variant[], seller: Sell
       : `💰 *${rupees(drop.price_paise)}*`,
     sizes.length ? `📏 ${t.shareSizes}: ${sizes.join(', ')}` : null,
     drop.ship_fee_paise ? `🚚 ${drop.free_ship_above_paise ? t.shareShipFree(rupees(drop.ship_fee_paise), rupees(drop.free_ship_above_paise)) : t.shareShip(rupees(drop.ship_fee_paise))}` : null,
-    drop.cod_enabled ? `${drop.cod_advance_paise ? t.advShareLine(rupees(drop.cod_advance_paise)) : `💵 ${t.codBtn}`}` : null,
     drop.live_drop && (drop.live_at ?? 0) > Date.now() ? `*${t.shareLiveDrop(liveWhen(drop.live_at, t.lang))}*`
       : (drop.live_at ?? 0) > Date.now() ? `⏰ *${t.shareLiveAt(liveWhen(drop.live_at, t.lang))}*` : drop.live_drop ? `*${t.shareLiveNow}*` : null,
     `📦 ${t.shareLimited}`,
