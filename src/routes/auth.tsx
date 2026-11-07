@@ -2,13 +2,13 @@ import { Hono } from 'hono'
 import type { Context } from 'hono'
 import type { AppEnv } from '../env'
 import { tr, type Dict } from '../i18n'
-import { endSession, startSession } from '../lib/auth'
+import { endSession, issueResetCode, startSession } from '../lib/auth'
 import { hashPin, sha256 } from '../lib/crypto'
 import { getSettings, parseModes } from '../lib/billing'
 import { createSeller } from '../lib/sellers'
 import { isValidVpa } from '../lib/upi'
 import { normalizePhone, randomId, waLink } from '../lib/util'
-import { sendOtp, waEnabled } from '../lib/whatsapp'
+import { sendOtp, waBotEnabled, waEnabled } from '../lib/whatsapp'
 import { Flash, Icon, Layout, PhoneInput, PinInput } from '../views/layout'
 import { here } from './public'
 
@@ -34,7 +34,7 @@ auth.get('/login', (c) => {
   // Pre-filled from the link the admin sends on WhatsApp (/seller?p=98XXXXXXXX), so the seller only types the PIN.
   const pre = (c.req.query('p') ?? '').replace(/\D/g, '').slice(-10)
   const preOk = /^[6-9]\d{9}$/.test(pre)
-  const canReset = waEnabled(c.env) && c.env.WA_OTP_TEMPLATE
+  const canReset = waBotEnabled(c.env) || (waEnabled(c.env) && c.env.WA_OTP_TEMPLATE)
   return c.html(
     <Layout t={t} path={here(c)} title={`${t.logIn} – NukkadSale`} ok={c.req.query('ok')}>
       <Brand t={t} />
@@ -160,6 +160,28 @@ auth.post('/logout', async (c) => {
 
 auth.get('/reset', (c) => {
   const t = tr(c)
+  // Free route: the seller messages our WhatsApp number first and the bot replies with the code.
+  if (waBotEnabled(c.env)) {
+    return c.html(
+      <Layout t={t} path={here(c)} title={t.resetPin}>
+        <h1>{t.resetPin}</h1>
+        <Flash msg={c.req.query('err')} />
+        <div class="card stack">
+          <h2 style="margin:0;font-size:1.05rem"><span class="muted">1.</span> {t.resetStep1}</h2>
+          <p class="muted" style="margin:0">{t.resetStep1Help}</p>
+          <a class="btn primary block" href={waLink(c.env.WA_BOT_NUMBER!, 'RESET PIN')}>{t.resetWaBtn}</a>
+        </div>
+        <form method="post" action="/reset/verify" class="card stack" style="margin-top:12px">
+          <h2 style="margin:0;font-size:1.05rem"><span class="muted">2.</span> {t.resetStep2}</h2>
+          <div><label for="phone">{t.phone}</label><PhoneInput id="phone" name="phone" value={(c.req.query('phone') ?? '').replace(/\D/g, '').slice(-10) || undefined} /></div>
+          <div><label for="code">{t.codeLabel}</label><input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength={6} required /></div>
+          <div><label for="pin">{t.newPin}</label><PinInput id="pin" t={t} autocomplete="new-password" /></div>
+          <button class="btn primary block" type="submit">{t.setNewPin}</button>
+        </form>
+        <p style="text-align:center"><a href="/login">← {t.logIn}</a></p>
+      </Layout>,
+    )
+  }
   if (!waEnabled(c.env) || !c.env.WA_OTP_TEMPLATE) return c.redirect('/login')
   const phone = c.req.query('phone')
   return c.html(
@@ -188,16 +210,10 @@ auth.post('/reset/send', async (c) => {
   const t = tr(c)
   const phone = normalizePhone(String((await c.req.parseBody()).phone ?? ''))
   if (!phone || !waEnabled(c.env)) return c.redirect('/reset?err=' + encodeURIComponent(t.wrongPhone), 303)
-  const existing = await c.env.DB.prepare(`SELECT expires_at FROM pin_resets WHERE phone = ?`).bind(phone).first<{ expires_at: number }>()
-  // Codes live 10 minutes; allow a resend only after 1 minute to keep Meta message costs down.
-  const recentlySent = existing && existing.expires_at - 9 * 60000 > Date.now()
   const seller = await c.env.DB.prepare(`SELECT 1 FROM sellers WHERE phone = ?`).bind(phone).first()
-  if (seller && !recentlySent) {
-    const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000))
-    await c.env.DB.prepare(`INSERT OR REPLACE INTO pin_resets (phone, code_hash, attempts, expires_at) VALUES (?, ?, 0, ?)`)
-      .bind(phone, await sha256(code + c.env.SECRET_KEY), Date.now() + 10 * 60000).run()
-    c.executionCtx.waitUntil(sendOtp(c.env, phone, code).catch((e) => console.error('otp send failed', e)))
-  }
+  // Codes live 10 minutes; a resend only after 1 minute, to keep Meta message costs down.
+  const code = seller ? await issueResetCode(c.env, phone) : null
+  if (code) c.executionCtx.waitUntil(sendOtp(c.env, phone, code).catch((e) => console.error('otp send failed', e)))
   // Same response whether or not the number has a shop, so this can't be used to probe numbers.
   return c.redirect('/reset?phone=' + phone, 303)
 })

@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
-import type { AppEnv, Seller } from '../env'
+import type { AppEnv, Bindings, Seller } from '../env'
 import { sha256 } from './crypto'
 import { randomId } from './util'
 
@@ -57,4 +57,14 @@ export const sameOrigin: MiddlewareHandler<AppEnv> = async (c, next) => {
     if (origin && origin !== new URL(c.req.url).origin) return c.text('Bad origin', 403)
   }
   await next()
+}
+
+/** A 6-digit PIN-reset code for a seller's phone, valid 10 minutes (stored hashed). Null if asked again within a minute. */
+export async function issueResetCode(env: Bindings, phone: string): Promise<string | null> {
+  const existing = await env.DB.prepare(`SELECT expires_at FROM pin_resets WHERE phone = ?`).bind(phone).first<{ expires_at: number }>()
+  if (existing && existing.expires_at - 9 * 60000 > Date.now()) return null
+  const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000))
+  await env.DB.prepare(`INSERT OR REPLACE INTO pin_resets (phone, code_hash, attempts, expires_at) VALUES (?, ?, 0, ?)`)
+    .bind(phone, await sha256(code + env.SECRET_KEY), Date.now() + 10 * 60000).run()
+  return code
 }

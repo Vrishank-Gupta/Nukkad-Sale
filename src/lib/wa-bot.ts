@@ -1,3 +1,4 @@
+import { issueResetCode } from './auth'
 import { shopOpen } from './billing'
 import { alertSeller } from './push'
 import type { Bindings, Order, Seller } from '../env'
@@ -63,6 +64,14 @@ export async function handleInbound(env: Bindings, origin: string, msg: Inbound,
   }
   const ctx: Ctx = { env, origin, phone, buyer, t, session }
 
+  // Seller forgot their PIN: they message "RESET PIN" from their own number and get a code back.
+  // It's a reply inside the chat they started, so no template is needed.
+  if (/^(reset( pin)?|forgot pin|pin reset|पिन( रीसेट)?)$/i.test(text)) {
+    const seller = await db.prepare(`SELECT 1 FROM sellers WHERE phone = ?`).bind(phone).first()
+    if (!seller) return sendText(env, phone, t.botResetNoShop)
+    const code = await issueResetCode(env, phone)
+    return sendText(env, phone, code ? t.botResetCode(code) : t.botResetWait)
+  }
   const tap = msg.interactive?.button_reply?.id ?? msg.interactive?.list_reply?.id ?? msg.button?.payload
   if (tap) return onTap(ctx, tap)
   if (msg.type === 'image' && msg.image) return onScreenshot(ctx, msg.image.id)

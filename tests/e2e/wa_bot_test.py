@@ -172,5 +172,22 @@ check(m_ok := (out and out[0].get('interactive', {}).get('type') == 'list'), 'â€
 _, out = inbound(C, 'Rahul', {'type': 'interactive', 'interactive': {'type': 'list_reply', 'list_reply': {'id': rows[0], 'title': 'x'}}}) if rows else (0, [])
 check(bool(out) and any(m.get('interactive', {}).get('type') == 'button' for m in out), 'tapping an item opens its product card')
 
+print('seller forgot PIN: reset over WhatsApp, no template')
+s, _, rp = req(APP + '/reset')
+check(s == 200 and b'wa.me/919000000000?text=RESET' in rp, 'reset page sends the seller to WhatsApp with "RESET PIN"')
+_, out = inbound('919811111111', 'Stranger', text('RESET PIN'))
+check(bool(out) and 'doesnâ€™t have a NukkadSale shop' in body(out[-1]), 'a number without a shop gets no code')
+_, out = inbound('919876543210', 'Meera', text('reset pin'))
+m = re.search(r'\*(\d{6})\*', body(out[-1])) if out else None
+check(bool(m) and out[-1].get('type') == 'text', 'seller gets a 6-digit code as a normal reply (no template)')
+_, out2 = inbound('919876543210', 'Meera', text('RESET PIN'))
+check(bool(out2) and 'just sent you a code' in body(out2[-1]), 'asking again within a minute: told to use the code already sent')
+s, h, _ = form('/reset/verify', {'phone': '9876543210', 'code': '000000', 'pin': '5678'})
+check('err=' in (h['Location'] or ''), 'wrong code refused')
+s, h, _ = form('/reset/verify', {'phone': '9876543210', 'code': m.group(1) if m else '', 'pin': '5678'})
+check('ok=' in (h['Location'] or ''), 'right code sets the new PIN')
+s, h, _ = form('/login', {'phone': '9876543210', 'pin': '5678'})
+check(h['Location'] and h['Location'].startswith('/app'), 'seller logs in with the new PIN')
+
 print('ALL PASSED' if not fails else f'{fails} FAILED')
 sys.exit(1 if fails else 0)
