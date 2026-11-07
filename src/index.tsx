@@ -36,6 +36,10 @@ app.use('*', async (c, next) => {
   if (OLD_HOSTS.has(url.hostname) && (c.req.method === 'GET' || c.req.method === 'HEAD') && !url.pathname.startsWith('/webhooks')) {
     return c.redirect(`https://nukkadsale.in${url.pathname}${url.search}`, 301)
   }
+  // "/admin/", "/app/" etc. → without the trailing slash (routes are defined without it).
+  if ((c.req.method === 'GET' || c.req.method === 'HEAD') && url.pathname.length > 1 && url.pathname.endsWith('/')) {
+    return c.redirect(url.pathname.replace(/\/+$/, '') + url.search, 301)
+  }
   await next()
 })
 // Webhooks are server-to-server and authenticated by signature, so they skip the origin check.
