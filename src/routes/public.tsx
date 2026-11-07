@@ -4,7 +4,7 @@ import { raw } from 'hono/html'
 import type { AppEnv, Order, Seller } from '../env'
 import { courierDate, dictFor, tr, type Dict } from '../i18n'
 import { decrypt, sha256 } from '../lib/crypto'
-import { amountClash, pickUniqueAmount, claimAdvance, shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
+import { amountClash, cancelByBuyer, pickUniqueAmount, claimAdvance, shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
 import { confirmGateway, confirmRazorpay, startGatewayPayment } from '../lib/gateway'
 import { verifyCallback } from '../lib/razorpay'
 import { shopOpen } from '../lib/billing'
@@ -642,6 +642,12 @@ pub.post('/d/:id', async (c) => {
     if (state !== 'ok' || !offer) return c.redirect(`/d/${id}?err=${encodeURIComponent(t.offerGone)}`, 303)
     if (qty > offer.max_qty) return back(failText(t, 'qty', offer.max_qty))
     unitPaise = offer.price_paise; offerId = offer.id
+    // The buyer already holds this size at the regular price (unpaid, on its own): their special price replaces it.
+    const old = await c.env.DB.prepare(
+      `SELECT id FROM orders o WHERE drop_id = ? AND variant_id = ? AND buyer_phone = ? AND status = 'pending' AND COALESCE(offer_id, '') <> ?
+       AND cart_id IS NULL AND NOT EXISTS (SELECT 1 FROM orders x WHERE x.cart_id = o.id)`,
+    ).bind(id, variantId, phone, offer.id).first<{ id: string }>()
+    if (old) await cancelByBuyer(c.env, old.id, phone)
   }
   const res = await reserveOrder(c.env, seller, data.drop, { variantId, qty, name, phone, address, ipHash, cod, unitPaise, offerId })
   if (!res.ok) return back(failText(t, res.reason, data.drop.max_per_order))
@@ -778,6 +784,10 @@ pub.get('/o/:id', async (c) => {
   const holdUntil = Math.max(...lines.map((l) => l.hold_until))
   // The cron sweep may lag a minute behind; show a lapsed hold as "time over" straight away.
   const status = order.pay_mode === 'cod' ? shownStatus(order) : order.status === 'pending' && holdUntil < Date.now() ? 'expired' : order.status
+  // The buyer has now seen this amount (and may pay it): from here on the payment never changes. Link previews don't count.
+  if (status === 'pending' && order.pay_mode === 'direct' && !order.pay_seen_at && !/facebookexternalhit|WhatsApp|bot|crawl|preview/i.test(c.req.header('user-agent') ?? '')) {
+    c.executionCtx.waitUntil(c.env.DB.prepare(`UPDATE orders SET pay_seen_at = ?2 WHERE (id = ?1 OR cart_id = ?1) AND pay_seen_at IS NULL`).bind(cartKeyOf(order), Date.now()).run())
+  }
   // Payments go to the UPI ID chosen for this sale (or the seller's default).
   const payVpa = data.drop.upi_vpa ?? seller.upi_vpa
   const note = lines.length > 1 ? `${shortNo(order.id)} ${lines.length} items` : `${shortNo(order.id)} ${data.drop.title}`

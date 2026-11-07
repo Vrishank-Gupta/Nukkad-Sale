@@ -374,14 +374,14 @@ img{max-width:100%;height:auto;display:block}
 .btn.sm{min-height:40px;padding:0 16px;font-size:.92rem;border-radius:12px}
 header{position:sticky;top:0;z-index:20;background:rgba(255,250,245,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;gap:16px;height:64px}
-.logo{display:flex;align-items:center;gap:8px;font-weight:900;font-size:1.25rem;text-decoration:none;letter-spacing:-.3px}
+.logo{display:flex;align-items:center;min-height:44px;gap:8px;font-weight:900;font-size:1.25rem;text-decoration:none;letter-spacing:-.3px}
 .logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(145deg,var(--brand2),var(--brand));display:flex;align-items:center;justify-content:center}
 nav.links{display:flex;gap:22px;margin-left:24px}
 nav.links a{text-decoration:none;font-weight:600;color:var(--muted);white-space:nowrap}
 @media (max-width:1100px){nav.links{gap:16px;margin-left:8px}}@media (max-width:980px){nav.links{display:none}}
 nav.links a:hover{color:var(--ink)}
 .hgap{flex:1}
-.lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem;display:inline-flex;align-items:center;min-height:40px}
+.lang{font-weight:700;text-decoration:none;color:var(--muted);font-size:.95rem;display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px}
 .login{font-weight:700;text-decoration:none;font-size:.95rem;display:inline-flex;align-items:center;min-height:40px;white-space:nowrap}.login .short,header .btn .short{display:none}
 section{padding:72px 0}
 .eyebrow{display:inline-block;font-weight:800;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);margin-bottom:10px}

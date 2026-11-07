@@ -181,6 +181,8 @@ export type Order = {
   pack_photo_key?: string | null
   /** Late payment sent back by the seller (order stays 'refund_due'). */
   refunded_at?: number | null
+  /** First time the buyer opened the pay page: the payment's amount is fixed from then on. */
+  pay_seen_at?: number | null
   /** Advance on cash on delivery: amount (with its own paise) and '' | due | claimed | paid. */
   adv_paise?: number
   adv_status?: string

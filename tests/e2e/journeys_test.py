@@ -228,4 +228,34 @@ other = client('10.9.9.9'); other('/login', {'phone': f'97{r}', 'pin': '4321'})
 check(other('/app')[0] == 200, 'second device logged in')
 A('/app/pin', {'current': '4321', 'pin': '8642'})
 check(other('/app')[0] in (302, 303) and A('/app')[0] == 200, 'changing the PIN logs the other device out; this one stays in')
+
+# ---------- unpaid-hold limits, frozen payments, special price over a regular hold ----------
+dG = sale(A, [('title', 'Hold test tee'), ('price', '250'), ('stock', '50'), ('max', '1')])
+dG2 = sale(A, [('title', 'Hold test cap'), ('price', '150'), ('stock', '50'), ('max', '1')])
+dG3 = sale(A, [('title', 'Hold test bag'), ('price', '350'), ('stock', '50'), ('max', '1')])
+dG4 = sale(A, [('title', 'Hold test belt'), ('price', '450'), ('stock', '50'), ('max', '1')])
+P = f'87{r}'
+def one(drop, ip):
+    v = sql(f"SELECT id FROM variants WHERE drop_id = '{drop}'")[0]['id']
+    c = client(ip); st, h, _ = c(f'/d/{drop}', {'variant': v, 'qty': '1', 'name': 'Holder', 'phone': P, 'address': '8 Station Road, Pune', 'pincode': '411001'})
+    k = loc(h)[3:].split('?')[0] if loc(h).startswith('/o/') else None
+    if k: c(f'/o/{k}')  # the buyer sees the pay page
+    return k
+k1, k2, k3 = one(dG, '10.95.0.1'), one(dG2, '10.95.0.2'), one(dG3, '10.95.0.3')
+check(k1 and k2 and k3 and len({k1, k2, k3}) == 3, 'after opening a pay page, the next item is a separate payment (the amount they saw never changes)')
+check(one(dG4, '10.95.0.4') is None, 'a 4th unpaid payment from the same number at one shop is refused')
+
+dH = sale(A, [('title', 'Offer kurta'), ('price', '800'), ('stock', '5'), ('max', '1')])
+vH = sql(f"SELECT id FROM variants WHERE drop_id = '{dH}'")[0]['id']
+Q = f'86{r}'
+st, h, _ = client('10.96.0.1')(f'/d/{dH}', {'variant': vH, 'qty': '1', 'name': 'Meena', 'phone': Q, 'address': '4 Ring Road, Surat', 'pincode': '395002'})
+regular = loc(h)[3:].split('?')[0]
+A(f'/app/drops/{dH}/offers', {'price': '650', 'phone': Q, 'hours': '24', 'qty': '1', 'name': 'Meena'})
+oid = sql(f"SELECT id FROM offers WHERE drop_id = '{dH}'")[0]['id']
+st, h, _ = client('10.96.0.2')(f'/d/{dH}', {'variant': vH, 'qty': '1', 'name': 'Meena', 'phone': Q, 'address': '4 Ring Road, Surat', 'pincode': '395002', 'offer': oid})
+special = loc(h)[3:].split('?')[0]
+row = sql(f"SELECT status FROM orders WHERE id = '{regular}'")[0]
+amt = sql(f"SELECT amount_paise, offer_id FROM orders WHERE id = '{special}'")[0]
+check(special != regular and row['status'] == 'expired' and amt['offer_id'] == oid and 64901 <= amt['amount_paise'] <= 64999, 'special price replaces the buyer’s unpaid regular-price hold (₹650, not ₹800)')
+check(sql(f"SELECT available FROM variants WHERE id = {vH}")[0]['available'] == 4, '…and only one piece is held')
 print(f'\nall {ok} checks passed')

@@ -138,7 +138,7 @@ body{font-size:14px}
 .shell{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
 .shell aside{background:var(--card);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
 .abrand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:1rem;color:var(--ink);text-decoration:none;padding:4px 8px 16px}
-.shell aside nav a{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;color:var(--ink);text-decoration:none;font-weight:500}
+.shell aside nav a{display:flex;gap:10px;align-items:center;min-height:44px;padding:9px 10px;border-radius:9px;color:var(--ink);text-decoration:none;font-weight:500}
 .shell aside nav a:hover{background:var(--bg)}.shell aside nav a.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
 .shell aside nav a .n{margin-left:auto;background:var(--bad);color:#fff;border-radius:99px;font-size:.7rem;font-weight:700;padding:1px 7px}
 .alogout{margin-top:auto}

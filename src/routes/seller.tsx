@@ -287,7 +287,7 @@ app.get('/', async (c) => {
           <small>{t.todayEarned}</small>
           <div class="stat">{rupees(today?.amt ?? 0)}</div>
           <small>{t.ordersToday(today?.n ?? 0)}</small>
-          {(waiting?.amt ?? 0) > 0 && <a href="/app/orders?tab=check" class="row" style="gap:6px;margin-top:8px;color:var(--warn);font-weight:700;text-decoration:none;font-size:.88rem"><Icon n="clock" s={16} />{t.moneyWaiting(rupees(waiting!.amt))}</a>}
+          {(waiting?.amt ?? 0) > 0 && <a href="/app/orders?tab=check" class="row" style="gap:6px;margin-top:4px;min-height:44px;color:var(--warn);font-weight:700;text-decoration:none;font-size:.88rem"><Icon n="clock" s={16} />{t.moneyWaiting(rupees(waiting!.amt))}</a>}
         </div>
       ) : (
         <div class="card setup">

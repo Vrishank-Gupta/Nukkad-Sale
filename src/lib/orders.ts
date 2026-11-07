@@ -191,6 +191,15 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
       .bind(drop.id, input.ipHash)
       .first<{ n: number }>()
     if ((fromIp?.n ?? 0) >= 3) return { ok: false, reason: 'device' }
+    // Phone numbers aren't verified on the website, so one number or one network can't keep holding a shop's
+    // stock with fake orders: at most 3 unpaid payments per number and 6 per network at a shop (a cart is one).
+    const busy = await db
+      .prepare(`SELECT COUNT(DISTINCT CASE WHEN buyer_phone = ?2 THEN COALESCE(cart_id, id) END) AS byPhone,
+                       COUNT(DISTINCT CASE WHEN ip_hash = ?3 THEN COALESCE(cart_id, id) END) AS byIp
+                FROM orders WHERE seller_id = ?1 AND status = 'pending' AND hold_until > ?4`)
+      .bind(seller.id, input.phone, input.ipHash, Date.now())
+      .first<{ byPhone: number; byIp: number }>()
+    if ((busy?.byPhone ?? 0) >= 3 || (busy?.byIp ?? 0) >= 6) return { ok: false, reason: 'device' }
   }
 
   let got = await takeStock(db, input.variantId, drop.id, input.qty)
@@ -244,8 +253,8 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
       .prepare(
         `SELECT o.* FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.seller_id = ? AND o.buyer_phone = ? AND o.status = 'pending'
          AND o.hold_until > ? AND o.pay_mode = ? AND COALESCE(d.upi_vpa, ?) = ?
-         -- A gateway payment whose link already exists is never changed: the buyer may be paying that link right now.
-         AND NOT EXISTS (SELECT 1 FROM orders x WHERE (x.id = COALESCE(o.cart_id, o.id) OR x.cart_id = COALESCE(o.cart_id, o.id)) AND x.pay_url IS NOT NULL)
+         -- A payment the buyer may already be paying is never changed: a gateway link exists, or they opened the pay page.
+         AND NOT EXISTS (SELECT 1 FROM orders x WHERE (x.id = COALESCE(o.cart_id, o.id) OR x.cart_id = COALESCE(o.cart_id, o.id)) AND (x.pay_url IS NOT NULL OR x.pay_seen_at IS NOT NULL))
          ORDER BY o.created_at LIMIT 1`,
       )
       .bind(seller.id, input.phone, now, mode, seller.upi_vpa ?? '', payee ?? '')
