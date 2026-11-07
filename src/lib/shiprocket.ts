@@ -1,9 +1,9 @@
 import type { Bindings, Seller } from '../env'
-import { decrypt, encrypt } from './crypto'
+import { decrypt, encrypt, sha256 } from './crypto'
 
 /**
- * Shiprocket, optional per seller: the seller's own account (API user email + password), so courier charges come
- * from their Shiprocket wallet. API: https://apidocs.shiprocket.in – base URL can point at tests/e2e/mock_shiprocket.py.
+ * Shiprocket, optional per seller: either the seller's own account (API user email + password), so courier charges
+ * come from their Shiprocket wallet, or NukkadSale Shipping – the platform's account, paid from a prepaid balance. API: https://apidocs.shiprocket.in – base URL can point at tests/e2e/mock_shiprocket.py.
  */
 const base = (env: Bindings) => (env.SHIPROCKET_API_BASE || 'https://apiv2.shiprocket.in') + '/v1/external'
 
@@ -51,7 +51,36 @@ export async function srLogin(env: Bindings, email: string, password: string) {
   return d.token
 }
 
+/** Marks a seller who ships through NukkadSale's own Shiprocket account (sellers.sr_email). */
+export const NK_SHIP = 'NukkadSale Shipping'
+export const sharedShipping = (env: Bindings) => Boolean(env.SHIPROCKET_EMAIL && env.SHIPROCKET_PASSWORD)
+export const onShared = (s: { sr_email?: string | null }) => s.sr_email === NK_SHIP
+
+/** The platform account's token, cached encrypted in platform_settings for 9 days. */
+export async function platformToken(env: Bindings): Promise<string> {
+  if (!sharedShipping(env)) throw new ShiprocketError('NukkadSale Shipping is not set up yet.')
+  const { results } = await env.DB.prepare(`SELECT key, value FROM platform_settings WHERE key IN ('sr_token_enc', 'sr_token_exp')`).all<{ key: string; value: string }>()
+  const m = new Map(results.map((r) => [r.key, r.value]))
+  if (m.get('sr_token_enc') && Number(m.get('sr_token_exp')) > Date.now()) return decrypt(m.get('sr_token_enc')!, env.SECRET_KEY)
+  const token = await srLogin(env, env.SHIPROCKET_EMAIL!, env.SHIPROCKET_PASSWORD!)
+  const put = `INSERT INTO platform_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+  await env.DB.batch([env.DB.prepare(put).bind('sr_token_enc', await encrypt(token, env.SECRET_KEY)), env.DB.prepare(put).bind('sr_token_exp', String(Date.now() + 9 * 86_400_000))])
+  return token
+}
+
+/** Adds a seller's pickup address to the platform account. Location names are unique there. */
+export async function srAddPickup(env: Bindings, token: string, p: { location: string; name: string; phone: string; address: string; address2: string; city: string; state: string; pin: string }) {
+  await call(env, token, 'POST', '/settings/company/addpickup', {
+    pickup_location: p.location, name: p.name, email: `pickup+${p.location.toLowerCase().replace(/[^a-z0-9]/g, '')}@nukkadsale.in`, phone: p.phone,
+    address: p.address, address_2: p.address2, city: p.city, state: p.state, country: 'India', pin_code: p.pin,
+  })
+}
+
+/** Secret part of the platform account's webhook URL (/webhooks/shiprocket/<this>). */
+export const platformHook = async (env: Bindings) => (await sha256('sr-platform-hook' + env.SECRET_KEY)).slice(0, 24)
+
 export async function srToken(env: Bindings, s: SrSeller): Promise<string> {
+  if (onShared(s)) return platformToken(env)
   if (!s.sr_email || !s.sr_password_enc) throw new ShiprocketError('Shiprocket is not connected.')
   if (s.sr_token_enc && (s.sr_token_exp ?? 0) > Date.now()) return decrypt(s.sr_token_enc, env.SECRET_KEY)
   const token = await srLogin(env, s.sr_email, await decrypt(s.sr_password_enc, env.SECRET_KEY))
@@ -136,16 +165,21 @@ export async function applyTracking(env: Bindings, shipmentRow: { id: string; or
 
 export type ShipmentRow = {
   id: string; seller_id: string; order_key: string; sr_order_id: string | null; shipment_id: string | null; awb: string | null; courier: string
-  status: ShipStatus; status_text: string; label_url: string | null; pickup_date: string | null; etd: string | null; charge_paise: number; cod_paise: number
+  status: ShipStatus; status_text: string; label_url: string | null; pickup_date: string | null; etd: string | null; charge_paise: number; cod_paise: number; prepaid_paise: number
   weight_g: number; scans: string; checked_at: number; created_at: number; updated_at: number
 }
 export const ACTIVE_SHIP = `status NOT IN ('cancelled')`
 
 /** Webhook from Shiprocket (URL carries the seller's secret): {awb, current_status, scans[], etd}. */
 export async function shiprocketWebhook(env: Bindings, hook: string, body: any) {
+  if (!body?.awb) return false
   const seller = await env.DB.prepare(`SELECT id FROM sellers WHERE sr_hook = ?`).bind(hook).first<{ id: string }>()
-  if (!seller || !body?.awb) return false
-  const sh = await env.DB.prepare(`SELECT * FROM shipments WHERE awb = ? AND seller_id = ?`).bind(String(body.awb), seller.id).first<ShipmentRow>()
+  // The platform account (NukkadSale Shipping) has one webhook for every seller on it: find the parcel by AWB.
+  const sh = seller
+    ? await env.DB.prepare(`SELECT * FROM shipments WHERE awb = ? AND seller_id = ?`).bind(String(body.awb), seller.id).first<ShipmentRow>()
+    : hook === (await platformHook(env))
+      ? await env.DB.prepare(`SELECT sh.* FROM shipments sh JOIN sellers s ON s.id = sh.seller_id WHERE sh.awb = ? AND s.sr_email = ?`).bind(String(body.awb), NK_SHIP).first<ShipmentRow>()
+      : null
   if (!sh) return false
   const raw = String(body.current_status ?? body.shipment_status ?? '')
   const scans: Scan[] = Array.isArray(body.scans) ? body.scans.map((x: any) => ({ at: String(x.date ?? ''), text: String(x.activity ?? x['sr-status-label'] ?? ''), place: String(x.location ?? '') })).reverse() : []

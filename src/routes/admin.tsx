@@ -15,6 +15,8 @@ import { isValidVpa } from '../lib/upi'
 import { checkKeys, isTestKey } from '../lib/razorpay'
 import { here } from './public'
 import { LANDING_SECTIONS } from '../lib/analytics'
+import { NK_SHIP, platformHook, sharedShipping } from '../lib/shiprocket'
+import { changeBalance, confirmTopup, rejectTopup, type LedgerRow } from '../lib/ship-balance'
 import { asPlan, PLAN_IDS, PLANS, uniqueFee, upgradeUndone } from '../lib/plans'
 
 /*
@@ -168,7 +170,7 @@ table.data a.rowlink{color:var(--ink);font-weight:600;text-decoration:none}
 `
 
 function page(c: Context<AppEnv>, on: string, title: string, body: Child) {
-  const tabs: [string, string, IconName][] = [['/admin', 'Dashboard', 'home'], ['/admin/leads', 'Requests', 'edit'], ['/admin/sellers', 'Sellers', 'users'], ['/admin/analytics', 'Analytics', 'search'], ['/admin/billing', 'Billing', 'receipt'], ['/admin/privacy', 'Privacy', 'lock'], ['/admin/settings', 'Settings', 'gear']]
+  const tabs: [string, string, IconName][] = [['/admin', 'Dashboard', 'home'], ['/admin/leads', 'Requests', 'edit'], ['/admin/sellers', 'Sellers', 'users'], ['/admin/analytics', 'Analytics', 'search'], ['/admin/billing', 'Billing', 'receipt'], ['/admin/shipping', 'Shipping', 'box'], ['/admin/privacy', 'Privacy', 'lock'], ['/admin/settings', 'Settings', 'gear']]
   const ok = c.req.query('ok')
   return c.html('<!doctype html>' + (
     <html lang="en">
@@ -279,6 +281,7 @@ admin.get('/', async (c) => {
               (SELECT COUNT(*) FROM (SELECT s.plan, (SELECT COUNT(DISTINCT COALESCE(o.cart_id, o.id)) FROM orders o WHERE o.seller_id = s.id AND ((o.status = 'paid' AND o.paid_at >= ?3) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.created_at >= ?3))) AS u
                  FROM sellers s WHERE s.plan IN ('free', 'dukaan') AND s.account_status = 'active') WHERE (plan = 'free' AND u >= ${PLANS.free.limit}) OR (plan = 'dukaan' AND u >= ${PLANS.dukaan.limit})) AS at_limit,
               (SELECT COUNT(*) FROM invoices WHERE status = 'claimed') AS claimed,
+              (SELECT COUNT(*) FROM ship_ledger WHERE kind = 'topup' AND status = 'claimed') AS topups,
               (SELECT COUNT(*) FROM sellers WHERE gateway_request = 1) AS gw_requests,
               (SELECT COUNT(*) FROM leads WHERE status = 'new') AS new_leads,
               (SELECT COUNT(*) FROM sellers WHERE plan_fee_paise > 0) AS fee_sellers,
@@ -323,6 +326,7 @@ admin.get('/', async (c) => {
     (x.at_limit ?? 0) > 0 && <Todo href="/admin/sellers" kind="warn" icon="pause" title={`${x.at_limit} shop(s) reached their plan's order limit`} sub="Their shop has stopped taking orders until they upgrade – a good time to call them" />,
     (x.new_leads ?? 0) > 0 && <Todo href="/admin/leads" kind="info" icon="edit" title={`${x.new_leads} new request(s) to get started`} sub="Call or WhatsApp them, then create their shop" />,
     (x.claimed ?? 0) > 0 && <Todo href="/admin/billing?f=claimed" kind="info" icon="search" title={`${x.claimed} seller(s) say they paid`} sub="Check your UPI app, then mark paid or not received" />,
+    (x.topups ?? 0) > 0 && <Todo href="/admin/shipping" kind="info" icon="box" title={`${x.topups} shipping top-up(s) to check`} sub="Check your UPI app, then add it to their shipping balance" />,
     (x.gw_requests ?? 0) > 0 && <Todo href="/admin/sellers?f=gw" kind="warn" icon="key" title={`${x.gw_requests} seller(s) want automatic payments`} sub="Send the Razorpay guide, then add their keys" />,
     (x.overdue ?? 0) > 0 && <Todo href="/admin/billing?f=overdue" kind="bad" icon="pause" title={`${x.overdue} shop(s) paused for unpaid fees`} sub="Send a reminder with the pay link" />,
   ].filter(Boolean)
@@ -1113,6 +1117,73 @@ admin.get('/billing', async (c) => {
       {results.map((inv) => <InvoiceCard inv={inv} seller={inv} origin={origin} />)}
     </>
   ))
+})
+
+// ---------- NukkadSale Shipping: top-ups and balances ----------
+
+admin.get('/shipping', async (c) => {
+  const db = c.env.DB
+  const [{ results: claims }, { results: shops }, hook] = await Promise.all([
+    db.prepare(`SELECT l.*, s.shop_name, s.phone FROM ship_ledger l JOIN sellers s ON s.id = l.seller_id WHERE l.kind = 'topup' AND l.status = 'claimed' ORDER BY l.created_at`)
+      .all<LedgerRow & { shop_name: string; phone: string }>(),
+    db.prepare(`SELECT s.id, s.shop_name, s.phone, s.ship_balance_paise, s.sr_pickup_pin,
+                  (SELECT COUNT(*) FROM shipments sh WHERE sh.seller_id = s.id AND sh.prepaid_paise > 0) AS parcels
+                FROM sellers s WHERE s.sr_email = ? OR s.ship_balance_paise <> 0 ORDER BY s.ship_balance_paise DESC`).bind(NK_SHIP)
+      .all<{ id: string; shop_name: string; phone: string; ship_balance_paise: number; sr_pickup_pin: string | null; parcels: number }>(),
+    platformHook(c.env),
+  ])
+  const total = shops.reduce((n, x) => n + x.ship_balance_paise, 0)
+  return page(c, '/admin/shipping', 'Shipping', (
+    <>
+      <h1>NukkadSale Shipping</h1>
+      {!sharedShipping(c.env) && <div class="alert bad">Not switched on: add your Shiprocket API user as the Worker secrets SHIPROCKET_EMAIL and SHIPROCKET_PASSWORD.</div>}
+      <div class="card stack">
+        <small>Sellers ship through your Shiprocket account and pay from a prepaid balance. Keep your Shiprocket wallet above the total of their balances: <b>{rupees(total)}</b>.</small>
+        <small>In Shiprocket → Settings → Webhooks, add this URL so parcels update by themselves:</small>
+        <input readonly value={`${new URL(c.req.url).origin}/webhooks/shiprocket/${hook}`} aria-label="Webhook URL" />
+      </div>
+      <h2>Top-ups to check ({claims.length})</h2>
+      {claims.length === 0 && <p class="muted">Nothing to check.</p>}
+      {claims.map((l) => (
+        <div class="card row between" style="gap:12px;flex-wrap:wrap">
+          <span><b>{l.shop_name}</b><small style="display:block">{displayPhone(l.phone)} · says paid {seen(l.created_at)}</small></span>
+          <b style="font-size:1.2rem">{rupees(l.amount_paise)}</b>
+          <span class="row" style="gap:8px">
+            <form method="post" action={`/admin/shipping/topups/${l.id}/ok`}><button class="btn ok sm" type="submit">Received – add it</button></form>
+            <form method="post" action={`/admin/shipping/topups/${l.id}/no`}><button class="btn ghost sm" type="submit" data-confirm="Mark as not received?">Not received</button></form>
+          </span>
+        </div>
+      ))}
+      <h2>Balances</h2>
+      {shops.length === 0 && <p class="muted">No seller uses NukkadSale Shipping yet.</p>}
+      {shops.map((x) => (
+        <div class="card stack">
+          <div class="row between"><span><b>{x.shop_name}</b><small style="display:block">{displayPhone(x.phone)} · pickup {x.sr_pickup_pin ?? '–'} · {x.parcels} parcel(s)</small></span>
+            <b style={x.ship_balance_paise < 0 ? 'color:var(--bad)' : ''}>{rupees(x.ship_balance_paise)}</b></div>
+          <details><summary>Correct the balance</summary>
+            <form method="post" action={`/admin/shipping/${x.id}/adjust`} class="stack" style="margin-top:8px">
+              <small>Positive adds, negative takes away – e.g. −120 for a return-to-origin charge Shiprocket took from your wallet.</small>
+              <div class="duo"><div><label>Amount (₹)</label><input name="amount" inputmode="decimal" required placeholder="-120" /></div>
+                <div><label>Reason (the seller sees it)</label><input name="note" required maxlength={60} placeholder="Return charge #AB12" /></div></div>
+              <button class="btn sm" type="submit">Save</button>
+            </form>
+          </details>
+        </div>
+      ))}
+    </>
+  ))
+})
+
+admin.post('/shipping/topups/:id/ok', async (c) => backTo(c, (await confirmTopup(c.env, Number(c.req.param('id')))) ? 'Added to their shipping balance.' : 'Already handled.'))
+admin.post('/shipping/topups/:id/no', async (c) => { await rejectTopup(c.env, Number(c.req.param('id'))); return backTo(c, 'Marked not received.') })
+admin.post('/shipping/:id/adjust', async (c) => {
+  const f = await c.req.parseBody()
+  const amt = Math.round(Number(String(f.amount ?? '').replace(/[₹,\s]/g, '')) * 100)
+  const note = String(f.note ?? '').trim().slice(0, 60)
+  if (!amt || !Number.isFinite(amt) || !note) return backTo(c, 'Enter an amount and a reason.')
+  const seller = await c.env.DB.prepare(`SELECT 1 FROM sellers WHERE id = ?`).bind(c.req.param('id')).first()
+  if (seller) await changeBalance(c.env, c.req.param('id'), amt, 'adjust', null, note)
+  return backTo(c, 'Balance updated.')
 })
 
 // ---------- Platform settings ----------

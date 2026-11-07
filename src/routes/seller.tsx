@@ -5,7 +5,7 @@ import type { Child, FC } from 'hono/jsx'
 import type { AppEnv, Drop, Offer, Order, PayMode, Seller, ShipStatus, Variant } from '../env'
 import { pctOff } from '../lib/offers'
 import { TOOLS, toolOn, type Tool } from '../lib/tools'
-import { ACTIVE_SHIP, applyTracking, mapStatus, srBook, srCancel, srLabel, srLogin, srNdr, srPickup, srPickups, srPincode, srRates, srToken, srTrack, ShiprocketError, type ShipmentRow } from '../lib/shiprocket'
+import { ACTIVE_SHIP, applyTracking, mapStatus, NK_SHIP, onShared, platformToken, sharedShipping, srAddPickup, srBook, srCancel, srLabel, srLogin, srNdr, srPickup, srPickups, srPincode, srRates, srToken, srTrack, ShiprocketError, type ShipmentRow } from '../lib/shiprocket'
 import { dictFor, tr, type Dict } from '../i18n'
 import { allowedEndpoint, pushEnabled, pushToSeller } from '../lib/push'
 import { requireSeller } from '../lib/auth'
@@ -15,6 +15,7 @@ import { setPin } from '../lib/sellers'
 import { notifyOwner } from '../lib/mail'
 import { billingState, confirmInvoice, ensureInvoices, getSettings, onlineFeePayments, parseModes, startInvoicePayment, type Invoice } from '../lib/billing'
 import { notifyBuyer } from '../lib/notify'
+import { changeBalance, takeFromBalance, type LedgerRow } from '../lib/ship-balance'
 import { asPlan, higherPlans, planUsage, PLANS, requestUpgrade, upgradePaid, type PlanId, type Usage } from '../lib/plans'
 import { upiAppLinks, upiLink } from '../lib/upi'
 import { cancelCod, confirmAdvance, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
@@ -998,8 +999,8 @@ app.post('/cartoffer', async (c) => {
 
 // ---------- Shiprocket (optional): connect, check rates, book, label, pickup, track, failed delivery, returns ----------
 
-type SrRow = { sr_email: string | null; sr_password_enc: string | null; sr_token_enc: string | null; sr_token_exp: number; sr_pickup: string | null; sr_pickup_pin: string | null; sr_box: string; sr_hook: string | null }
-const srRow = (c: Context<AppEnv>) => c.env.DB.prepare(`SELECT id, sr_email, sr_password_enc, sr_token_enc, sr_token_exp, sr_pickup, sr_pickup_pin, sr_box, sr_hook FROM sellers WHERE id = ?`).bind(c.get('seller').id).first<SrRow & { id: string }>()
+type SrRow = { sr_email: string | null; sr_password_enc: string | null; sr_token_enc: string | null; sr_token_exp: number; sr_pickup: string | null; sr_pickup_pin: string | null; ship_balance_paise: number; sr_box: string; sr_hook: string | null }
+const srRow = (c: Context<AppEnv>) => c.env.DB.prepare(`SELECT id, sr_email, sr_password_enc, sr_token_enc, sr_token_exp, sr_pickup, sr_pickup_pin, ship_balance_paise, sr_box, sr_hook FROM sellers WHERE id = ?`).bind(c.get('seller').id).first<SrRow & { id: string }>()
 const box = (b: string) => { const [l, w, h] = (b || '25x20x5').split('x').map((x) => Math.max(1, Math.min(200, Number(x) || 1))); return { l, b: w, h } }
 const srFail = (c: Context<AppEnv>, to: string, e: unknown) => c.redirect(`${to}${to.includes('?') ? '&' : '?'}err=${encodeURIComponent(tr(c).shipErr(e instanceof Error ? e.message : String(e)))}`, 303)
 
@@ -1007,25 +1008,98 @@ app.get('/ship', async (c) => {
   const t = tr(c)
   const r = (await srRow(c))!
   let pickups: { name: string; pin: string; address: string }[] = [], err = ''
-  if (r.sr_email) { try { pickups = await srPickups(c.env, await srToken(c.env, r)) } catch (e) { err = t.shipErr((e as Error).message) } }
+  const shared = onShared(r)
+  if (r.sr_email && !shared) { try { pickups = await srPickups(c.env, await srToken(c.env, r)) } catch (e) { err = t.shipErr((e as Error).message) } }
   // Rate checker: ?pin=&g=&cod= – courier prices before any booking.
   const pin = (c.req.query('pin') ?? '').replace(/\D/g, ''), g = Math.max(50, Math.min(30000, Number(c.req.query('g')) || 500)), cod = c.req.query('cod') === '1'
   let rates: Awaited<ReturnType<typeof srRates>> | null = null
   if (r.sr_email && r.sr_pickup_pin && /^[1-9]\d{5}$/.test(pin)) { try { rates = await srRates(c.env, await srToken(c.env, r), r.sr_pickup_pin, pin, g / 1000, cod) } catch (e) { err = t.shipErr((e as Error).message) } }
   const origin = new URL(c.req.url).origin
+  const canShare = sharedShipping(c.env)
+  const ledger = shared ? (await c.env.DB.prepare(`SELECT * FROM ship_ledger WHERE seller_id = ? AND status <> 'new' ORDER BY created_at DESC LIMIT 15`).bind(r.id).all<LedgerRow>()).results : []
+  const OwnForm = () => (
+    <form method="post" action="/app/ship/connect" class="card stack">
+      <div><label for="sre">{t.shipEmail}</label><input id="sre" name="email" type="email" required autocomplete="off" /></div>
+      <div><label for="srp">{t.shipPass}</label><input id="srp" name="password" type="password" required autocomplete="new-password" /></div>
+      <button class="btn primary block" type="submit">{t.shipConnect}</button>
+      <details><summary>{t.shipHow}</summary><ol style="margin:6px 0 0;padding-left:20px">{t.shipHowSteps.map((x) => <li>{x}</li>)}</ol></details>
+    </form>
+  )
+  const AddrForm = (p: { action: string; button: string }) => (
+    <form method="post" action={p.action} class="card stack">
+      <div><b>{t.nkPickupTitle}</b><small style="display:block">{t.nkPickupHint}</small></div>
+      <div><label for="nka">{t.nkAddr1}</label><input id="nka" name="address" required minlength={10} maxlength={80} /></div>
+      <div><label for="nkb">{t.nkAddr2}</label><input id="nkb" name="address2" maxlength={80} /></div>
+      <div class="duo">
+        <div><label for="nkp">{t.pincode}</label><input id="nkp" name="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength={6} required /></div>
+        <div><label for="nkc">{t.shipCity}</label><input id="nkc" name="city" maxlength={40} /></div>
+      </div>
+      <div><label for="nks">{t.shipState}</label><input id="nks" name="state" maxlength={40} /></div>
+      <div><label for="nkph">{t.nkPickupPhone}</label><PhoneInput id="nkph" name="phone" value={displayPhone(c.get('seller').phone).replace(/\D/g, '').slice(-10)} /></div>
+      <button class="btn primary block" type="submit">{p.button}</button>
+    </form>
+  )
   return page(c, 'settings', t.shipTitle, (
     <>
       <a class="back" href="/app/settings">← {t.settingsTitle}</a>
       <h1>{t.shipTitle}</h1>
-      <p class="hint">{t.srHint}</p>
+      <p class="hint">{shared ? t.nkPitch : t.srHint}</p>
       <Flash msg={c.req.query('err') || err} />
-      {!r.sr_email ? (
-        <form method="post" action="/app/ship/connect" class="card stack">
-          <div><label for="sre">{t.shipEmail}</label><input id="sre" name="email" type="email" required autocomplete="off" /></div>
-          <div><label for="srp">{t.shipPass}</label><input id="srp" name="password" type="password" required autocomplete="new-password" /></div>
-          <button class="btn primary block" type="submit">{t.shipConnect}</button>
-          <details><summary>{t.shipHow}</summary><ol style="margin:6px 0 0;padding-left:20px">{t.shipHowSteps.map((x) => <li>{x}</li>)}</ol></details>
-        </form>
+      {!r.sr_email && canShare ? (
+        <>
+          <div class="card stack" style="border:2px solid var(--brand)">
+            <b style="font-size:1.1rem">{t.nkTitle}</b>
+            <small>{t.nkPitch}</small>
+            <small class="muted">{t.nkPrepaidOnly}</small>
+          </div>
+          <AddrForm action="/app/ship/nukkad" button={t.nkStart} />
+          <details class="card"><summary><b>{t.nkOwnTitle}</b></summary><div style="margin-top:10px"><OwnForm /></div></details>
+        </>
+      ) : shared ? (
+        <>
+          <div class="card row between"><span class="row" style="gap:8px"><Icon n="check" s={18} />{t.shipConnected(NK_SHIP)}</span>
+            <form method="post" action="/app/ship/disconnect"><button class="btn sm ghost" type="submit" data-confirm={t.shipDisconnect + '?'}>{t.shipDisconnect}</button></form></div>
+          <div class="card stack" id="balance">
+            <small>{t.nkBalance}</small>
+            <b style={`font-size:1.8rem;${r.ship_balance_paise < 10000 ? 'color:var(--bad)' : ''}`}>{rupees(r.ship_balance_paise)}</b>
+            <form method="post" action="/app/ship/topup" class="row" style="gap:8px;flex-wrap:wrap">
+              {[500, 1000, 2000].map((n) => <button class="btn" name="amount" value={String(n)} type="submit">+ ₹{n.toLocaleString('en-IN')}</button>)}
+            </form>
+            <small class="muted">{t.nkExtra}</small>
+          </div>
+          <div class="card stack">
+            <small>{t.nkPickupTitle}</small><b>{r.sr_pickup}</b><small class="muted">{t.pincode} {r.sr_pickup_pin}</small>
+            <details><summary>{t.nkChangeAddr}</summary><div style="margin-top:10px"><AddrForm action="/app/ship/nukkad" button={t.shipSave} /></div></details>
+          </div>
+          <form method="post" action="/app/ship/settings" class="card stack">
+            <div><label for="bx">{t.shipBoxLabel}</label><input id="bx" name="box" value={r.sr_box} pattern="\d{1,3}x\d{1,3}x\d{1,3}" placeholder="25x20x5" style="max-width:200px" /></div>
+            <button class="btn block" type="submit">{t.shipSave}</button>
+          </form>
+          {ledger.length > 0 && (
+            <>
+              <h2>{t.nkHistory}</h2>
+              <div class="card" style="padding:4px 16px">
+                {ledger.map((l, i) => (
+                  <div class="row between" style={`padding:10px 0;${i ? 'border-top:1px solid var(--line)' : ''}`}>
+                    <span><b style="display:block">{t.nkKind[l.kind]}{l.status !== 'done' ? ` · ${t.nkTopupState[l.status as 'claimed' | 'rejected'] ?? l.status}` : ''}</b><small>{fmtDate(l.created_at)}{l.note ? ` · ${l.note}` : ''}</small></span>
+                    <b style={l.status !== 'done' ? 'opacity:.5' : l.amount_paise < 0 ? '' : 'color:var(--ok)'}>{l.amount_paise < 0 ? '−' : '+'}{rupees(Math.abs(l.amount_paise))}</b>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <h2 id="rates">{t.shipCourier}</h2>
+          <form method="get" action="/app/ship#rates" class="card stack">
+            <div class="duo">
+              <div><label for="rpin">{t.pincode}</label><input id="rpin" name="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength={6} required value={pin} /></div>
+              <div><label for="rg">{t.shipWeight}</label><input id="rg" name="g" inputmode="numeric" value={String(g)} /></div>
+            </div>
+            <button class="btn block" type="submit">{t.shipCheck}</button>
+          </form>
+          {rates && <CourierList t={t} rates={rates} />}
+        </>
+      ) : !r.sr_email ? (
+        <OwnForm />
       ) : (
         <>
           <div class="card row between"><span class="row" style="gap:8px"><Icon n="check" s={18} />{t.shipConnected(r.sr_email)}</span>
@@ -1080,6 +1154,7 @@ app.post('/ship/connect', async (c) => {
   const t = tr(c)
   const f = await c.req.parseBody()
   const email = String(f.email ?? '').trim(), password = String(f.password ?? '')
+  if (email === NK_SHIP) return c.redirect(`/app/ship?err=${encodeURIComponent(t.shipBadLogin)}`, 303)
   try {
     const token = await srLogin(c.env, email, password)
     const pickups = await srPickups(c.env, token).catch(() => [])
@@ -1107,6 +1182,84 @@ app.post('/ship/disconnect', async (c) => {
   return c.redirect(`/app/settings?ok=${encodeURIComponent(tr(c).shipDisconnected)}`, 303)
 })
 
+// ---------- NukkadSale Shipping: the platform's Shiprocket account, paid from a prepaid balance ----------
+
+// Join (or change the pickup address): the address is added to the platform account under a name for this shop.
+app.post('/ship/nukkad', async (c) => {
+  const t = tr(c)
+  if (!sharedShipping(c.env)) return c.redirect('/app/ship', 303)
+  const s = c.get('seller')
+  const f = await c.req.parseBody()
+  const v = (k: string, n = 80) => String(f[k] ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
+  const address = v('address'), address2 = v('address2'), pin = v('pin').replace(/\D/g, ''), phone = (normalizePhone(v('phone')) ?? s.phone).slice(-10)
+  if (address.length < 10 || !/^[1-9]\d{5}$/.test(pin)) return c.redirect(`/app/ship?err=${encodeURIComponent(t.nkBadAddr)}`, 303)
+  try {
+    const token = await platformToken(c.env)
+    const place = await srPincode(c.env, token, pin)
+    const city = v('city', 40) || place.city, state = v('state', 40) || place.state
+    if (!city || !state) return c.redirect(`/app/ship?err=${encodeURIComponent(t.nkBadAddr)}`, 303)
+    // Unique on the platform account; a new name each time so an old address isn't overwritten under a live parcel.
+    const location = `NS-${s.id.slice(0, 8)}-${Date.now().toString(36)}`.slice(0, 36)
+    await srAddPickup(c.env, token, { location, name: s.shop_name.slice(0, 40), phone, address, address2, city, state, pin })
+    await c.env.DB.prepare(`UPDATE sellers SET sr_email = ?, sr_password_enc = NULL, sr_token_enc = NULL, sr_token_exp = 0, sr_pickup = ?, sr_pickup_pin = ? WHERE id = ?`)
+      .bind(NK_SHIP, location, pin, s.id).run()
+    return c.redirect(`/app/ship?ok=${encodeURIComponent(t.nkAddrSaved)}`, 303)
+  } catch (e) { return srFail(c, '/app/ship', e) }
+})
+
+// Add money: a top-up row with an exact amount (a few paise under, so the admin can tell who paid), then the pay page.
+app.post('/ship/topup', async (c) => {
+  const rupeesIn = Math.round(Number((await c.req.parseBody()).amount))
+  if (![500, 1000, 2000].includes(rupeesIn)) return c.redirect('/app/ship#balance', 303)
+  const paise = rupeesIn * 100 - (1 + (crypto.getRandomValues(new Uint8Array(1))[0] % 98))
+  const r = await c.env.DB.prepare(`INSERT INTO ship_ledger (seller_id, kind, amount_paise, status, created_at) VALUES (?, 'topup', ?, 'new', ?) RETURNING id`)
+    .bind(c.get('seller').id, paise, Date.now()).first<{ id: number }>()
+  return c.redirect(`/app/ship/topup/${r!.id}`, 303)
+})
+
+app.get('/ship/topup/:id', async (c) => {
+  const t = tr(c)
+  const s = c.get('seller')
+  const row = await c.env.DB.prepare(`SELECT * FROM ship_ledger WHERE id = ? AND seller_id = ? AND kind = 'topup'`).bind(Number(c.req.param('id')), s.id).first<LedgerRow>()
+  if (!row) return c.notFound()
+  const settings = await getSettings(c.env)
+  const note = `NukkadSale shipping ${s.shop_name}`
+  return page(c, 'settings', t.nkTopupTitle, (
+    <>
+      <a class="back" href="/app/ship#balance">← {t.shipTitle}</a>
+      <h1>{t.nkTopupTitle}</h1>
+      <div class="card stack">
+        {row.status === 'new' && settings.upi_vpa ? (
+          <>
+            <b style="font-size:1.2rem">{t.nkTopupPay(rupees(row.amount_paise))}</b>
+            <div>{t.payUpiTo} <b>{settings.upi_vpa}</b></div>
+            <div data-os="android"><a class="btn primary block big" href={upiLink(settings.upi_vpa, settings.payee_name, row.amount_paise, note)}>{t.payWithApp(rupees(row.amount_paise))}</a></div>
+            <div data-os="ios" hidden><div class="appgrid">{upiAppLinks(settings.upi_vpa, settings.payee_name, row.amount_paise, note).map((a) => <a class="btn" href={a.href}>{a.name}</a>)}</div></div>
+            <form method="post" action={`/app/ship/topup/${row.id}/paid`}>
+              <button class="btn ok block" type="submit">{t.iPaid}</button>
+              <small style="display:block;text-align:center;margin-top:6px">{t.nkTopupExact}</small>
+            </form>
+          </>
+        ) : row.status === 'new' ? (
+          <div class="alert info" style="margin:0">{t.nkTopupNoUpi}</div>
+        ) : row.status === 'claimed' ? (
+          <div class="alert info" style="margin:0">{t.nkTopupClaimed}</div>
+        ) : row.status === 'done' ? (
+          <div class="alert ok" style="margin:0">{t.nkTopupDone(rupees(row.amount_paise))}</div>
+        ) : <div class="alert bad" style="margin:0">{t.nkTopupState.rejected}</div>}
+      </div>
+    </>
+  ))
+})
+
+app.post('/ship/topup/:id/paid', async (c) => {
+  const s = c.get('seller')
+  const r = await c.env.DB.prepare(`UPDATE ship_ledger SET status = 'claimed', created_at = ? WHERE id = ? AND seller_id = ? AND kind = 'topup' AND status = 'new'`)
+    .bind(Date.now(), Number(c.req.param('id')), s.id).run()
+  if (r.meta.changes) c.executionCtx.waitUntil(notifyOwner(c.env, `Shipping top-up: ${s.shop_name}`, `${s.shop_name} says they paid for a shipping top-up. Check your UPI app, then confirm it in Admin → Shipping.`).catch(() => {}))
+  return c.redirect(`/app/ship/topup/${c.req.param('id')}`, 303)
+})
+
 // The parcel for one order/cart: everything in it, its weight and the COD cash.
 async function parcelFor(c: Context<AppEnv>, key: string) {
   const { results: lines } = await c.env.DB.prepare(
@@ -1127,6 +1280,8 @@ app.get('/ship/book/:key', async (c) => {
   if (!r.sr_email) return c.redirect('/app/ship', 303)
   const p = await parcelFor(c, key)
   if (!p) return c.notFound()
+  const shared = onShared(r)
+  if (shared && p.cod) return c.redirect(`/app/orders?tab=send&err=${encodeURIComponent(t.nkNoCod)}`, 303)
   const dupe = await c.env.DB.prepare(`SELECT id FROM shipments WHERE order_key = ? AND ${OPEN_SHIP}`).bind(key).first()
   if (dupe) return c.redirect('/app/orders?tab=send', 303)
   const pin = (c.req.query('pin') ?? p.pin).replace(/\D/g, '')
@@ -1143,6 +1298,7 @@ app.get('/ship/book/:key', async (c) => {
       <a class="back" href="/app/orders?tab=send">← {t.ordersPageTitle}</a>
       <h1>{t.shipBookTitle}</h1>
       <Flash msg={c.req.query('err') || err} />
+      {shared && <div class={`alert ${r.ship_balance_paise < (rates?.list[0]?.rate ?? 1) ? 'bad' : 'info'}`}>{t.nkBalance}: <b>{rupees(r.ship_balance_paise)}</b> · <a href="/app/ship#balance">{t.nkAddMoney}</a></div>}
       <div class="card">
         <small>{t.shipTo}</small>
         <b style="display:block">{p.o.buyer_name}</b>
@@ -1181,6 +1337,8 @@ app.post('/ship/book/:key', async (c) => {
   const p = await parcelFor(c, key)
   if (!r.sr_email || !p) return c.redirect('/app/orders?tab=send', 303)
   if (await c.env.DB.prepare(`SELECT 1 FROM shipments WHERE order_key = ? AND ${OPEN_SHIP}`).bind(key).first()) return c.redirect('/app/orders?tab=send', 303)
+  const shared = onShared(r)
+  if (shared && p.cod) return c.redirect(`/app/orders?tab=send&err=${encodeURIComponent(t.nkNoCod)}`, 303)
   const f = await c.req.parseBody()
   const pin = String(f.pin ?? '').replace(/\D/g, ''), grams = Math.max(50, Math.min(30000, Number(f.g) || p.grams)), b = box(String(f.box ?? r.sr_box))
   const courierId = Number(f.courier)
@@ -1188,8 +1346,18 @@ app.post('/ship/book/:key', async (c) => {
   if (!courierId || !/^[1-9]\d{5}$/.test(pin)) return c.redirect(back, 303)
   const id = `${shortNo(key)}-${randomId(4)}`.toLowerCase()
   const date = new Date(Date.now() + 19_800_000).toISOString().slice(0, 16).replace('T', ' ')
+  // NukkadSale Shipping: take the courier's price from the balance first (price checked again here, not taken from the form).
+  let held = 0
   try {
     const token = await srToken(c.env, r)
+    if (shared) {
+      const quote = (await srRates(c.env, token, r.sr_pickup_pin!, pin, grams / 1000, false)).list.find((x) => x.id === courierId)
+      if (!quote) return c.redirect(`${back}&err=${encodeURIComponent(t.shipNoCourier)}`, 303)
+      if (!(await takeFromBalance(c.env, c.get('seller').id, quote.rate, id, `#${shortNo(key)} ${quote.name}`))) {
+        return c.redirect(`${back}&err=${encodeURIComponent(t.nkNotEnough(rupees(quote.rate), rupees(r.ship_balance_paise)))}`, 303)
+      }
+      held = quote.rate
+    }
     const res = await srBook(c.env, token, {
       id, date, pickup: r.sr_pickup!, name: p.o.buyer_name, phone: p.o.buyer_phone.slice(-10), address: p.o.address.replace(/\s+/g, ' ').slice(0, 190),
       city: String(f.city ?? '').trim(), state: String(f.state ?? '').trim(), pincode: pin,
@@ -1197,15 +1365,21 @@ app.post('/ship/book/:key', async (c) => {
       cod: p.cod, subTotal: p.total, codAmount: p.cod ? p.total : 0, l: b.l, b: b.b, h: b.h, weightKg: grams / 1000, courierId,
     })
     const now = Date.now()
+    // Shiprocket's actual charge differs from the quote: settle the difference.
+    let prepaid = held
+    if (held && res.charge > 0 && res.charge !== held) { await changeBalance(c.env, c.get('seller').id, held - res.charge, held > res.charge ? 'refund' : 'charge', id, `#${shortNo(key)} final courier price`); prepaid = res.charge }
     await c.env.DB.batch([
-      c.env.DB.prepare(`INSERT INTO shipments (id, seller_id, order_key, sr_order_id, shipment_id, awb, courier, status, label_url, pickup_date, charge_paise, cod_paise, weight_g, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(id, c.get('seller').id, key, res.srOrderId, res.shipmentId, res.awb, res.courier, res.pickupDate ? 'pickup' : 'booked', res.label, res.pickupDate, res.charge, p.cod ? p.total : 0, grams, now, now),
+      c.env.DB.prepare(`INSERT INTO shipments (id, seller_id, order_key, sr_order_id, shipment_id, awb, courier, status, label_url, pickup_date, charge_paise, cod_paise, weight_g, prepaid_paise, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(id, c.get('seller').id, key, res.srOrderId, res.shipmentId, res.awb, res.courier, res.pickupDate ? 'pickup' : 'booked', res.label, res.pickupDate, res.charge || held, p.cod ? p.total : 0, grams, prepaid, now, now),
       // Booked = packed and waiting for pickup.
       c.env.DB.prepare(`UPDATE orders SET ship_status = 'packed' WHERE (id = ?1 OR cart_id = ?1) AND ship_status = 'new'`).bind(key),
     ])
     return c.redirect(`/app/orders?tab=send&ok=${encodeURIComponent(t.shipBooked)}`, 303)
-  } catch (e) { return srFail(c, back, e) }
+  } catch (e) {
+    if (held) await changeBalance(c.env, c.get('seller').id, held, 'refund', id, `#${shortNo(key)} booking failed`)
+    return srFail(c, back, e)
+  }
 })
 
 const ownShipment = (c: Context<AppEnv>) => c.env.DB.prepare(`SELECT * FROM shipments WHERE id = ? AND seller_id = ?`).bind(c.req.param('id'), c.get('seller').id).first<ShipmentRow>()
@@ -1239,6 +1413,9 @@ app.post('/ship/:id/cancel', async (c) => {
       c.env.DB.prepare(`UPDATE shipments SET status = 'cancelled', updated_at = ? WHERE id = ?`).bind(Date.now(), sh.id),
       c.env.DB.prepare(`UPDATE orders SET ship_status = 'new' WHERE (id = ?1 OR cart_id = ?1) AND ship_status = 'packed'`).bind(sh.order_key),
     ])
+    // Paid from the shipping balance: give it back (once).
+    const refund = await c.env.DB.prepare(`UPDATE shipments SET prepaid_paise = 0 WHERE id = ? AND prepaid_paise > 0 RETURNING ?2 AS amt`).bind(sh.id, sh.prepaid_paise).first<{ amt: number }>()
+    if (refund?.amt) await changeBalance(c.env, c.get('seller').id, refund.amt, 'refund', sh.id, `#${shortNo(sh.order_key)} cancelled`)
     return backWith(c, '/app/orders?tab=send', tr(c).shipCancelled)
   } catch (e) { return srFail(c, '/app/orders?tab=send', e) }
 })

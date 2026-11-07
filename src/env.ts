@@ -44,6 +44,9 @@ export type Bindings = {
   RAZORPAY_API_BASE?: string
   /** Shiprocket API base (tests point it at tests/e2e/mock_shiprocket.py). */
   SHIPROCKET_API_BASE?: string
+  /** NukkadSale Shipping: the platform's own Shiprocket API user. Sellers on it ship from a prepaid balance. */
+  SHIPROCKET_EMAIL?: string
+  SHIPROCKET_PASSWORD?: string
 }
 
 export type PayMode = 'direct' | 'razorpay'
@@ -58,6 +61,7 @@ export type Seller = {
   offer_off_paise?: number
   offer_pct?: number
   sr_email?: string | null
+  ship_balance_paise?: number
   sr_pickup?: string | null
   sr_pickup_pin?: string | null
   sr_box?: string

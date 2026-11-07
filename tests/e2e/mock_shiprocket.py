@@ -53,6 +53,11 @@ class H(BaseHTTPRequestHandler):
             if b.get('email') == 'seller@test.in' and b.get('password') == 'secret123': return self._json(200, {'token': TOKEN})
             return self._json(400, {'message': 'Invalid email and password combination', 'status_code': 400})
         if not self._auth(): return self._json(401, {'message': 'Token has expired', 'status_code': 401})
+        if p == '/settings/company/addpickup':
+            if len(b.get('address', '')) < 10 or not str(b.get('pin_code', '')).isdigit() or any(x['pickup_location'] == b.get('pickup_location') for x in PICKUPS):
+                return self._json(422, {'message': 'Invalid pickup address', 'status_code': 422})
+            PICKUPS.append({'pickup_location': b['pickup_location'], 'pin_code': int(b['pin_code']), 'address': b['address'], 'city': b.get('city', '')})
+            return self._json(200, {'success': True, 'address': b, 'pickup_id': len(PICKUPS)})
         if p == '/orders/create/adhoc':
             for k in ['order_id', 'billing_customer_name', 'billing_address', 'billing_city', 'billing_pincode', 'billing_state', 'billing_phone', 'order_items', 'payment_method', 'sub_total', 'weight', 'pickup_location']:
                 if b.get(k) in (None, '', []): return self._json(422, {'message': f'The {k} field is required.', 'status_code': 422})
