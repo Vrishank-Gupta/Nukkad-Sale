@@ -8,7 +8,7 @@ import { TOOLS, toolOn, type Tool } from '../lib/tools'
 import { ACTIVE_SHIP, applyTracking, mapStatus, NK_SHIP, onShared, platformToken, sharedShipping, srAddPickup, srBook, srCancel, srLabel, srLogin, srNdr, srPickup, srPickups, srPincode, srRates, srToken, srTrack, ShiprocketError, type ShipmentRow } from '../lib/shiprocket'
 import { dictFor, tr, type Dict } from '../i18n'
 import { allowedEndpoint, pushEnabled, pushToSeller } from '../lib/push'
-import { requireSeller } from '../lib/auth'
+import { requireSeller, startSession } from '../lib/auth'
 import { decrypt, encrypt, hashPin } from '../lib/crypto'
 import { checkKeys, isTestKey } from '../lib/razorpay'
 import { setPin } from '../lib/sellers'
@@ -1997,7 +1997,7 @@ app.get('/settings', async (c) => {
             </div>
             {u.vpa !== s.upi_vpa && (
               <>
-                <form method="post" action={`/app/upi/${u.id}/default`}><button class="btn sm" type="submit">{t.makeDefault}</button></form>
+                <form method="post" action={`/app/upi/${u.id}/default`} class="row" style="gap:6px"><input name="pin" type="password" inputmode="numeric" maxlength={6} required placeholder="PIN" aria-label={t.pinConfirm} style="width:76px;min-height:36px" /><button class="btn sm" type="submit">{t.makeDefault}</button></form>
                 <form method="post" action={`/app/upi/${u.id}/remove`}><button class="btn sm ghost" type="submit" aria-label={t.removeUpi} style="border:0;padding:0 8px">✕</button></form>
               </>
             )}
@@ -2009,6 +2009,7 @@ app.get('/settings', async (c) => {
         <form method="post" action="/app/upi/add" class="stack">
           <input name="vpa" placeholder="name@bank" autocapitalize="off" spellcheck={false} required aria-label={t.upiId} />
           <input name="label" placeholder={t.upiLabelPh} maxlength={40} />
+          <input name="pin" type="password" inputmode="numeric" maxlength={6} required placeholder={t.pinConfirm} aria-label={t.pinConfirm} />
           <button class="btn primary block" type="submit">{t.save}</button>
         </form>
       </details>
@@ -2057,6 +2058,7 @@ app.get('/settings', async (c) => {
               <small>{t.rzpWhere} <a href="/help/razorpay">{t.rzpGuide}</a></small>
               <input name="rzp_key" placeholder={t.rzpKeyId} value={s.rzp_key_id ?? ''} autocapitalize="off" spellcheck={false} aria-label={t.rzpKeyId} />
               <input name="rzp_secret" type="password" placeholder={`${t.rzpSecret} ${s.rzp_secret_enc ? t.rzpSaved : ''}`} autocomplete="off" aria-label={t.rzpSecret} />
+              <input name="pin" type="password" inputmode="numeric" maxlength={6} placeholder={t.pinConfirmKeys} aria-label={t.pinConfirmKeys} autocomplete="off" />
               <details>
                 <summary style="font-weight:600">{t.rzpHookTitle}</summary>
                 <div class="stack">
@@ -2212,6 +2214,7 @@ app.post('/pin', async (c) => {
   if (!/^\d{4,6}$/.test(pin)) return back('err', t.badPin)
   if (pin === current) return back('err', t.samePin)
   await setPin(c.env, s.id, pin, false)
+  await startSession(c, s.id) // this phone stays logged in; every other device is logged out
   return back('ok', t.pinChanged)
 })
 
@@ -2233,6 +2236,8 @@ app.post('/settings', async (c) => {
   // Razorpay needs only the keys: payments are confirmed by asking Razorpay; the webhook is optional.
   if (mode === 'razorpay' && !(key && secretEnc)) return fail(t.rzpMissing)
   if (key && isTestKey(key) && c.env.ALLOW_TEST_KEYS !== '1') return fail(t.rzpTestKey)
+  // New payment keys decide where the money goes: they need the PIN.
+  if ((secret || hook || (key || null) !== s.rzp_key_id || (mode === 'razorpay' && s.pay_mode !== 'razorpay')) && !(await pinConfirmed(c, f.pin))) return fail(t.wrongCurrentPin)
   // New or changed keys are checked with Razorpay now, so a typo never reaches a buyer.
   if (key && secretEnc && (secret || key !== s.rzp_key_id)) {
     const plain = secret || (await decrypt(secretEnc, c.env.SECRET_KEY))
@@ -2514,10 +2519,27 @@ type Upi = { id: number; vpa: string; label: string }
 const sellerUpis = async (db: D1Database, sellerId: string) =>
   (await db.prepare(`SELECT id, vpa, label FROM seller_upis WHERE seller_id = ? ORDER BY created_at`).bind(sellerId).all<Upi>()).results
 
+/**
+ * Changes that decide where buyers' money goes ask for the PIN again. Wrong PINs count like wrong logins:
+ * the 5th locks the account and logs every device out.
+ */
+async function pinConfirmed(c: Context<AppEnv>, pin: unknown) {
+  const s = c.get('seller')
+  const row = await c.env.DB.prepare(`SELECT pin_hash, pin_salt, failed_logins FROM sellers WHERE id = ?`).bind(s.id).first<{ pin_hash: string; pin_salt: string; failed_logins: number }>()
+  if (row && (await hashPin(String(pin ?? ''), row.pin_salt, c.env.SECRET_KEY)) === row.pin_hash) return true
+  const fails = (row?.failed_logins ?? 0) + 1
+  await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE sellers SET failed_logins = ?, locked_until = ? WHERE id = ?`).bind(fails, fails % 5 === 0 ? Date.now() + 15 * 60000 : 0, s.id),
+    ...(fails % 5 === 0 ? [c.env.DB.prepare(`DELETE FROM sessions WHERE seller_id = ?`).bind(s.id)] : []),
+  ])
+  return false
+}
+
 app.post('/upi/add', async (c) => {
   const t = tr(c)
   const s = c.get('seller')
   const f = await c.req.parseBody()
+  if (!(await pinConfirmed(c, f.pin))) return c.redirect('/app/settings?err=' + enc(t.wrongCurrentPin), 303)
   const vpa = String(f.vpa ?? '').trim().toLowerCase()
   if (!isValidVpa(vpa)) return c.redirect('/app/settings?err=' + enc(t.badUpi), 303)
   const r = await c.env.DB.prepare(`INSERT OR IGNORE INTO seller_upis (seller_id, vpa, label, created_at) VALUES (?, ?, ?, ?)`)
@@ -2530,6 +2552,7 @@ app.post('/upi/add', async (c) => {
 
 app.post('/upi/:id/default', async (c) => {
   const s = c.get('seller')
+  if (!(await pinConfirmed(c, (await c.req.parseBody()).pin))) return c.redirect('/app/settings?err=' + enc(tr(c).wrongCurrentPin), 303)
   await c.env.DB.prepare(`UPDATE sellers SET upi_vpa = (SELECT vpa FROM seller_upis WHERE id = ? AND seller_id = ?) WHERE id = ? AND EXISTS (SELECT 1 FROM seller_upis WHERE id = ? AND seller_id = ?)`)
     .bind(Number(c.req.param('id')), s.id, s.id, Number(c.req.param('id')), s.id).run()
   return c.redirect('/app/settings?ok=' + enc(tr(c).saved), 303)

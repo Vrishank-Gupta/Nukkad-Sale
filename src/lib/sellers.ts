@@ -42,6 +42,10 @@ export function tempPin(): string {
 /** Sets a new PIN; `temp` marks it as one the admin handed over. Also clears a lockout. */
 export async function setPin(env: Bindings, sellerId: string, pin: string, temp: boolean) {
   const salt = randomId(16)
-  await env.DB.prepare(`UPDATE sellers SET pin_hash = ?, pin_salt = ?, temp_pin = ?, failed_logins = 0, locked_until = 0 WHERE id = ?`)
-    .bind(await hashPin(pin, salt, env.SECRET_KEY), salt, temp ? 1 : 0, sellerId).run()
+  // A new PIN logs out every device (a stolen login stops working); the caller starts a fresh session if needed.
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE sellers SET pin_hash = ?, pin_salt = ?, temp_pin = ?, failed_logins = 0, locked_until = 0 WHERE id = ?`)
+      .bind(await hashPin(pin, salt, env.SECRET_KEY), salt, temp ? 1 : 0, sellerId),
+    env.DB.prepare(`DELETE FROM sessions WHERE seller_id = ?`).bind(sellerId),
+  ])
 }

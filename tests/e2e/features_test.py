@@ -35,8 +35,10 @@ check('Request automatic payments' in st or 'Requested' in st, 'Option 2 is visi
 check('shop@ybl' in st, 'signup UPI ID is in the UPI list (lower-cased)')
 
 print('several UPI IDs')
-post('/app/upi/add', {'vpa': 'personal@okhdfcbank', 'label': 'Personal GPay'})
-s, loc, _ = post('/app/upi/add', {'vpa': 'personal@okhdfcbank'})
+s, loc, _ = post('/app/upi/add', {'vpa': 'hacker@ybl', 'pin': '9999'})
+check('err=' in loc, 'adding a UPI ID needs the right PIN')
+post('/app/upi/add', {'vpa': 'personal@okhdfcbank', 'label': 'Personal GPay', 'pin': '1234'})
+s, loc, _ = post('/app/upi/add', {'vpa': 'personal@okhdfcbank', 'pin': '1234'})
 check('err=' in loc, 'duplicate UPI ID refused')
 _, _, st = go('/app/settings')
 check('personal@okhdfcbank' in st and 'Personal GPay' in st and 'Default' in st, 'both UPI IDs listed, one marked Default')

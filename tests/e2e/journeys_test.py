@@ -214,4 +214,18 @@ check('I’ve sent the refund' in chk, 'seller sees "I’ve sent the refund"')
 A(f'/app/orders/{first}/refunded', {})
 check(sql(f"SELECT refunded_at FROM orders WHERE id = '{first}'")[0]['refunded_at'] and 'I’ve sent the refund' not in A('/app/orders?tab=check')[2], 'refund closed – gone from Check payment')
 check('has sent your money back' in client('10.90.0.1')(f'/o/{first}')[2], 'buyer’s order page says the money was sent back')
+
+# ---------- account safety: payout changes need the PIN; a new PIN logs other devices out ----------
+s, h, _ = A('/app/upi/add', {'vpa': 'thief@ybl', 'pin': '0000'})
+check('err=' in loc(h) and not sql(f"SELECT id FROM seller_upis WHERE vpa = 'thief@ybl'"), 'adding a UPI ID with the wrong PIN is refused')
+A('/app/upi/add', {'vpa': 'second@ybl', 'pin': '4321'})
+uid = sql(f"SELECT id FROM seller_upis WHERE seller_id = '{a_id}' AND vpa = 'second@ybl'")[0]['id']
+A(f'/app/upi/{uid}/default', {'pin': '1111'})
+check(sql(f"SELECT upi_vpa FROM sellers WHERE id = '{a_id}'")[0]['upi_vpa'] != 'second@ybl', 'making it the default with the wrong PIN is refused')
+A(f'/app/upi/{uid}/default', {'pin': '4321'})
+check(sql(f"SELECT upi_vpa FROM sellers WHERE id = '{a_id}'")[0]['upi_vpa'] == 'second@ybl', '…and works with the right PIN')
+other = client('10.9.9.9'); other('/login', {'phone': f'97{r}', 'pin': '4321'})
+check(other('/app')[0] == 200, 'second device logged in')
+A('/app/pin', {'current': '4321', 'pin': '8642'})
+check(other('/app')[0] in (302, 303) and A('/app')[0] == 200, 'changing the PIN logs the other device out; this one stays in')
 print(f'\nall {ok} checks passed')
