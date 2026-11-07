@@ -328,7 +328,7 @@ const en = {
   chatSupport: 'Chat with us on WhatsApp',
 
   // buyer: sale page
-  flashBy: (s: string) => `⚡ Flash sale by ${s}`,
+  flashBy: (s: string) => `Order from ${s} on WhatsApp – pay by UPI`,
   onlyLeft: (n: number) => (n === 1 ? 'Only 1 left!' : `Only ${n} left!`),
   nLeft: (n: number) => `${n} left`,
   soldCount: (n: number) => `${n} sold`,
@@ -1268,7 +1268,7 @@ const hi: Dict = {
   needMoreHelp: 'और मदद चाहिए?',
   chatSupport: 'हमसे WhatsApp पर बात करें',
 
-  flashBy: (s: string) => `⚡ ${s} की फ़्लैश सेल`,
+  flashBy: (s: string) => `${s} से WhatsApp पर ऑर्डर करें – UPI से पेमेंट`,
   onlyLeft: (n: number) => `सिर्फ़ ${n} बचे!`,
   nLeft: (n: number) => `${n} बचे`,
   soldCount: (n: number) => `${n} बिके`,
