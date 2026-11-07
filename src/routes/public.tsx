@@ -4,13 +4,13 @@ import { raw } from 'hono/html'
 import type { AppEnv, Order, Seller } from '../env'
 import { courierDate, dictFor, tr, type Dict } from '../i18n'
 import { decrypt, sha256 } from '../lib/crypto'
-import { claimAdvance, shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
+import { amountClash, pickUniqueAmount, claimAdvance, shownStatus, cartKeyOf, cartOrders, cartTotal, claimCart, dropCounts, loadDrop, markCartPaid, rejectOrder, reserveOrder, sellingFast, shortNo, type ReserveFailure } from '../lib/orders'
 import { confirmGateway, confirmRazorpay, startGatewayPayment } from '../lib/gateway'
 import { verifyCallback } from '../lib/razorpay'
 import { shopOpen } from '../lib/billing'
 import { alertSeller, pushToSeller } from '../lib/push'
 import { isValidUtr, qrSvg, upiAppLinks, upiLink } from '../lib/upi'
-import { clip, liveWhen, normalizePhone, randomId, rupees, waLink } from '../lib/util'
+import { clip, isPhotoType, liveWhen, normalizePhone, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled } from '../lib/whatsapp'
 import { checkOffer, pctOff } from '../lib/offers'
 import { ACTIVE_SHIP, applyTracking, srToken, srTrack, type Scan, type ShipmentRow } from '../lib/shiprocket'
@@ -254,9 +254,10 @@ pub.get('/s/:id/cart', async (c) => {
   if (!seller) return c.notFound()
   const offer = { min: seller.offer_min_paise ?? 0, off: seller.offer_off_paise ?? 0, pct: seller.offer_pct ?? 0 }
   const page = `(function(){var C=kkCart,L=document.getElementById('lines'),f=document.getElementById('co');
+function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
 function draw(){var c=C.get();if(!c.length){document.getElementById('empty').hidden=false;f.hidden=true;L.innerHTML='';return}
-  L.innerHTML=c.map(function(x,i){return '<div class="cartline">'+(x.img?'<img src="/img/'+x.img+'" alt="">':'<span class="thumb"></span>')+'<div class="grow"><b>'+x.t.replace(/</g,'&lt;')+'</b><div class="muted">'+(x.l?x.l+' · ':'')+C.rs(x.p)+'</div></div>'+
-   '<div class="stepper compact"><button type="button" data-i="'+i+'" data-d="-1" aria-label="Less">−</button><input value="'+x.q+'" readonly aria-label="qty"><button type="button" data-i="'+i+'" data-d="1" aria-label="More">+</button></div></div>'}).join('');
+  L.innerHTML=c.map(function(x,i){return '<div class="cartline">'+(x.img?'<img src="/img/'+E(x.img)+'" alt="">':'<span class="thumb"></span>')+'<div class="grow"><b>'+E(x.t)+'</b><div class="muted">'+(x.l?E(x.l)+' · ':'')+C.rs(x.p)+'</div></div>'+
+   '<div class="stepper compact"><button type="button" data-i="'+i+'" data-d="-1" aria-label="Less">−</button><input value="'+E(x.q)+'" readonly aria-label="qty"><button type="button" data-i="'+i+'" data-d="1" aria-label="More">+</button></div></div>'}).join('');
   var n=C.items(c),d=C.disc(n);document.getElementById('it').textContent=C.rs(n);var dr=document.getElementById('dr');dr.hidden=!d;dr.querySelector('span:last-child').textContent='−'+C.rs(d);
   document.getElementById('tp').textContent=C.rs(n-d);f.querySelector('[name=lines]').value=JSON.stringify(c.map(function(x){return{d:x.d,v:x.v,q:x.q}}))}
 L.addEventListener('click',function(e){var b=e.target.closest('[data-i]');if(!b)return;var c=C.get(),x=c[+b.dataset.i];x.q+=+b.dataset.d;if(x.q<1)c.splice(+b.dataset.i,1);else x.q=Math.min(x.q,x.max||5);C.save(c);draw()});
@@ -297,7 +298,7 @@ pub.post('/s/:id/cart', async (c) => {
   const f = await c.req.parseBody()
   let lines: { d: string; v: number; q: number }[] = []
   try { lines = JSON.parse(String(f.lines ?? '[]')) } catch { lines = [] }
-  lines = lines.filter((l) => typeof l?.d === 'string' && Number.isInteger(+l.v) && +l.q >= 1).slice(0, 20)
+  lines = lines.filter((l) => typeof l?.d === 'string' && Number.isInteger(+l.v) && Number.isInteger(+l.q) && +l.q >= 1).slice(0, 20)
   const phone = normalizePhone(String(f.phone ?? ''))
   const name = String(f.name ?? '').trim().slice(0, 60)
   const pincode = String(f.pincode ?? '').replace(/\D/g, '')
@@ -638,7 +639,7 @@ pub.post('/d/:id', async (c) => {
 
   if (!(await shopOpen(c.env, seller))) return back(seller.account_status === 'active' ? t.shopPaused : t.bErrClosed)
   const ipHash = (await sha256((c.req.header('cf-connecting-ip') ?? '') + c.env.SECRET_KEY)).slice(0, 16)
-  const cod = f.pay === 'cod' && Boolean(data.drop.cod_enabled)
+  const cod = false // cash on delivery is switched off for every shop
   // A personal price applies only through a valid link, for the right number, within its piece limit.
   let unitPaise: number | undefined, offerId: string | undefined
   if (f.offer && toolOn(seller, 'offers')) {
@@ -1057,7 +1058,7 @@ pub.post('/o/:id/review', async (c) => {
   if (!(stars >= 1 && stars <= 5)) return c.redirect(`/o/${order.id}?err=${encodeURIComponent(t.revErr)}#review`, 303)
   let photo: string | null = null
   const p = f.photo
-  if (p instanceof File && p.size > 0 && p.size < 5 * 1024 * 1024 && p.type.startsWith('image/')) {
+  if (p instanceof File && p.size > 0 && p.size < 5 * 1024 * 1024 && isPhotoType(p.type)) {
     photo = `r/${randomId(16)}`
     await c.env.IMAGES.put(photo, p.stream(), { httpMetadata: { contentType: p.type } })
   }
@@ -1104,7 +1105,7 @@ pub.post('/o/:id/utr', async (c) => {
   const utr = String(f.utr ?? '').replace(/\D/g, '')
   if (utr && !isValidUtr(utr)) return c.redirect(`/o/${id}?err=${encodeURIComponent(t.badUtr)}`, 303)
   const proof = f.proof
-  if (proof instanceof File && proof.size > 0 && proof.size < 5 * 1024 * 1024 && proof.type.startsWith('image/')) {
+  if (proof instanceof File && proof.size > 0 && proof.size < 5 * 1024 * 1024 && isPhotoType(proof.type)) {
     const key = `p/${randomId(16)}`
     await c.env.IMAGES.put(key, proof.stream(), { httpMetadata: { contentType: proof.type } })
     await c.env.DB.prepare(`UPDATE orders SET proof_key = ? WHERE id = ?`).bind(key, id).run()
@@ -1139,7 +1140,10 @@ pub.get('/img/:key{.+}', async (c) => {
   if (!obj) return c.notFound()
   return new Response(obj.body, {
     headers: {
-      'Content-Type': obj.httpMetadata?.contentType ?? 'image/jpeg',
+      // Only photo types are ever served as such; anything else (e.g. an old SVG) downloads and can't run.
+      'Content-Type': isPhotoType(obj.httpMetadata?.contentType ?? 'image/jpeg') ? obj.httpMetadata?.contentType ?? 'image/jpeg' : 'application/octet-stream',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
       // Keys are content-unique, so browsers and Cloudflare's edge can cache forever.
       'Cache-Control': 'public, max-age=31536000, immutable',
       ETag: obj.httpEtag,
@@ -1228,14 +1232,15 @@ pub.post('/a/:id', async (c) => {
   // One reserve per buyer per ask: its own amount a few paise under the reserve, so the seller can spot it.
   let r = await c.env.DB.prepare(`SELECT key FROM ask_reserves WHERE ask_id = ? AND phone = ?`).bind(ask.id, phone).first<{ key: string }>()
   if (!r) {
-    const { results: taken } = await c.env.DB.prepare(`SELECT amount_paise FROM ask_reserves WHERE seller_id = ? AND status IN ('due', 'claimed') AND amount_paise BETWEEN ? AND ?`)
-      .bind(ask.seller_id, ask.reserve_paise - 99, ask.reserve_paise).all<{ amount_paise: number }>()
-    const used = new Set(taken.map((x) => ask.reserve_paise - x.amount_paise))
-    const free = Array.from({ length: 99 }, (_, i) => i + 1).filter((k) => !used.has(k))
-    const amount = ask.reserve_paise - (free.length ? free[Math.floor(Math.random() * free.length)] : 0)
+    // Unique across everything this seller is waiting for – order payments too, not just other reserves.
     r = { key: randomId(12) }
+    let amount = await pickUniqueAmount(c.env.DB, ask.seller_id, ask.reserve_paise)
     await c.env.DB.prepare(`INSERT INTO ask_reserves (key, ask_id, seller_id, name, phone, amount_paise, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(r.key, ask.id, ask.seller_id, name, phone, amount, now, now).run()
+    for (let i = 0; i < 3 && (await amountClash(c.env.DB, ask.seller_id, r.key, amount)); i++) {
+      amount = await pickUniqueAmount(c.env.DB, ask.seller_id, ask.reserve_paise, r.key)
+      await c.env.DB.prepare(`UPDATE ask_reserves SET amount_paise = ? WHERE key = ?`).bind(amount, r.key).run()
+    }
   }
   return c.redirect(`/a/${ask.id}/r/${r.key}`, 303)
 })

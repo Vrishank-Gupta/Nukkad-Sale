@@ -29,7 +29,7 @@ class Browser:
         return self.go(url, urllib.parse.urlencode(pairs).encode(), {'Content-Type': 'application/x-www-form-urlencoded'})
 
 def sql(q):
-    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True, cwd='/home/vrishankgupta/CommSeller').stdout
+    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', q], capture_output=True, text=True, cwd='/home/vrishankgupta/CommSeller').stdout
     return json.loads(out)[0]['results']
 
 def signup(b, name, shop, phone):
@@ -67,8 +67,10 @@ s, loc, _ = sel.post('/app/settings', {'shop': 'Meera Boutique', 'vpa': 'meera@y
 check(sql("SELECT pay_mode FROM sellers WHERE phone = '919876543210'")[0]['pay_mode'] == 'direct', 'an unknown method (old Cashfree) falls back to manual UPI')
 check(sql(f"SELECT plan, plan_fee_paise FROM sellers WHERE id = '{seller_id}'")[0] == {'plan': 'free', 'plan_fee_paise': 0}, 'new shop starts on Shuruaat with no fee')
 check(not sql(f"SELECT id FROM invoices WHERE seller_id = '{seller_id}'"), 'no invoice for a free shop')
-s, loc, _ = adm.post(f'/admin/sellers/{seller_id}/billing', {'plan': 'dukaan', 'fee': '299', 'trial': '2026-12-31', 'invoice_now': '1'})
-check(len(sql(f"SELECT id FROM invoices WHERE seller_id = '{seller_id}'")) == 1, '"Save & bill now" bills straight away, even with a trial date set')
+s, loc, _ = adm.post(f'/admin/sellers/{seller_id}/billing', {'plan': 'dukaan', 'fee': '299', 'trial': '2030-12-31'})
+check(not sql(f"SELECT id FROM invoices WHERE seller_id = '{seller_id}'"), 'paid plan with a trial date: no bill yet')
+s, loc, _ = adm.post(f'/admin/sellers/{seller_id}/billing', {'plan': 'dukaan', 'fee': '299', 'trial': ''})
+check(len(sql(f"SELECT id FROM invoices WHERE seller_id = '{seller_id}'")) == 1, 'paid plan without a trial: billed straight away')
 _, _, bill = sel.go('/app/billing')
 check('299.' in bill and 'Pay ₹299.' in bill, 'invoice created with a unique amount and Pay online button')
 _, _, home = sel.go('/app')
@@ -81,13 +83,15 @@ check(pay_url.startswith('http://localhost:8792/pay/plink_'), 'redirected to the
 r = urllib.request.Request(pay_url, data=b'', method='POST')
 try: resp = urllib.request.build_opener(NoRedirect()).open(r); ret = resp.headers['Location']
 except urllib.error.HTTPError as e: ret = e.headers['Location']
-sel.go(ret)
+sel.go('/' + ret.split('/', 3)[3] if ret.startswith('http') else ret)  # local dev reports the live domain
 check(sql(f"SELECT status, paid_via FROM invoices WHERE id = '{inv['id']}'")[0] == {'status': 'paid', 'paid_via': 'razorpay'}, 'invoice marked paid automatically (checked with Razorpay on return)')
 _, _, home = sel.go('/app')
 check('NukkadSale fee' not in home, 'banner gone once paid')
 
 print('second seller pays by UPI → admin confirms')
 s2 = Browser(); signup(s2, 'Ravi Kumar', 'Ravi Organics', '9700000001')
+sid2 = sql("SELECT id FROM sellers WHERE phone = '919700000001'")[0]['id']
+adm.post(f'/admin/sellers/{sid2}/billing', {'plan': 'dukaan', 'fee': '', 'trial': ''})
 s2.go('/app/billing')
 inv2 = sql("SELECT i.id FROM invoices i JOIN sellers s ON s.id = i.seller_id WHERE s.phone = '919700000001'")[0]['id']
 s2.post(f'/app/billing/claim/{inv2}')
@@ -116,7 +120,7 @@ check(loc.startswith('http://localhost:8792/pay/'), 'buyer goes straight to the 
 r = urllib.request.Request(loc, data=b'', method='POST')
 try: back = urllib.request.build_opener(NoRedirect()).open(r).headers['Location']
 except urllib.error.HTTPError as e: back = e.headers['Location']
-buyer.go(back)
+buyer.go('/' + back.split('/', 3)[3] if back.startswith('http') else back)  # local dev reports the live domain
 oid = re.search(r'/o/([a-z0-9]+)/paid', back).group(1)
 check(sql(f"SELECT status FROM orders WHERE id = '{oid}'")[0]['status'] == 'paid', 'buyer pays on the gateway → order paid automatically')
 _, _, orders = sel.go('/app/orders?tab=all')

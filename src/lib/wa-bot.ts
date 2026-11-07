@@ -30,7 +30,7 @@ export type Inbound = {
 }
 
 type Buyer = { phone: string; name: string; address: string; pincode: string; lang: Lang }
-type Session = { phone: string; state: string; drop_id: string | null; variant_id: number | null; qty: number; order_id: string | null }
+type Session = { phone: string; state: string; drop_id: string | null; variant_id: number | null; qty: number; order_id: string | null; updated_at?: number }
 
 const SELLER_COLS = `id, phone, name, shop_name, upi_vpa, pay_mode, rzp_key_id, rzp_secret_enc, rzp_webhook_enc, allowed_modes, account_status, gateway_request, tools_off, slug, offer_min_paise, offer_off_paise, offer_pct`
 // Sale codes use the same look-alike-free alphabet as randomId().
@@ -110,6 +110,10 @@ async function showSale(ctx: Ctx, dropId: string) {
   const { drop, variants } = data
   const shop = await env.DB.prepare(`SELECT shop_name, phone FROM sellers WHERE id = ?`).bind(drop.seller_id).first<{ shop_name: string; phone: string }>()
   if (drop.status !== 'live') return sendText(env, phone, t.botClosed)
+  // A paused shop (fee unpaid, plan limit reached, suspended) says so before the buyer picks a size.
+  const owner = await env.DB.prepare(`SELECT id, account_status FROM sellers WHERE id = ?`).bind(drop.seller_id).first<{ id: string; account_status: string }>()
+  if (!owner || !(await shopOpen(env, owner))) return sendText(env, phone, owner?.account_status === 'active' ? t.shopPaused : t.botClosed)
+  if ((drop.live_at ?? 0) > Date.now()) return sendText(env, phone, t.dropSoonErr)
   const left = variants.reduce((n, v) => n + v.available, 0)
   if (left < 1) {
     const held = await env.DB.prepare(`SELECT COUNT(*) AS n FROM orders WHERE drop_id = ? AND status IN ('pending', 'verifying')`).bind(drop.id).first<{ n: number }>()
@@ -183,6 +187,9 @@ async function onTap(ctx: Ctx, id: string) {
     return sendText(env, phone, t.botAskAddress)
   }
   if (kind === 'paid') return markClaimed(ctx, arg, null)
+  // A screenshot the buyer confirmed is for this order (key "p/<id>" saved when it arrived).
+  if (kind === 'shot') { const proof = id.split(':')[2]; return markClaimed(ctx, arg, proof && proof !== '-' ? `p/${proof}` : null) }
+  if (kind === 'shotno') return sendText(env, phone, t.botShotIgnored)
   if (kind === 'cancel') {
     const ok = await cancelCart(env, arg, phone)
     await setSession(ctx, { state: 'idle', order_id: null })
@@ -297,14 +304,34 @@ async function markClaimed(ctx: Ctx, orderId: string | null, proofKey: string | 
 }
 
 async function onScreenshot(ctx: Ctx, mediaId: string) {
-  const { env, phone, session } = ctx
+  const { env, phone, session, t } = ctx
   const media = await downloadMedia(env, mediaId).catch(() => null)
   let key: string | null = null
   if (media && media.body.byteLength < 5 * 1024 * 1024) {
     key = `p/${randomId(16)}`
     await env.IMAGES.put(key, media.body, { httpMetadata: { contentType: media.type } })
   }
-  return markClaimed(ctx, session?.state === 'pay' ? session.order_id : null, key)
+  // Right after the pay button (last 30 min, order still unpaid): this picture is the payment for that order.
+  if (session?.state === 'pay' && session.order_id && (session.updated_at ?? 0) > Date.now() - 30 * 60_000) {
+    const o = await env.DB.prepare(`SELECT status FROM orders WHERE id = ? AND buyer_phone = ?`).bind(session.order_id, phone).first<{ status: string }>()
+    if (o && ['pending', 'expired', 'rejected'].includes(o.status)) return markClaimed(ctx, session.order_id, key)
+  }
+  // Otherwise never guess – a buyer may have orders with several shops, or be sending a photo to ask about.
+  const { results } = await env.DB.prepare(
+    `SELECT COALESCE(o.cart_id, o.id) AS k, s.shop_name, SUM(o.amount_paise) AS amt FROM orders o JOIN sellers s ON s.id = o.seller_id
+     WHERE o.buyer_phone = ? AND o.pay_mode = 'direct' AND o.status IN ('pending', 'expired', 'rejected') AND o.created_at > ?
+     GROUP BY k ORDER BY MAX(o.created_at) DESC LIMIT 3`,
+  ).bind(phone, Date.now() - 86_400_000).all<{ k: string; shop_name: string; amt: number }>()
+  if (!results.length) return sendText(env, phone, t.botShotNoOrder)
+  const proof = key ? key.slice(2) : '-'
+  if (results.length === 1) {
+    const r = results[0]
+    return sendButtons(env, phone, t.botShotConfirm(shortNo(r.k), rupees(r.amt), r.shop_name), [
+      { id: `shot:${r.k}:${proof}`, title: t.botShotYes },
+      { id: 'shotno:x', title: t.botShotNo },
+    ])
+  }
+  return sendButtons(env, phone, t.botShotWhich, results.map((r) => ({ id: `shot:${r.k}:${proof}`, title: `${rupees(r.amt)} · ${r.shop_name}`.slice(0, 20) })))
 }
 
 async function showOrders(ctx: Ctx) {

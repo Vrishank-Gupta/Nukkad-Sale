@@ -54,7 +54,7 @@ check(s == 303 and h['Location'] == f'/thanks?p={phone}', 'request accepted → 
 s, h, body = anon(h['Location'])
 check(s == 200 and phone[:5] in body.replace(' ', ''), 'thank-you page shows their number')
 s, h, _ = anon('/get-started', form)
-q = lambda sql: subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', sql], capture_output=True, text=True).stdout
+q = lambda sql: subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', sql], capture_output=True, text=True).stdout
 check(q(f"SELECT COUNT(*) AS n FROM leads WHERE phone = '91{phone}'").count('"n": 1') == 1, 'a repeat submission does not create a duplicate')
 for i in range(6): last = anon('/get-started', {'name': 'R', 'business': 'R', 'phone': f'97{i:08d}'}, ip='10.9.9.9')
 check('err=' in last[1]['Location'], 'more than 5 requests a day from one device are refused')

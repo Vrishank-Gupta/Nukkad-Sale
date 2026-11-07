@@ -193,7 +193,7 @@ const end = (line, sub = 'Start free · nukkadsale.in') => ({ d: 3.2, cls: 'oran
   <div class="c offer" style="top:890px" data-a="pop" data-t="1.0">${/[\u0900-\u097F]/.test(line) ? 'हर महीने 30 ऑर्डर तक मुफ़्त<br>कोई कमीशन नहीं' : 'Free up to 30 orders a month<br>No commission'}</div>` })
 
 const DMS = [['Priya', 'Price?', 40, 120], ['Sana', 'M size hai??', 330, 210], ['Ritu', 'Kitne ka hai', 70, 330], ['Neha', 'Mera hold karo pls', 300, 430],
-  ['Kavya', 'L available?', 30, 540], ['Anjali', 'Payment kaise karu?', 270, 650], ['Pooja', 'COD hai?', 60, 760], ['Simran', 'Still available??', 300, 860],
+  ['Kavya', 'L available?', 30, 540], ['Anjali', 'Payment kaise karu?', 270, 650], ['Pooja', 'Kab milega?', 60, 760], ['Simran', 'Still available??', 300, 860],
   ['Divya', 'Photo bhejo', 40, 970], ['Meghna', 'Hello??', 380, 1060], ['Riya', 'Mine!!', 380, 140], ['Tanvi', 'Same in blue?', 40, 1110],
   ['Isha', 'Bhej diye ₹799 ✓', 330, 330], ['Nisha', 'Kab tak milega?', 50, 440], ['Aarti', 'Reply karo!!', 360, 760], ['Komal', 'Size chart?', 330, 980]]
 const PAINS = ['Typing “₹799, S M L” 50 times', 'Who asked first? 🤷‍♀️', 'Last piece promised to 3 people', 'Scrolling for payment screenshots']
@@ -558,7 +558,7 @@ const REELS = {
   { d: 3.6, cls: 'kraft', html: `
     <div class="cap" style="top:60px" data-a="pop"><span class="tag">8 labels a page. Every parcel.</span></div>
     <div class="sheet" style="top:230px;height:420px;transform:rotate(-2deg)" data-a="rise" data-d=".6"><img src="img/feat-labels-sheet.png" data-a="zoom" data-t=".8" data-d="2.6" data-e="ease-in-out" style="--zs:1.35;transform-origin:50% 0"></div>
-    <div class="c m" style="top:740px;color:#1d1a16" data-a="pop" data-t="1.2">Name · address · items<br>· COD amount · your shop</div>
+    <div class="c m" style="top:740px;color:#1d1a16" data-a="pop" data-t="1.2">Name · address · items<br>· your shop</div>
     ` },
   { d: 3.2, cls: 'kraft', html: `
     <div class="c" style="top:300px" data-a="slam" data-d=".45"><span class="stamp2">PRINT · CUT · STICK · SHIP</span></div>
@@ -785,7 +785,7 @@ const FORMAT_REELS = {
     <div class="c h" style="top:400px;font-size:84px;color:#1d1a16;text-shadow:none" data-a="hit" data-d=".5">4 myths about<br>selling on<br><span class="o">WhatsApp</span></div>` },
   ...[['You need a website to sell online.', 'You need a link. Buyers order from it right in your group.', 'buyer-sale'],
       ['With UPI you can’t tell who paid.', 'Each order gets its own exact amount – ₹798.52 is Priya.', 'orders-check'],
-      ['Cash on delivery means fake orders.', 'Ask a small UPI advance first. Fake buyers never pay it.', ''],
+      ['Many groups means sold-twice chaos.', 'One link works in every group – stock updates itself.', 'sale-live'],
       ['Hisaab needs a CA every month.', 'Every paid order lands in your khata – profit included.', 'feat-khata-profit']].map(([m, f, img], i) => ({ d: 3.0, cls: 'paperbg', html: `
     <div class="c" style="top:90px;font-size:28px;font-weight:900;letter-spacing:3px;color:#d9480f" data-a="vis" data-d="3">MYTH ${i + 1} OF 4</div>
     <div class="mv my" style="top:170px" data-a="hit" data-d=".45"><small>MYTH</small><b>${m}</b></div>

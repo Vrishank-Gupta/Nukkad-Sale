@@ -66,10 +66,13 @@ auth.post('/login', async (c) => {
   if (!s) return fail(t.noShop)
   if (s.locked_until > Date.now()) return fail(t.locked(Math.ceil((s.locked_until - Date.now()) / 60000)))
   if ((await hashPin(pin, s.pin_salt, c.env.SECRET_KEY)) !== s.pin_hash) {
+    // Wrong tries keep counting until a correct PIN: every 5th locks the account, each lock twice as long
+    // as the one before (15 min, 30 min, 1 h … up to a day), so a 4-digit PIN can't be guessed in days.
     const fails = s.failed_logins + 1
+    const lockMin = fails % MAX_FAILS === 0 ? Math.min(24 * 60, LOCK_MINUTES * 2 ** (fails / MAX_FAILS - 1)) : 0
     await c.env.DB.prepare(`UPDATE sellers SET failed_logins = ?, locked_until = ? WHERE id = ?`)
-      .bind(fails >= MAX_FAILS ? 0 : fails, fails >= MAX_FAILS ? Date.now() + LOCK_MINUTES * 60000 : 0, s.id).run()
-    return fail(fails >= MAX_FAILS ? t.locked(LOCK_MINUTES) : t.wrongPin)
+      .bind(fails, lockMin ? Date.now() + lockMin * 60000 : 0, s.id).run()
+    return fail(lockMin ? t.locked(lockMin) : t.wrongPin)
   }
   await c.env.DB.prepare(`UPDATE sellers SET failed_logins = 0 WHERE id = ?`).bind(s.id).run()
   await startSession(c, s.id)

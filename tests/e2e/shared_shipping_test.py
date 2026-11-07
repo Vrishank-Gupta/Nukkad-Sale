@@ -38,8 +38,7 @@ check('Shipping balance' in bp and 'Xpressbees' in bp, 'booking page shows the b
 s, h, _ = sel(f'/app/ship/book/{o1}', {'courier': '20', 'pin': '560038', 'g': '700', 'city': 'Bengaluru', 'state': 'Karnataka'})
 check('err=' in loc(h) and 'Add%20money' in loc(h) and not sql(f"SELECT id FROM shipments WHERE order_key = '{o1}'"), 'not enough balance: refused, nothing booked')
 oc = order(drop, '9811500002', cod=True, ip='10.8.9.2')
-s, h, _ = sel(f'/app/ship/book/{oc}')
-check('err=' in loc(h) and 'cash-on-delivery' in urllib.parse.unquote(loc(h)), 'cash on delivery can’t use NukkadSale Shipping')
+check(sql(f"SELECT pay_mode FROM orders WHERE id = '{oc}'")[0]['pay_mode'] == 'direct', 'cash on delivery is off: a forged pay=cod is a normal UPI order')
 
 # ---------- top up ----------
 s, h, _ = sel('/app/ship/topup', {'amount': '7'})

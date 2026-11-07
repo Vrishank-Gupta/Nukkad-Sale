@@ -23,45 +23,25 @@ s, h, _ = sel('/app/drops/new', multipart=multipart([('title', 'Cotton kurta'), 
     ('max', '2'), ('size_chart', '1'), ('cod', '1'), ('cod_advance', '100')]))
 drop = re.search(r'/drops/([a-z0-9]+)', h['Location']).group(1)
 d = sql(f"SELECT size_chart, cod_advance_paise FROM drops WHERE id = '{drop}'")[0]
-check(d == {'size_chart': 1, 'cod_advance_paise': 10000}, 'sale saved with size chart on and a ₹100 COD advance')
+check(d == {'size_chart': 1, 'cod_advance_paise': 0}, 'sale saved with size chart on (cash on delivery stays off)')
 s, h, pg = sel(f'/app/drops/{drop}')
-check('₹100 advance' in urllib.parse.unquote(pg), 'share message mentions the COD advance')
+check('advance' not in urllib.parse.unquote(pg).lower(), 'share message has no COD advance')
 b1 = client('10.5.1.1')
 s, h, pg = b1(f'/d/{drop}')
 check(f'/img/{chart}' in pg and 'Size chart' in pg, 'buyer sees the size chart')
 check('Ask Trust Shop' in pg and 'Which+size' in pg.replace('%20', '+'), 'buyer can ask their size on WhatsApp')
-check('pay ₹100 advance now' in pg, 'COD button says the advance')
+check('advance now' not in pg, 'no cash-on-delivery button')
 _, h2, _ = sel('/app/drops/new', multipart=multipart([('title', 'Plain shawl'), ('price', '500'), ('has_sizes', '1'), ('size_label', 'Free'), ('size_qty', '9'), ('max', '2')]))
 plain = re.search(r'/drops/([a-z0-9]+)', h2['Location']).group(1)
 check(f'/img/{chart}' not in b1(f'/d/{plain}')[2], 'no chart on a sale where the seller did not tick it')
 sel(f'/app/drops/{plain}/size-chart', {'on': '1'})
 check(f'/img/{chart}' in b1(f'/d/{plain}')[2], 'seller can switch the chart on from the sale page')
 
-# ---------- cash on delivery with an advance ----------
+# ---------- cash on delivery is switched off ----------
 vm = sql(f"SELECT id FROM variants WHERE drop_id = '{drop}' AND label = 'M'")[0]['id']
 s, h, _ = b1(f'/d/{drop}', {**buyer(vm, 'Priya Sharma', '9811000441'), 'pay': 'cod'})
 oid = h['Location'][3:].split('?')[0]
-o = sql(f"SELECT status, pay_mode, adv_status, adv_paise, amount_paise, hold_until FROM orders WHERE id = '{oid}'")[0]
-check(o['pay_mode'] == 'cod' and o['adv_status'] == 'due' and 9901 <= o['adv_paise'] <= 9999, 'COD order asks for an advance a few paise under ₹100')
-check(o['hold_until'] < time.time() * 1000 + 20 * 60_000, 'piece is held only for the usual time until the advance is paid')
-s, h, pg = b1(f'/o/{oid}')
-check(f"am={o['adv_paise'] / 100:.2f}" in pg and 'I have paid the advance' in pg, 'order page: pay the exact advance by UPI')
-s, h, pg = sel('/app/orders?tab=send')
-check('Priya Sharma' not in pg, 'not in "To send" before the advance is paid')
-s, h, pg = sel('/app/orders?tab=check')
-check('Waiting for the ₹' in pg, 'seller sees it waiting for the advance')
-b1(f'/o/{oid}/advance', {})
-check(sql(f"SELECT adv_status FROM orders WHERE id = '{oid}'")[0]['adv_status'] == 'claimed', 'buyer says the advance is paid')
-check('Trust Shop is checking your advance' in b1(f'/o/{oid}')[2], 'buyer sees the shop is checking')
-s, h, home = sel('/app')
-check('1 payment to check' in home or '1 payments to check' in home, 'seller home: a payment to check')
-sel(f'/app/orders/{oid}/advance', {})
-check(sql(f"SELECT adv_status FROM orders WHERE id = '{oid}'")[0]['adv_status'] == 'paid', 'seller confirms the advance')
-s, h, pg = sel('/app/orders?tab=send')
-rest = f"₹{(o['amount_paise'] - o['adv_paise']) / 100:,.2f}"
-check('Priya Sharma' in pg and 'paid in advance' in pg and rest in pg, f'now in "To send": collect {rest} in cash')
-s, h, pg = b1(f'/o/{oid}')
-check('Advance of ₹' in pg and rest in pg, 'buyer order page: advance received, the rest in cash')
+check(sql(f"SELECT pay_mode FROM orders WHERE id = '{oid}'")[0]['pay_mode'] == 'direct', 'a forged pay=cod is a normal UPI order')
 
 # ---------- timeline + packed photo + receipt ----------
 b2 = client('10.5.2.1')

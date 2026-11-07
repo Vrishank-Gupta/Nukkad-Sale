@@ -24,7 +24,7 @@ def client(ip):
         except urllib.error.HTTPError as e: return e.code, e.headers, e.read().decode(errors='replace')
     return go
 def sql(q):
-    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True).stdout
+    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', q], capture_output=True, text=True).stdout
     return json.loads(out)[0]['results']
 
 phone = '97' + str(random.randint(10**7, 10**8 - 1))

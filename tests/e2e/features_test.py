@@ -115,13 +115,13 @@ check('/app/quick-order/done/' in loc, 'seller makes a quick order for a buyer w
 _, _, qd = go(loc.replace(APP, ''))
 link = re.search(r'(https?://[^\s<]+/o/[a-z0-9]+)', qd)
 check(link is not None and 'Total' in qd and 'wa.me/919822200777' in qd, 'ready message with total + pay link, “Send on WhatsApp” to the buyer')
-bp = pub.open(urllib.request.Request(link.group(1), headers={'User-Agent': UA})).read().decode()
+bp = pub.open(urllib.request.Request(APP + '/o/' + link.group(1).rsplit('/', 1)[1], headers={'User-Agent': UA})).read().decode()
 check(f'/o/{link.group(1).rsplit("/", 1)[1]}/details"' in bp, 'buyer page asks for the address the seller did not have')
 key = link.group(1).rsplit('/', 1)[1]
 r = urllib.request.Request(APP + f'/o/{key}/details', data=urllib.parse.urlencode({'name': 'Neha Gupta', 'address': '7 Lake Road, Bhopal', 'pincode': '462001'}).encode(), headers={'Origin': APP, 'User-Agent': UA})
 try: pub.open(r)
 except urllib.error.HTTPError: pass
-bp = pub.open(urllib.request.Request(link.group(1), headers={'User-Agent': UA})).read().decode()
+bp = pub.open(urllib.request.Request(APP + '/o/' + key, headers={'User-Agent': UA})).read().decode()
 check(f'/o/{key}/details"' not in bp and 'I have paid' in bp, 'after the address, the buyer just pays and taps “I have paid”')
 print('ALL PASSED' if not fails else f'{fails} FAILED')
 sys.exit(1 if fails else 0)

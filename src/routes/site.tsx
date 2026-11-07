@@ -47,7 +47,7 @@ const C = {
     jobsEyebrow: 'For you · What it does', jobsH: 'Four jobs you do by hand today. One app does them.', jobsP: 'Tap any of them to see how it works.',
     jobs: [
       ['orders', 'bag', 'Orders & stock', 'Instead of answering every DM and a notebook of who ordered', ['Your own shop link with every product', 'An order link for each product, for your groups', 'Cart – many items, one payment', 'Stock held while buyers pay – never sold twice'], 'How orders work'],
-      ['payments', 'wallet', 'Payments', 'Instead of checking payment screenshots', ['Money goes straight to your UPI ID', 'Each order has an exact amount – you see who paid', 'GPay, PhonePe, Paytm – any UPI app', 'Cash on delivery and automatic payments too'], 'How payments work'],
+      ['payments', 'wallet', 'Payments', 'Instead of checking payment screenshots', ['Money goes straight to your UPI ID', 'Each order has an exact amount – you see who paid', 'GPay, PhonePe, Paytm – any UPI app', 'Automatic payments too, with Razorpay'], 'How payments work'],
       ['delivery', 'box', 'Delivery', 'Instead of calling couriers and writing addresses', ['Courier rates and dates for the buyer’s pincode', 'Book and schedule the pickup in one go', 'Address labels for every parcel', 'Buyers track their parcel themselves'], 'How delivery works'],
       ['accounts', 'book', 'Accounts', 'Instead of an Excel sheet at month end', ['A khata that fills itself', 'Profit per piece and for the month', 'Your buyers list, repeat buyers marked', 'Excel download for your CA'], 'How accounts work'],
     ],
@@ -59,9 +59,8 @@ const C = {
       ['receipt', 'A proper payment receipt', 'Once you confirm, they get a receipt to save, print or forward. No more “did you get my money?”.'],
       ['size', 'The right size, first time', 'Your size chart on the sale, a one-tap “Ask my size”, and their size remembered for next time.'],
       ['reviews', 'Reviews from real buyers', 'After delivery they rate it and add a photo. Shown on your shop – and you choose what is shown.'],
-      ['advance', 'Cash on delivery, without the risk', 'Ask for a small UPI advance before you pack. Fewer fake orders and refused parcels.'],
     ],
-    buyProtect: 'It protects you too: fewer “where is my order?” messages, proof of every step, and less money lost to cash on delivery.',
+    buyProtect: 'It protects you too: fewer “where is my order?” messages, proof of every step, and fewer payment arguments.',
     buyMore: 'See everything buyers get',
     newPill: 'New: Live drops and Ask your buyers',
     newEyebrow: 'To sell more · Only on NukkadSale', newH: 'Two ways to sell more that no other app has',
@@ -96,7 +95,6 @@ const C = {
         ['An exact amount per order', 'Every order has its own paise, so you see who paid at a glance.'],
         ['Any UPI app', 'One Pay button on Android, GPay / PhonePe / Paytm buttons on iPhone, a QR code on a computer.'],
         ['More than one UPI ID', 'Shop and personal – choose which one each sale pays into.'],
-        ['Cash on delivery', 'Turn on COD for any sale, with an extra COD charge if you want one.'],
         ['Automatic payments', 'Busy? Payments through your own Razorpay account confirm themselves.'],
         ['Screenshots, checked', 'Buyers can send a screenshot; you see it with a reminder to check your UPI app.'],
       ]],
@@ -110,7 +108,7 @@ const C = {
       ]],
       ['box', 'Packing and delivery', [
         ['A to-send list', 'Paid → Packed → Sent → Delivered, and buyers see every step.'],
-        ['Address labels', 'Print every label at once – 8 on an A4 page, COD amount included.'],
+        ['Address labels', 'Print every label at once – 8 on an A4 page.'],
         ['Compare and book couriers', 'Rates and delivery dates for the buyer’s pincode. Book and schedule the pickup in one go.'],
         ['Tracking for buyers', 'Their order page shows every scan – fewer “where is my parcel?” messages.'],
         ['Failed deliveries, sorted', 'Ask for another attempt, take it back, send again or restock.'],
@@ -144,7 +142,7 @@ const C = {
     priceNote: 'No commission on your sales – money goes straight to your UPI ID or your own Razorpay account (Razorpay charges its own fee). We set up your shop with you on every plan.',
     priceRules: [
       ['The only difference is how many orders', 'Every plan has every feature, including automatic payments through your own Razorpay account – we switch it on with you.'],
-      ['What counts as an order', 'One payment from a buyer: a cart of several items is one order. Paid orders and cash-on-delivery orders count; unpaid, cancelled and expired ones don’t.'],
+      ['What counts as an order', 'One payment from a buyer: a cart of several items is one order. Only paid orders count; unpaid, cancelled and expired ones don’t.'],
       ['What happens at the limit', 'You get a warning at 80%. At the limit your shop stops taking new orders until you upgrade or the month resets – nothing is charged automatically, and orders already placed carry on.'],
     ],
     faqEyebrow: 'FAQ', faqH: 'Questions sellers ask',
@@ -187,7 +185,7 @@ const C = {
     jobsEyebrow: 'आपके लिए · क्या करता है', jobsH: 'चार काम जो आप आज हाथ से करते हैं। एक ऐप करता है।', jobsP: 'किसी पर भी टैप करके देखें कैसे काम करता है।',
     jobs: [
       ['orders', 'bag', 'ऑर्डर और स्टॉक', 'हर DM का जवाब देने और कॉपी में ऑर्डर लिखने की जगह', ['हर प्रोडक्ट के साथ अपनी दुकान का लिंक', 'ग्रुप के लिए हर प्रोडक्ट का ऑर्डर लिंक', 'कार्ट – कई चीज़ें, एक पेमेंट', 'पेमेंट तक स्टॉक होल्ड – दो बार नहीं बिकता'], 'ऑर्डर कैसे होते हैं'],
-      ['payments', 'wallet', 'पेमेंट', 'पेमेंट के स्क्रीनशॉट देखने की जगह', ['पैसा सीधे आपकी UPI ID में', 'हर ऑर्डर की सही रकम – पता चले किसने भेजा', 'GPay, PhonePe, Paytm – कोई भी UPI ऐप', 'कैश ऑन डिलीवरी और अपने आप पेमेंट भी'], 'पेमेंट कैसे होते हैं'],
+      ['payments', 'wallet', 'पेमेंट', 'पेमेंट के स्क्रीनशॉट देखने की जगह', ['पैसा सीधे आपकी UPI ID में', 'हर ऑर्डर की सही रकम – पता चले किसने भेजा', 'GPay, PhonePe, Paytm – कोई भी UPI ऐप', 'Razorpay से अपने आप पेमेंट भी'], 'पेमेंट कैसे होते हैं'],
       ['delivery', 'box', 'डिलीवरी', 'कूरियर को फ़ोन करने और पते लिखने की जगह', ['ग्राहक के पिनकोड के लिए कूरियर रेट और तारीख़', 'बुकिंग और पिकअप एक साथ', 'हर पार्सल का पते वाला लेबल', 'ग्राहक ख़ुद पार्सल ट्रैक करें'], 'डिलीवरी कैसे होती है'],
       ['accounts', 'book', 'हिसाब', 'महीने के आख़िर में Excel की जगह', ['अपने आप भरने वाला खाता', 'हर पीस और महीने का मुनाफ़ा', 'ग्राहकों की लिस्ट, बार-बार आने वाले अलग', 'CA के लिए Excel डाउनलोड'], 'हिसाब कैसे रहता है'],
     ],
@@ -199,9 +197,8 @@ const C = {
       ['receipt', 'असली पेमेंट रसीद', 'आपके पक्का करते ही उन्हें रसीद मिले – सेव, प्रिंट या फ़ॉरवर्ड करें। “पैसे मिले?” वाले मैसेज ख़त्म।'],
       ['size', 'पहली बार में सही साइज़', 'सेल पर आपका साइज़ चार्ट, एक टैप में “मेरा साइज़ पूछें”, और अगली बार के लिए उनका साइज़ याद।'],
       ['reviews', 'असली ग्राहकों के रिव्यू', 'डिलीवरी के बाद रेटिंग और फ़ोटो। आपकी दुकान पर दिखते हैं – और क्या दिखे, यह आप चुनें।'],
-      ['advance', 'बिना ख़तरे के कैश ऑन डिलीवरी', 'पैक करने से पहले थोड़ा UPI एडवांस लें। नकली ऑर्डर और लौटे पार्सल कम।'],
     ],
-    buyProtect: 'यह आपको भी बचाता है: “ऑर्डर कहाँ है?” वाले मैसेज कम, हर कदम का सबूत, और कैश ऑन डिलीवरी में कम नुकसान।',
+    buyProtect: 'यह आपको भी बचाता है: “ऑर्डर कहाँ है?” वाले मैसेज कम, हर कदम का सबूत, और पेमेंट पर कम बहस।',
     buyMore: 'ग्राहकों को क्या-क्या मिलता है',
     newPill: 'नया: लाइव ड्रॉप और ग्राहकों से पूछें',
     newEyebrow: 'ज़्यादा बेचने के लिए · सिर्फ़ NukkadSale पर', newH: 'ज़्यादा बेचने के दो तरीके जो किसी और ऐप में नहीं',
@@ -236,7 +233,6 @@ const C = {
         ['हर ऑर्डर की सही रकम', 'हर ऑर्डर के अपने पैसे, तो एक नज़र में पता चले किसने पेमेंट किया।'],
         ['कोई भी UPI ऐप', 'Android पर एक Pay बटन, iPhone पर GPay / PhonePe / Paytm बटन, कंप्यूटर पर QR कोड।'],
         ['एक से ज़्यादा UPI ID', 'दुकान की और अपनी – हर सेल के लिए चुनें पैसा कहाँ आए।'],
-        ['कैश ऑन डिलीवरी', 'किसी भी सेल पर COD चालू करें, चाहें तो COD चार्ज के साथ।'],
         ['अपने आप पेमेंट', 'ज़्यादा ऑर्डर? आपके अपने Razorpay खाते से पेमेंट अपने आप पक्का।'],
         ['स्क्रीनशॉट की जाँच', 'ग्राहक स्क्रीनशॉट भेज सकते हैं; साथ में याद दिलाया जाता है कि UPI ऐप में देखें।'],
       ]],
@@ -250,7 +246,7 @@ const C = {
       ]],
       ['box', 'पैकिंग और डिलीवरी', [
         ['भेजने की लिस्ट', 'पेमेंट → पैक → भेजा → पहुँचा, और ग्राहक हर कदम देखें।'],
-        ['पते के लेबल', 'सारे लेबल एक साथ प्रिंट – A4 पर 8, COD रकम के साथ।'],
+        ['पते के लेबल', 'सारे लेबल एक साथ प्रिंट – A4 पर 8।'],
         ['कूरियर देखें और बुक करें', 'ग्राहक के पिनकोड के लिए रेट और पहुँचने की तारीख़। बुकिंग और पिकअप एक साथ।'],
         ['ग्राहक के लिए ट्रैकिंग', 'उनके ऑर्डर पेज पर हर स्कैन – “पार्सल कहाँ है?” वाले मैसेज कम।'],
         ['डिलीवरी फ़ेल? संभल जाएगा', 'फिर से कोशिश, वापस मंगवाना, दोबारा भेजना या स्टॉक में डालना।'],
@@ -283,7 +279,7 @@ const C = {
     planIncl: 'हर प्लान में', incl: ['दुकान का लिंक और ऑर्डर लिंक', 'सही रकम वाला UPI पेमेंट', 'पेमेंट तक स्टॉक होल्ड', 'खाता और मुनाफ़ा', 'छूट, ख़ास दाम, वेटलिस्ट', 'पते के लेबल और कूरियर बुकिंग', 'ग्राहकों की लिस्ट', 'हिंदी + English'],
     priceRules: [
       ['फ़र्क सिर्फ़ ऑर्डर की गिनती का है', 'हर प्लान में हर फ़ीचर, आपके अपने Razorpay खाते से अपने आप पेमेंट भी – हम आपके साथ चालू करते हैं।'],
-      ['ऑर्डर किसे गिनते हैं', 'ग्राहक का एक पेमेंट: कई चीज़ों वाला कार्ट एक ऑर्डर है। पेड और कैश ऑन डिलीवरी ऑर्डर गिने जाते हैं; बिना पेमेंट, रद्द या समय ख़त्म वाले नहीं।'],
+      ['ऑर्डर किसे गिनते हैं', 'ग्राहक का एक पेमेंट: कई चीज़ों वाला कार्ट एक ऑर्डर है। सिर्फ़ पेड ऑर्डर गिने जाते हैं; बिना पेमेंट, रद्द या समय ख़त्म वाले नहीं।'],
       ['लिमिट पूरी होने पर', '80% पर चेतावनी मिलती है। लिमिट पर दुकान नए ऑर्डर लेना बंद करती है, जब तक आप अपग्रेड न करें या महीना न बदले – अपने आप कोई पैसा नहीं कटता, और पहले के ऑर्डर चलते रहते हैं।'],
     ],
     priceNote: 'बिक्री पर कोई कमीशन नहीं – पैसा सीधे आपकी UPI ID या आपके अपने Razorpay खाते में (Razorpay अपनी फ़ीस लेता है)। हर प्लान में दुकान हम आपके साथ सेट करते हैं।',
@@ -327,17 +323,17 @@ const FEATURES = {
     hi: { faq: [["क्या कूरियर खाता ज़रूरी है?", "नहीं। पार्सल जैसे चाहें भेजें और सबके पते के लेबल प्रिंट करें। ऐप से कूरियर रेट देखने और पिकअप बुक करने के लिए एक बार अपना कूरियर खाता जोड़ें – एक खाते में कई कूरियर।"], ["कूरियर का पैसा कौन देता है?", "आप, अपने कूरियर खाते के वॉलेट से। NukkadSale ऊपर से कुछ नहीं जोड़ता।"], ["डिलीवरी फ़ेल हो तो?", "ऑर्डर पर दिखता है। फिर से कोशिश करवाएं, वापस मंगवाएं, दोबारा भेजें या स्टॉक में डालें।"]], name: 'डिलीवरी', h1: 'एक टैप में कूरियर बुक। ग्राहक ख़ुद ट्रैक करें।', sub: 'ग्राहक के पिनकोड के लिए कूरियर रेट और पहुँचने की तारीख़ देखें, सबसे सस्ता या सबसे तेज़ बुक करें, पिकअप तय करें और लेबल प्रिंट करें – ऑर्डर से ही। लोकल कूरियर पसंद है? सारे लेबल एक साथ प्रिंट करें।',
       steps: ['पेड ऑर्डर खोलें और उस पिनकोड के कूरियर रेट देखें।', 'बुक करें, लेबल प्रिंट करें, पिकअप तय करें।', 'पहुँचने तक ग्राहक के ऑर्डर पेज पर हर स्कैन।'] } },
   accounts: { icon: 'book', group: 4, clip: 'accounts', imgs: ['profit', 'home'],
-    en: { faq: [["What does “profit” include?", "Money from paid orders, minus the product cost you entered for each piece, minus the expenses you add (courier, packing, ads – one tap each with “You gave ₹”)."], ["Are delivery and cash-on-delivery charges counted?", "Yes – they are part of what the buyer paid, so they count as money in. What the courier charges you is an expense you add."], ["Are discounts counted?", "Yes. Profit uses the price the buyer actually paid, after any discount or special price."], ["Are payment gateway fees taken off?", "Not automatically. If you use Razorpay, add its fee as an expense, or note it monthly."], ["What about refunds and returns?", "Add a refund as “You gave ₹” and it comes off the month’s money in."], ["When does a sale count?", "When it is paid – when you confirm the UPI payment, the gateway confirms it, or you mark cash on delivery received."]], name: 'Accounts', h1: 'Your khata writes itself. With profit.', sub: 'Every paid order is added for you. Add a piece’s cost once and see profit per piece and for the month. Know your best buyers. Download it all for your CA.',
+    en: { faq: [["What does “profit” include?", "Money from paid orders, minus the product cost you entered for each piece, minus the expenses you add (courier, packing, ads – one tap each with “You gave ₹”)."], ["Are delivery charges counted?", "Yes – they are part of what the buyer paid, so they count as money in. What the courier charges you is an expense you add."], ["Are discounts counted?", "Yes. Profit uses the price the buyer actually paid, after any discount or special price."], ["Are payment gateway fees taken off?", "Not automatically. If you use Razorpay, add its fee as an expense, or note it monthly."], ["What about refunds and returns?", "Add a refund as “You gave ₹” and it comes off the month’s money in."], ["When does a sale count?", "When it is paid – when you confirm the UPI payment, or the gateway confirms it."]], name: 'Accounts', h1: 'Your khata writes itself. With profit.', sub: 'Every paid order is added for you. Add a piece’s cost once and see profit per piece and for the month. Know your best buyers. Download it all for your CA.',
       steps: ['Sell as usual – every paid order lands in the khata.', 'Add cash sales and expenses with one tap.', 'See today, this month and your profit at a glance.'] },
-    hi: { faq: [["“मुनाफ़े” में क्या आता है?", "पेड ऑर्डर का पैसा, घटाकर हर पीस की आपकी डाली लागत, घटाकर आपके जोड़े ख़र्च (कूरियर, पैकिंग, विज्ञापन – “आपने दिए ₹” से एक टैप में)।"], ["डिलीवरी और COD चार्ज गिने जाते हैं?", "हाँ – ये ग्राहक के दिए पैसे का हिस्सा हैं, तो आमदनी में गिने जाते हैं। कूरियर आपसे जो लेता है, वो ख़र्च में जोड़ें।"], ["छूट गिनी जाती है?", "हाँ। मुनाफ़ा उसी दाम पर बनता है जो ग्राहक ने असल में दिया – छूट या ख़ास दाम के बाद।"], ["पेमेंट गेटवे की फ़ीस घटती है?", "अपने आप नहीं। Razorpay इस्तेमाल करें तो उसकी फ़ीस ख़र्च में जोड़ें, या महीने में एक बार।"], ["रिफ़ंड और वापसी?", "रिफ़ंड “आपने दिए ₹” में जोड़ें, वो महीने की आमदनी से घट जाता है।"], ["बिक्री कब गिनी जाती है?", "पेमेंट होने पर – जब आप UPI पेमेंट पक्का करें, गेटवे पक्का करे, या आप COD का पैसा मिला दर्ज करें।"]], name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
+    hi: { faq: [["“मुनाफ़े” में क्या आता है?", "पेड ऑर्डर का पैसा, घटाकर हर पीस की आपकी डाली लागत, घटाकर आपके जोड़े ख़र्च (कूरियर, पैकिंग, विज्ञापन – “आपने दिए ₹” से एक टैप में)।"], ["डिलीवरी चार्ज गिने जाते हैं?", "हाँ – ये ग्राहक के दिए पैसे का हिस्सा हैं, तो आमदनी में गिने जाते हैं। कूरियर आपसे जो लेता है, वो ख़र्च में जोड़ें।"], ["छूट गिनी जाती है?", "हाँ। मुनाफ़ा उसी दाम पर बनता है जो ग्राहक ने असल में दिया – छूट या ख़ास दाम के बाद।"], ["पेमेंट गेटवे की फ़ीस घटती है?", "अपने आप नहीं। Razorpay इस्तेमाल करें तो उसकी फ़ीस ख़र्च में जोड़ें, या महीने में एक बार।"], ["रिफ़ंड और वापसी?", "रिफ़ंड “आपने दिए ₹” में जोड़ें, वो महीने की आमदनी से घट जाता है।"], ["बिक्री कब गिनी जाती है?", "पेमेंट होने पर – जब आप UPI पेमेंट पक्का करें, या गेटवे पक्का करे।"]], name: 'हिसाब', h1: 'खाता अपने आप लिखा जाता है। मुनाफ़े के साथ।', sub: 'हर पेड ऑर्डर अपने आप जुड़ता है। एक बार लागत डालें और हर पीस व महीने का मुनाफ़ा देखें। अपने सबसे अच्छे ग्राहक जानें। CA के लिए सब डाउनलोड करें।',
       steps: ['आम तरह बेचें – हर पेड ऑर्डर खाते में।', 'कैश बिक्री और ख़र्च एक टैप में जोड़ें।', 'आज, इस महीने और मुनाफ़ा एक नज़र में।'] } },
   buyers: { icon: 'lock', group: 3, clip: '', imgs: ['t-timeline', 't-receipt'],
-    en: { name: 'For your buyers', h1: 'Your buyers get what big online shops give.', sub: 'Buyers who trust your link pay faster and come back. Every order on NukkadSale comes with a timeline, a receipt, size help and reviews – and cash on delivery can start with a small advance.',
+    en: { name: 'For your buyers', h1: 'Your buyers get what big online shops give.', sub: 'Buyers who trust your link pay faster and come back. Every order on NukkadSale comes with a timeline, a receipt, size help and reviews.',
       steps: ['The buyer orders from your link and pays you directly.', 'They follow every step: paid, packed (with your photo), sent, delivered – and get a receipt.', 'After delivery they review it, and the next buyer sees real reviews on your shop.'],
-      items: [['Order timeline', 'From “Order placed” to “Delivered”, with the time of each step and the courier’s tracking.'], ['Packed-parcel photo', 'Snap the parcel when you tap “Mark as packed” – the buyer sees it on their order.'], ['Payment receipt', 'Shop, items, total, how it was paid. Save as PDF, print or share on WhatsApp.'], ['Size chart', 'Upload it once in Settings and show it on the sales you choose.'], ['“Ask my size”', 'One tap opens WhatsApp to you with the product name ready. Their size is remembered for next time.'], ['Reviews with photos', 'After delivery only, first name only. Hide any review, or switch them all off.'], ['Advance on cash on delivery', 'Ask for, say, ₹100 by UPI first. The order is confirmed only once you see it; the rest is paid in cash.'], ['Proof for you', 'Every step has a time on it – useful when a buyer says “not received”.']] },
-    hi: { name: 'आपके ग्राहकों के लिए', h1: 'आपके ग्राहकों को वो मिलता है जो बड़ी ऑनलाइन दुकानें देती हैं।', sub: 'जिन ग्राहकों को आपके लिंक पर भरोसा है, वो जल्दी पेमेंट करते हैं और लौटते हैं। NukkadSale पर हर ऑर्डर के साथ टाइमलाइन, रसीद, साइज़ मदद और रिव्यू – और कैश ऑन डिलीवरी थोड़े एडवांस से शुरू हो सकता है।',
+      items: [['Order timeline', 'From “Order placed” to “Delivered”, with the time of each step and the courier’s tracking.'], ['Packed-parcel photo', 'Snap the parcel when you tap “Mark as packed” – the buyer sees it on their order.'], ['Payment receipt', 'Shop, items, total, how it was paid. Save as PDF, print or share on WhatsApp.'], ['Size chart', 'Upload it once in Settings and show it on the sales you choose.'], ['“Ask my size”', 'One tap opens WhatsApp to you with the product name ready. Their size is remembered for next time.'], ['Reviews with photos', 'After delivery only, first name only. Hide any review, or switch them all off.'], ['Proof for you', 'Every step has a time on it – useful when a buyer says “not received”.']] },
+    hi: { name: 'आपके ग्राहकों के लिए', h1: 'आपके ग्राहकों को वो मिलता है जो बड़ी ऑनलाइन दुकानें देती हैं।', sub: 'जिन ग्राहकों को आपके लिंक पर भरोसा है, वो जल्दी पेमेंट करते हैं और लौटते हैं। NukkadSale पर हर ऑर्डर के साथ टाइमलाइन, रसीद, साइज़ मदद और रिव्यू।',
       steps: ['ग्राहक आपके लिंक से ऑर्डर करे और सीधे आपको पेमेंट करे।', 'हर कदम देखे: पेमेंट, पैक (आपकी फ़ोटो के साथ), भेजा, पहुँचा – और रसीद पाए।', 'डिलीवरी के बाद रिव्यू दे, और अगला ग्राहक आपकी दुकान पर असली रिव्यू देखे।'],
-      items: [['ऑर्डर टाइमलाइन', '“ऑर्डर किया” से “पहुँच गया” तक, हर कदम के समय और कूरियर ट्रैकिंग के साथ।'], ['पैक पार्सल की फ़ोटो', '“पैक हुआ” दबाते समय फ़ोटो लें – ग्राहक अपने ऑर्डर पर देखे।'], ['पेमेंट रसीद', 'दुकान, सामान, कुल रकम, कैसे भुगतान हुआ। PDF सेव, प्रिंट या WhatsApp पर शेयर।'], ['साइज़ चार्ट', 'सेटिंग में एक बार डालें और चुनी हुई सेल पर दिखाएं।'], ['“मेरा साइज़ पूछें”', 'एक टैप में WhatsApp पर आपसे पूछें, प्रोडक्ट का नाम पहले से लिखा। अगली बार के लिए साइज़ याद।'], ['फ़ोटो वाले रिव्यू', 'सिर्फ़ डिलीवरी के बाद, सिर्फ़ पहला नाम। कोई भी रिव्यू छुपाएं, या सब बंद करें।'], ['कैश ऑन डिलीवरी पर एडवांस', 'पहले, जैसे ₹100, UPI से माँगें। आपके देखने पर ही ऑर्डर पक्का; बाकी कैश में।'], ['आपके लिए सबूत', 'हर कदम पर समय दर्ज – जब ग्राहक कहे “नहीं मिला” तब काम आता है।']] } },
+      items: [['ऑर्डर टाइमलाइन', '“ऑर्डर किया” से “पहुँच गया” तक, हर कदम के समय और कूरियर ट्रैकिंग के साथ।'], ['पैक पार्सल की फ़ोटो', '“पैक हुआ” दबाते समय फ़ोटो लें – ग्राहक अपने ऑर्डर पर देखे।'], ['पेमेंट रसीद', 'दुकान, सामान, कुल रकम, कैसे भुगतान हुआ। PDF सेव, प्रिंट या WhatsApp पर शेयर।'], ['साइज़ चार्ट', 'सेटिंग में एक बार डालें और चुनी हुई सेल पर दिखाएं।'], ['“मेरा साइज़ पूछें”', 'एक टैप में WhatsApp पर आपसे पूछें, प्रोडक्ट का नाम पहले से लिखा। अगली बार के लिए साइज़ याद।'], ['फ़ोटो वाले रिव्यू', 'सिर्फ़ डिलीवरी के बाद, सिर्फ़ पहला नाम। कोई भी रिव्यू छुपाएं, या सब बंद करें।'], ['आपके लिए सबूत', 'हर कदम पर समय दर्ज – जब ग्राहक कहे “नहीं मिला” तब काम आता है।']] } },
   live: { icon: 'bell', group: 2, clip: '', imgs: ['live', 'soon'],
     en: { name: 'Live drops', h1: 'Make every sale an event.', sub: 'Announce a time in your groups. Buyers get a countdown and can ask to be reminded. When it opens, everyone sees the pieces running out and who just bought – and you see the whole group turn up.',
       steps: ['Add a product, tick “Live drop” and pick a start time.', 'Share it – buyers see a countdown and tap “Remind me”. When it opens, you message them in one tap.', 'Buyers watch stock fall live: “Only 4 left!”, “Pooja just bought one”, then “Sold out in 12 minutes”.'],
@@ -518,16 +514,15 @@ details.fgroup[open] summary.fhead{margin-bottom:14px}
 .rules b{display:block;margin-bottom:3px}.rules span{color:var(--muted);font-size:.92rem}@media (max-width:900px){.rules{grid-template-columns:1fr}}
 .whatif{margin-top:30px}.whatif details{margin-top:10px}
 .buysec{background:#fff;border-top:1px solid var(--line)}
-.buy5{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:36px}
-.btile{grid-column:span 2;background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column}
-.btile.bt-reviews,.btile.bt-advance{grid-column:span 3}
+.buy5{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:36px}
+.btile{background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:16px;display:flex;flex-direction:column}
 .btile .bimg{height:230px;overflow:hidden;border-radius:14px;background:#fff;border:1px solid var(--line);margin-bottom:14px;display:flex;align-items:flex-start;justify-content:center}
 .btile .bimg img{width:100%;max-width:300px;display:block}.btile h3{font-size:1.08rem;margin:0 0 4px}.btile p{color:var(--muted);font-size:.92rem}
 .protect{margin-top:20px;display:flex;gap:14px;align-items:center;background:var(--soft);border-radius:20px;padding:16px 20px}
 .protect .ic{width:44px;height:44px;border-radius:12px;background:#fff;color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}.protect p{flex:1;font-weight:600}
-@media (max-width:1000px){.buy5{grid-template-columns:1fr 1fr}.btile,.btile.bt-reviews,.btile.bt-advance{grid-column:span 1}.btile.bt-advance{grid-column:span 2}}
+@media (max-width:1000px){.buy5{grid-template-columns:1fr 1fr}}
 @media (max-width:560px){.buy5{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:30px -20px 0;padding:0 20px 6px;scrollbar-width:none}.buy5::-webkit-scrollbar{display:none}
-  .btile,.btile.bt-advance{flex:0 0 80%;scroll-snap-align:center}.protect{flex-wrap:wrap}}
+  .btile{flex:0 0 80%;scroll-snap-align:center}.protect{flex-wrap:wrap}}
 .newpill{display:inline-flex;align-items:center;gap:8px;margin-top:12px;background:#1d1a16;color:#fff;border-radius:99px;padding:8px 14px 8px 8px;font-weight:700;font-size:.88rem;text-decoration:none;min-height:40px}
 .newpill span{background:var(--brand);border-radius:99px;padding:3px 9px;font-size:.75rem;font-weight:900;letter-spacing:.06em}
 .newsec{background:#16130f;color:#fff}.newsec .lead{color:#c9bfb3}
@@ -982,7 +977,7 @@ site.get('/features/:slug', (c) => {
         <div class="wrap">
           <h2>{k.featGet}</h2>
           <div class="fitems">{items.map(([t, d]) => <div class="fitem"><b>{t}</b><span>{d}</span></div>)}</div>
-          {f.imgs[0].startsWith('t-') ? <div class="cardshots">{['t-size', 't-reviews', 't-advance'].map((img) => <img class="cardshot" src={`/site/${img}-${lang}.webp`} alt="" loading="lazy" />)}</div> : <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={LANG_IMGS.has(img) ? `${img}-${lang}` : img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>}
+          {f.imgs[0].startsWith('t-') ? <div class="cardshots">{['t-size', 't-reviews', 't-receipt'].map((img) => <img class="cardshot" src={`/site/${img}-${lang}.webp`} alt="" loading="lazy" />)}</div> : <div class="pair" style="margin-top:36px">{f.imgs.map((img, i) => <Phone img={LANG_IMGS.has(img) ? `${img}-${lang}` : img} cls={i ? 'b' : 'a'} alt={x.name} />)}</div>}
         </div>
       </section>
       <section data-sec={`f-${slug}-more`} style="padding-top:10px">

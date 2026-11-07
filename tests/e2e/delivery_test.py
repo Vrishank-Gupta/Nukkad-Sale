@@ -22,7 +22,7 @@ def client(ip):
         except urllib.error.HTTPError as e: return e.code, e.headers, e.read().decode(errors='replace')
     return go
 def sql(q):
-    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
+    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
 def sale(sel, fields):
     bd = '----kk' + str(random.randint(1, 10**9))
     body = ''.join(f'--{bd}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields) + f'--{bd}--\r\n'
@@ -68,16 +68,17 @@ total = sum(l['amount_paise'] for l in lines)
 check(len(lines) == 2 and sum(l['ship_paise'] for l in lines) == 6000, 'cart pays delivery once (₹60, not ₹60 + ₹50)')
 check(60901 <= total <= 60999, f'cart total ₹400 + ₹150 + ₹60, paise off: ₹{total/100:.2f}')
 
-# COD: price + delivery + COD charge, exact
+# Cash on delivery is switched off: a forged pay=cod is a normal UPI order (no COD charge), a few paise under ₹460
 oc = buy(client('10.4.0.6'), d1, '9811000004', pay='cod')
-check(order(oc) == {'amount_paise': 49000, 'ship_paise': 6000, 'cart_id': None}, 'COD order: ₹400 + ₹60 delivery + ₹30 COD charge = ₹490')
+o = order(oc)
+check(45901 <= o['amount_paise'] <= 45999 and o['ship_paise'] == 6000, 'pay=cod ignored: ₹400 + ₹60 delivery, paid by UPI, no COD charge')
 
 # no sale ever charges more than its listed total
 rows = sql("SELECT o.amount_paise, d.price_paise * o.qty + o.ship_paise AS listed FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.pay_mode = 'direct' AND o.cart_id IS NULL")
 check(all(r['amount_paise'] <= r['listed'] for r in rows), f'no UPI order is above its listed total ({len(rows)} checked)')
 
 # plan page: this month's value above the Pay button
-sel(f'/app/orders/{oc}/cash', {})
+sel(f'/app/orders/{oc}/received', {})
 s, h, bill = sel('/app/billing')
-check('This month: 1 order, ₹490 through NukkadSale' in bill, 'plan page shows this month’s orders and sales')
+check(re.search(r'This month: 1 order, ₹459\.\d\d through NukkadSale', bill), 'plan page shows this month’s orders and sales')
 print(f'\nall {ok} checks passed')

@@ -242,7 +242,7 @@ Caption:
 ### Reel 16 – Labels: "Still writing addresses by hand?" (12 s) · `reel-16-labels.mp4` · kraft-paper look
 > Still writing addresses by hand? ✍️ 30 parcels tonight?
 >
-> On NukkadSale, "To send" → Print shipping labels: name, address, items and COD amount for every parcel, 8 on an A4 page. Print, cut, stick, ship.
+> On NukkadSale, "To send" → Print shipping labels: name, address and items for every parcel, 8 on an A4 page. Print, cut, stick, ship.
 >
 > Pack in minutes, not hours. Link in bio.
 >
@@ -399,7 +399,7 @@ Own look on purpose (dark + money green, big centred phones, section labels) –
 > #Khata #SmallBusinessIndia #SellerTips #Profit
 
 ### Post 16 – Labels · `post-16-labels.png`
-> Stop copying addresses by hand. One tap on "To send" prints a label for every parcel – name, address, items, COD. 8 on an A4 page. 📦
+> Stop copying addresses by hand. One tap on "To send" prints a label for every parcel – name, address and items. 8 on an A4 page. 📦
 > Link in bio → nukkadsale.in
 > #WhatsAppSeller #Shipping #SmallBusinessIndia
 
@@ -535,7 +535,7 @@ day in the life…) are scripted for the brand ambassador in `AMBASSADOR.md`.
 ### Reel 23 – 4 myths about selling on WhatsApp (17 s) · `reel-23-myths.mp4`
 > 4 myths that keep WhatsApp sellers small ❌
 >
-> You need a website. UPI can't tell you who paid. COD means fake orders. Hisaab needs a CA. All four – busted, with one app.
+> You need a website. UPI can't tell you who paid. Many groups means chaos. Hisaab needs a CA. All four – busted, with one app.
 > Link in bio → nukkadsale.in
 >
 > #WhatsAppSeller #MythVsFact #SmallBusinessIndia #SellerTips
@@ -545,7 +545,7 @@ day in the life…) are scripted for the brand ambassador in `AMBASSADOR.md`.
 >
 > 1. You need a website → you need a link
 > 2. UPI can't tell who paid → each order gets its own exact amount
-> 3. COD means fake orders → ask a small UPI advance first
+> 3. Many groups means chaos → one link, stock updates itself
 > 4. Hisaab needs a CA → your khata writes itself
 >
 > Save this for the next time someone says it 🔖 Get your free shop → nukkadsale.in

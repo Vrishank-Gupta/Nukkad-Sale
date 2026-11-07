@@ -144,7 +144,7 @@ legal.get('/refunds', (c) =>
       <ul>
         <li><b>Refunds are given by the seller.</b> Use “Message seller” on your order page. The seller refunds to the UPI ID or card you paid from.</li>
         <li><b>Cancel before paying:</b> simply don't pay, or tap “Cancel” in the WhatsApp chat. The piece is held only for a few minutes and nothing is charged.</li>
-        <li><b>Cancelled after paying:</b> ask the seller; once they cancel, they refund you in full. A cash-on-delivery advance is refunded the same way.</li>
+        <li><b>Cancelled after paying:</b> ask the seller; once they cancel, they refund you in full.</li>
         <li><b>Paid after the item sold out:</b> the order is marked “Refund due” for the seller, who must return your money.</li>
         <li><b>Paid twice or the wrong amount:</b> tell the seller – they see every payment in their UPI app and return anything extra.</li>
         <li><b>Part of an order can't be sent:</b> the seller refunds the part they can't send.</li>

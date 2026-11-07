@@ -27,7 +27,7 @@ def client(ip):
 def sr(path, body):
     return json.loads(urllib.request.urlopen(urllib.request.Request(SR + path, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'})).read())
 def sql(q):
-    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
+    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
 def sale(sel, fields):
     bd = '----kk' + str(random.randint(1, 10**9))
     body = ''.join(f'--{bd}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields) + f'--{bd}--\r\n'
@@ -108,14 +108,16 @@ client('10.7.9.4')(f"/webhooks/shiprocket/{row['sr_hook']}", raw=json.dumps(hook
 check(sql(f"SELECT status FROM shipments WHERE id = '{sh['id']}'")[0]['status'] == 'delivered' and sql(f"SELECT ship_status FROM orders WHERE id = '{o1}'")[0]['ship_status'] == 'delivered', 'webhook: delivered → order Delivered')
 check('Delivered' in b(f'/o/{o1}')[2], 'buyer page shows Delivered')
 
-# ---------- COD booking ----------
+# ---------- second parcel (cash on delivery is switched off: a forged pay=cod is a normal UPI order) ----------
 o2 = order(drop, '9811400002', cod=True, ip='10.7.9.5')
+check(sql(f"SELECT pay_mode FROM orders WHERE id = '{o2}'")[0]['pay_mode'] == 'direct', 'pay=cod ignored: UPI order')
+sel(f'/app/orders/{o2}/received', {})
 s, h, bp = sel(f'/app/ship/book/{o2}')
-check('Courier collects' in bp and 'Blue Dart Air' not in bp, 'COD: courier collects the cash; couriers without COD are hidden')
+check('Courier collects' not in bp and 'Blue Dart Air' in bp, 'prepaid parcel: every courier offered, nothing to collect')
 sel(f'/app/ship/book/{o2}', {'courier': '10', 'pin': '560038', 'g': '500', 'city': 'Bengaluru', 'state': 'Karnataka'})
 sh2 = sql(f"SELECT * FROM shipments WHERE order_key = '{o2}'")[0]
 created = [c for c in json.loads(urllib.request.urlopen(SR + '/_calls').read()) if c[0] == 'POST' and c[1] == '/orders/create/adhoc'][-1][2]
-check(created['payment_method'] == 'COD' and sh2['cod_paise'] > 0, 'COD order booked as COD with the amount to collect')
+check(created['payment_method'] == 'Prepaid' and sh2['cod_paise'] == 0, 'booked as Prepaid, nothing for the courier to collect')
 
 # ---------- failed delivery → re-attempt, then return → restock ----------
 sr('/_track', {'awb': sh2['awb'], 'status': 'UNDELIVERED', 'activity': 'Customer not available'})
@@ -136,7 +138,7 @@ check(sql(f"SELECT status FROM shipments WHERE id = '{sh2['id']}'")[0]['status']
 sel(f"/app/ship/{sh2['id']}/restock", {}); sel(f"/app/ship/{sh2['id']}/restock", {})
 check(sql(f"SELECT available FROM variants WHERE drop_id = '{drop}'")[0]['available'] == avail + 1, 'restock puts the piece back once (not twice)')
 check('delivery needs you' not in sel('/app')[2], 'home task clears')
-check(sql(f"SELECT status FROM orders WHERE id = '{o2}'")[0]['status'] == 'rejected' and f'#{o2[:6].upper()}' not in sel('/app/orders?tab=send')[2], 'returned COD order is cancelled and leaves To send')
+check(sql(f"SELECT status FROM orders WHERE id = '{o2}'")[0]['status'] == 'paid' and f'#{o2[:6].upper()}' not in sel('/app/orders?tab=send')[2], 'returned prepaid order: payment kept (seller refunds), leaves To send')
 
 # ---------- prepaid parcel comes back: send again, or restock and refund ----------
 o6 = order(drop, '9811400006', ip='10.7.9.10'); sel(f'/app/orders/{o6}/received', {})

@@ -21,7 +21,7 @@ def client(ip):
         except urllib.error.HTTPError as e: return e.code, e.headers, e.read().decode(errors='replace')
     return go
 def sql(q):
-    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
+    return json.loads(subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *(['--persist-to', __import__('os').environ['KK_PERSIST']] if __import__('os').environ.get('KK_PERSIST') else []), '--json', '--command', q], capture_output=True, text=True).stdout)[0]['results']
 def sale(sel, fields):
     bd = '----kk' + str(random.randint(1, 10**9))
     body = ''.join(f'--{bd}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n' for k, v in fields) + f'--{bd}--\r\n'

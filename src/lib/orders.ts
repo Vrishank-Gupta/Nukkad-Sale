@@ -86,16 +86,33 @@ const giveBackStock = (db: D1Database, variantId: number, qty: number) =>
  * no UTR needed. A payment is one order, or one cart (several orders paid together).
  * Payments that expired in the last day stay reserved too, because a buyer may still pay late.
  */
-async function uniqueAmount(db: D1Database, sellerId: string, base: number, excludeKey?: string): Promise<number> {
-  const { results } = await db
-    .prepare(`SELECT COALESCE(cart_id, id) AS k, SUM(amount_paise) AS amt FROM orders WHERE seller_id = ?
-              AND (status IN ${ACTIVE} OR (status = 'expired' AND created_at > ?)) GROUP BY k`)
-    .bind(sellerId, Date.now() - 86_400_000)
-    .all<{ k: string; amt: number }>()
+/** Every amount this seller is waiting to receive: open (or recently expired) order payments and "Ask" reserves. */
+async function amountsInUse(db: D1Database, sellerId: string, excludeKey?: string): Promise<number[]> {
+  const [{ results: pays }, { results: res }] = await Promise.all([
+    db.prepare(`SELECT COALESCE(cart_id, id) AS k, SUM(amount_paise) AS amt FROM orders WHERE seller_id = ?
+                AND (status IN ${ACTIVE} OR (status = 'expired' AND created_at > ?)) GROUP BY k`)
+      .bind(sellerId, Date.now() - 86_400_000).all<{ k: string; amt: number }>(),
+    db.prepare(`SELECT key AS k, amount_paise AS amt FROM ask_reserves WHERE seller_id = ? AND status IN ('due', 'claimed')`).bind(sellerId).all<{ k: string; amt: number }>(),
+  ])
+  return [...pays, ...res].filter((r) => r.k !== excludeKey).map((r) => r.amt)
+}
+
+/** A few paise under `base` that no other open payment of this seller uses (1–99 paise, up to ₹4.99 on a busy day). */
+export async function pickUniqueAmount(db: D1Database, sellerId: string, base: number, excludeKey?: string): Promise<number> {
+  const inUse = await amountsInUse(db, sellerId, excludeKey)
   // The unique paise come OFF the price (₹798.63 for ₹799), so a buyer never pays more than listed.
-  const taken = new Set(results.filter((r) => r.k !== excludeKey && r.amt <= base && r.amt >= base - 99).map((r) => base - r.amt))
-  const free = Array.from({ length: Math.min(99, base - 1) }, (_, i) => i + 1).filter((k) => !taken.has(k))
-  return base - (free.length ? free[Math.floor(Math.random() * free.length)] : 0)
+  for (const span of [99, 499]) {
+    const taken = new Set(inUse.filter((a) => a <= base && a >= base - span).map((a) => base - a))
+    const free = Array.from({ length: Math.min(span, base - 1) }, (_, i) => i + 1).filter((k) => !taken.has(k))
+    if (free.length) return base - free[Math.floor(Math.random() * free.length)]
+  }
+  return base
+}
+const uniqueAmount = pickUniqueAmount
+
+/** True if another open payment of this seller already has exactly this amount (two buyers at the same moment). */
+export async function amountClash(db: D1Database, sellerId: string, key: string, total: number) {
+  return (await amountsInUse(db, sellerId, key)).includes(total)
 }
 
 // ---------- Carts: several orders paid as one ----------
@@ -137,14 +154,22 @@ export async function repriceCart(db: D1Database, seller: Pick<Seller, 'id' | 'p
   const items = results.reduce((n, r) => n + r.items, 0)
   const disc = cartOffer(seller, items)
   const base = items + results.reduce((n, r) => n + r.ship, 0) - disc
-  const total = mode === 'direct' ? await uniqueAmount(db, seller.id, base, key) : base
-  await db.batch(results.map((r) =>
+  const save = (total: number) => db.batch(results.map((r) =>
     db.prepare(`UPDATE orders SET amount_paise = ?, disc_paise = ? WHERE id = ?`)
       // Lines add up to the total: the first line carries the discount and the unique-paise adjustment.
       .bind(r.items + r.ship + (r.id === key ? total - base - disc : 0), r.id === key ? disc : 0, r.id)))
+  if (mode !== 'direct') return void (await save(base))
+  // Pick, save, then check nobody took the same amount at the same moment; pick again if they did.
+  for (let i = 0; i < 4; i++) {
+    const total = await uniqueAmount(db, seller.id, base, key)
+    await save(total)
+    if (!(await amountClash(db, seller.id, key, total))) return
+  }
 }
 
 export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, input: ReserveInput): Promise<ReserveResult> {
+  // Cash on delivery is switched off everywhere: NukkadSale never handles cash or holds money.
+  input = { ...input, cod: false }
   const db = env.DB
   if (drop.status !== 'live') return { ok: false, reason: 'closed' }
   // Scheduled drop: visible, but nobody can order before it goes live.
@@ -152,10 +177,11 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
   if (input.qty < 1 || (!input.assisted && input.qty > drop.max_per_order)) return { ok: false, reason: 'qty' }
 
   if (!input.assisted) {
-    // One open hold per buyer per drop – a re-tap returns the existing order instead of locking more stock.
+    // One open hold per buyer per size – a re-tap returns the existing order instead of locking more stock.
+    // (Per size, not per product: a cart with an M and an L of the same kurta keeps both.)
     const existing = await db
-      .prepare(`SELECT * FROM orders WHERE drop_id = ? AND buyer_phone = ? AND status IN ${ACTIVE} LIMIT 1`)
-      .bind(drop.id, input.phone)
+      .prepare(`SELECT * FROM orders WHERE drop_id = ? AND variant_id = ? AND buyer_phone = ? AND status IN ${ACTIVE} LIMIT 1`)
+      .bind(drop.id, input.variantId, input.phone)
       .first<Order>()
     if (existing) return { ok: true, order: existing }
 

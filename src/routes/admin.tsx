@@ -79,10 +79,12 @@ admin.post('/login', async (c) => {
   if (!phone || !isAdmin(c.env, phone)) return fail('Wrong number or PIN.')
   const a = await c.env.DB.prepare(`SELECT * FROM admins WHERE phone = ?`).bind(phone).first<{ pin_hash: string; pin_salt: string; failed_logins: number; locked_until: number }>()
   if (!a) return c.redirect('/admin/setup?err=' + enc('Set up your admin PIN first.'), 303)
-  if (a.locked_until > Date.now()) return fail('Too many wrong tries. Try again in 15 minutes.')
+  if (a.locked_until > Date.now()) return fail(`Too many wrong tries. Try again in ${Math.ceil((a.locked_until - Date.now()) / 60000)} min.`)
   if ((await hashPin(String(f.pin ?? ''), a.pin_salt, c.env.SECRET_KEY)) !== a.pin_hash) {
+    // Every 5th wrong try locks, each lock twice as long as the last (15 min … 24 h), until a correct PIN.
     const fails = a.failed_logins + 1
-    await c.env.DB.prepare(`UPDATE admins SET failed_logins = ?, locked_until = ? WHERE phone = ?`).bind(fails >= 5 ? 0 : fails, fails >= 5 ? Date.now() + 15 * 60000 : 0, phone).run()
+    const lockMin = fails % 5 === 0 ? Math.min(24 * 60, 15 * 2 ** (fails / 5 - 1)) : 0
+    await c.env.DB.prepare(`UPDATE admins SET failed_logins = ?, locked_until = ? WHERE phone = ?`).bind(fails, lockMin ? Date.now() + lockMin * 60000 : 0, phone).run()
     return fail('Wrong number or PIN.')
   }
   await c.env.DB.prepare(`UPDATE admins SET failed_logins = 0 WHERE phone = ?`).bind(phone).run()

@@ -20,7 +20,7 @@ import { asPlan, higherPlans, lowerPlans, nextMonthStart, nextPeriod, planUsage,
 import { upiAppLinks, upiLink } from '../lib/upi'
 import { cancelCod, confirmAdvance, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
 import { isValidVpa } from '../lib/upi'
-import { clip, displayPhone, istDay, istDayStart, liveWhen, normalizePhone, parsePaise, randomId, rupees, waLink } from '../lib/util'
+import { clip, displayPhone, isPhotoType, istDay, istDayStart, liveWhen, normalizePhone, parsePaise, randomId, rupees, waLink } from '../lib/util'
 import { waBotEnabled, waEnabled } from '../lib/whatsapp'
 import { ago, BASE_CSS, Empty, Flash, Icon, type IconName, InstallCard, Layout, PhoneInput, PinInput, ShipSteps, StatusChip, Stepper, StockBar, StockSummary, type Nav } from '../views/layout'
 import { here, OS_JS } from './public'
@@ -492,20 +492,6 @@ app.get('/drops/new', async (c) => {
           <div><small style="display:block;margin-bottom:4px">{t.freeShipLabel}</small><span class="money"><span>₹</span><input name="free_ship_above" inputmode="decimal" placeholder="—" value={pre?.drop.free_ship_above_paise ? String(pre.drop.free_ship_above_paise / 100) : ''} aria-label={t.freeShipLabel} /></span></div>
         </div>
         <div class="hint">{t.shipHint}</div>
-        <label class="choice" style="margin-top:18px">
-          <input type="checkbox" name="cod" value="1" checked={Boolean(pre?.drop.cod_enabled)} data-codtoggle />
-          <span class="grow">
-            <b style="display:flex;gap:8px;align-items:center"><Icon n="cash" s={18} />{t.codLabel}</b>
-            <small style="display:block;margin-top:2px">{t.codHint}</small>
-            <span data-codfee hidden={!pre?.drop.cod_enabled} style="display:block;margin-top:10px;max-width:220px">
-              <small style="display:block;margin-bottom:4px">{t.codFeeLabel}</small>
-              <span class="money"><span>₹</span><input name="cod_fee" inputmode="decimal" placeholder="0" value={pre?.drop.cod_fee_paise ? String(pre.drop.cod_fee_paise / 100) : ''} aria-label={t.codFeeLabel} /></span>
-              <small style="display:block;margin:12px 0 4px">{t.advLabel}</small>
-              <span class="money"><span>₹</span><input name="cod_advance" inputmode="decimal" placeholder="0" value={pre?.drop.cod_advance_paise ? String(pre.drop.cod_advance_paise / 100) : ''} aria-label={t.advLabel} /></span>
-              <small style="display:block;margin-top:4px">{t.advHint}</small>
-            </span>
-          </span>
-        </label>
         <label class="choice" style="margin-top:12px">
           <input type="checkbox" name="live_drop" value="1" checked={Boolean(pre?.drop.live_drop)} />
           <span class="grow">
@@ -568,7 +554,7 @@ app.post('/drops/new', async (c) => {
   const id = randomId(7)
   // Up to 5 photos. "Sell again" keeps the earlier photos unless new ones are picked.
   const files = (Array.isArray(f.image) ? f.image : [f.image]).filter((x): x is File => x instanceof File && x.size > 0).slice(0, 5)
-  if (files.some((x) => !x.type.startsWith('image/'))) return fail(t.needPhotoFile)
+  if (files.some((x) => !isPhotoType(x.type))) return fail(t.needPhotoFile)
   if (files.some((x) => x.size > MAX_IMAGE_BYTES)) return fail(t.photoTooBig)
   let imageKeys: string[] = []
   if (files.length) {
@@ -589,7 +575,7 @@ app.post('/drops/new', async (c) => {
   const chosenUpi = one(f.upi)
   const upiVpa = chosenUpi && (await c.env.DB.prepare(`SELECT 1 FROM seller_upis WHERE seller_id = ? AND vpa = ?`).bind(s.id, chosenUpi).first()) ? chosenUpi : null
 
-  const cod = one(f.cod) === '1'
+  const cod = false // Cash on delivery is switched off: NukkadSale never handles cash or holds money.
   const codFee = cod ? Math.min(100_000, parsePaise(one(f.cod_fee) || '0') ?? 0) : 0
   const shipFee = Math.min(100_000, parsePaise(one(f.ship_fee) || '0') ?? 0)
   const freeShipAbove = shipFee ? Math.min(100_000_000, parsePaise(one(f.free_ship_above) || '0') ?? 0) : 0
@@ -1117,7 +1103,6 @@ app.get('/ship', async (c) => {
               <div><label for="rpin">{t.pincode}</label><input id="rpin" name="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength={6} required value={pin} placeholder="560038" /></div>
               <div><label for="rg">{t.shipWeight}</label><input id="rg" name="g" inputmode="numeric" value={String(g)} /></div>
             </div>
-            <label class="row" style="gap:8px"><input type="checkbox" name="cod" value="1" checked={cod} style="width:auto;min-height:0" />{t.codBtn}</label>
             <button class="btn block" type="submit">{t.shipCheck}</button>
           </form>
           {rates && <CourierList t={t} rates={rates} />}
@@ -1804,7 +1789,8 @@ app.get('/proof/:id', async (c) => {
   const o = await ownOrder(c, c.req.param('id'))
   const obj = o?.proof_key ? await c.env.IMAGES.get(o.proof_key) : null
   if (!obj) return c.notFound()
-  return new Response(obj.body, { headers: { 'Content-Type': obj.httpMetadata?.contentType ?? 'image/jpeg', 'Cache-Control': 'private, max-age=3600' } })
+  const type = obj.httpMetadata?.contentType ?? 'image/jpeg'
+  return new Response(obj.body, { headers: { 'Content-Type': isPhotoType(type) ? type : 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': 'private, max-age=3600' } })
 })
 
 app.post('/orders/:id/reject', async (c) => {
@@ -1836,7 +1822,7 @@ async function savePackPhoto(c: Context<AppEnv>, key: string) {
   const ct = c.req.header('content-type') ?? ''
   if (!ct.includes('multipart/form-data')) return false
   const photo = (await c.req.parseBody()).photo
-  if (!(photo instanceof File) || !photo.size || photo.size > MAX_IMAGE_BYTES || !photo.type.startsWith('image/')) return false
+  if (!(photo instanceof File) || !photo.size || photo.size > MAX_IMAGE_BYTES || !isPhotoType(photo.type)) return false
   const k = `k/${randomId(16)}`
   await c.env.IMAGES.put(k, photo.stream(), { httpMetadata: { contentType: photo.type } })
   await c.env.DB.prepare(`UPDATE orders SET pack_photo_key = ?1 WHERE id = ?2 OR cart_id = ?2`).bind(k, key).run()
@@ -2755,7 +2741,7 @@ app.post('/asks/new', async (c) => {
   for (let i = 0; i < 6; i++) {
     const name = String(f[`name${i}`] ?? '').trim().slice(0, 60), price = parsePaise(String(f[`price${i}`] ?? '')), file = f[`image${i}`]
     if (!name && !(file instanceof File && file.size)) continue
-    if (!name || !price || price < 100 || !(file instanceof File) || !file.size || !file.type.startsWith('image/')) return fail(t.askErrItems)
+    if (!name || !price || price < 100 || !(file instanceof File) || !file.size || !isPhotoType(file.type)) return fail(t.askErrItems)
     if (file.size > MAX_IMAGE_BYTES) return fail(t.photoTooBig)
     items.push({ title: name, price, file })
   }
@@ -2906,7 +2892,7 @@ app.post('/settings/size-chart', async (c) => {
     return c.redirect('/app/settings?ok=' + enc(t.sizeChartSaved) + '#sizechart', 303)
   }
   const file = f.chart
-  if (!(file instanceof File) || !file.size || !file.type.startsWith('image/')) return c.redirect('/app/settings?err=' + enc(t.needPhotoFile) + '#sizechart', 303)
+  if (!(file instanceof File) || !file.size || !isPhotoType(file.type)) return c.redirect('/app/settings?err=' + enc(t.needPhotoFile) + '#sizechart', 303)
   if (file.size > MAX_IMAGE_BYTES) return c.redirect('/app/settings?err=' + enc(t.photoTooBig) + '#sizechart', 303)
   const key = `c/${s.id}-${randomId(6)}`
   await c.env.IMAGES.put(key, file.stream(), { httpMetadata: { contentType: file.type } })

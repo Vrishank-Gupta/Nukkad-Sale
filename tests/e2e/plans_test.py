@@ -5,7 +5,7 @@
 # Needs the app running locally on a fresh database with:
 #   --var OPEN_SIGNUP:1 --var ADMIN_PHONES:919999999999 --var ADMIN_SETUP_CODE:setup-code
 # Set KK_PERSIST to the --persist-to folder if the app uses one.
-import http.cookiejar, json, os, random, re, subprocess, sys, urllib.error, urllib.parse, urllib.request
+import http.cookiejar, json, os, random, re, subprocess, sys, time, urllib.error, urllib.parse, urllib.request
 B = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8787'
 ok = 0
 def check(cond, what):
@@ -37,7 +37,10 @@ def cod_order(drop, variant):
     n_ip[0] += 1
     b = client(f'10.9.{n_ip[0] // 200}.{n_ip[0] % 200 + 1}')
     ph = '98' + str(10**7 + n_ip[0])
-    return b(f'/d/{drop}', {'variant': variant, 'qty': '1', 'name': 'Asha Rao', 'phone': ph, 'address': '12 MG Road, Indiranagar, Bengaluru', 'pincode': '560038', 'pay': 'cod'})
+    # Cash on delivery is gone: place a normal order and mark it paid (that's what counts against the plan).
+    res = b(f'/d/{drop}', {'variant': variant, 'qty': '1', 'name': 'Asha Rao', 'phone': ph, 'address': '12 MG Road, Indiranagar, Bengaluru', 'pincode': '560038'})
+    sql(f"UPDATE orders SET status = 'paid', paid_at = {int(time.time() * 1000)} WHERE buyer_phone = '91{ph}' AND status = 'pending'")
+    return res
 
 phone = '93' + str(random.randint(10**7, 10**8 - 1))
 sel = client('10.8.0.1')
@@ -53,7 +56,7 @@ check('0 of 30 orders used this month' in home and 'Shuruaat plan' in home, 'hom
 for _ in range(24):
     s, h, _ = cod_order(drop, variant)
     if s != 303: break
-check(s == 303, '24 cash-on-delivery orders placed')
+check(s == 303, '24 paid orders')
 s, h, home = sel('/app')
 check('24 of 30 orders used' in home and 'Only 6 of your 30 orders left' in home, 'at 80%: meter 24/30 and an upgrade warning')
 

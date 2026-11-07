@@ -50,3 +50,7 @@ export function liveWhen(ms: number, lang: 'en' | 'hi' = 'en') {
     : new Date(ms).toLocaleDateString(loc, { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })
   return `${d}, ${time}`
 }
+
+/** Photo uploads: only raster formats a phone camera makes. SVG and anything else can carry scripts. */
+export const PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'])
+export const isPhotoType = (t: string) => PHOTO_TYPES.has((t || '').toLowerCase())
