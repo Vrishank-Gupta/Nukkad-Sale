@@ -1,8 +1,9 @@
 import type { Bindings } from '../env'
 import { createPaymentLink, getPaymentLink } from './razorpay'
 import { decrypt, encrypt } from './crypto'
-import { istDay, istDayStart, randomId } from './util'
-import { planUsage, upgradePaid } from './plans'
+import { istDay, istDayStart, randomId, rupees } from './util'
+import { pushToSeller } from './push'
+import { applyScheduledPlans, planUsage, upgradePaid } from './plans'
 
 /*
  * Monthly platform fees (what sellers pay NukkadSale).
@@ -82,7 +83,8 @@ export type Invoice = {
 }
 
 /** Create this month's invoice for every seller whose fee applies. Safe to run repeatedly. */
-export async function ensureInvoices(env: Bindings, sellerId?: string) {
+/** `force` (admin's "bill now", one seller): bill this month even if a trial ended part-way through it. */
+export async function ensureInvoices(env: Bindings, sellerId?: string, force = false) {
   const now = Date.now()
   const period = currentPeriod(now)
   const settings = await getSettings(env)
@@ -93,8 +95,8 @@ export async function ensureInvoices(env: Bindings, sellerId?: string) {
   const { results } = await env.DB
     .prepare(
       `SELECT s.id, s.plan_fee_paise FROM sellers s
-       WHERE s.plan_fee_paise > 0 AND (s.trial_until <= ?1 OR s.trial_until <= s.created_at + 60000) AND s.trial_until <= ?4 AND s.account_status = 'active' ${sellerId ? 'AND s.id = ?3' : ''}
-       AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.seller_id = s.id AND (i.period = ?2 OR (i.period LIKE ?2 || '-u%' AND i.status IN ('paid', 'claimed')))) LIMIT 50`,
+       WHERE s.plan_fee_paise > 0 AND ${force && sellerId ? '1' : '(s.trial_until <= ?1 OR s.trial_until <= s.created_at + 60000)'} AND s.trial_until <= ?4 AND s.account_status = 'active' ${sellerId ? 'AND s.id = ?3' : ''}
+       AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.seller_id = s.id AND (i.period = ?2 OR (i.period LIKE ?2 || '-%' AND i.status IN ('paid', 'claimed')))) LIMIT 50`,
     )
     .bind(...(sellerId ? [monthStart, period, sellerId, now] : [monthStart, period, null, now]))
     .all<{ id: string; plan_fee_paise: number }>()
@@ -108,8 +110,12 @@ export async function ensureInvoices(env: Bindings, sellerId?: string) {
     const free = Array.from({ length: 99 }, (_, i) => i + 1).filter((k) => !used.has(k))
     const amount = s.plan_fee_paise + (free.length ? free[Math.floor(Math.random() * free.length)] : 0)
     const dueAt = now + graceDays(settings) * 86_400_000
-    await env.DB.prepare(`INSERT OR IGNORE INTO invoices (id, seller_id, period, amount_paise, due_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+    const ins = await env.DB.prepare(`INSERT OR IGNORE INTO invoices (id, seller_id, period, amount_paise, due_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
       .bind(randomId(12), s.id, period, amount, dueAt, now).run()
+    // Tell the seller on their phone (app alerts); the admin can also send it on WhatsApp from the shop page.
+    if (ins.meta.changes) await pushToSeller(env, s.id, (lang) => lang === 'hi'
+      ? { title: 'NukkadSale फ़ीस', body: `इस महीने की फ़ीस ${rupees(amount)} – ${istDay(dueAt).split('-').reverse().join('/')} तक भरें।`, url: '/app/billing' }
+      : { title: 'NukkadSale fee', body: `This month's fee: ${rupees(amount)}. Please pay by ${istDay(dueAt).split('-').reverse().join('/')}.`, url: '/app/billing' }).catch(() => 0)
   }
 }
 
@@ -177,6 +183,7 @@ export async function markInvoicePaid(env: Bindings, invoiceId: string, via: str
 
 /** Cron: create this month's invoices and catch any online fee payment whose webhook was lost. */
 export async function billingCron(env: Bindings) {
+  await applyScheduledPlans(env)
   await ensureInvoices(env)
   const { results } = await env.DB
     .prepare(`SELECT id FROM invoices WHERE status IN ('due', 'claimed') AND gateway_ref IS NOT NULL AND COALESCE(gw_checked_at, 0) < ? LIMIT 10`)

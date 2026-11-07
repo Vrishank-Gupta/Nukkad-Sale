@@ -17,7 +17,7 @@ import { here } from './public'
 import { LANDING_SECTIONS } from '../lib/analytics'
 import { NK_SHIP, platformHook, sharedShipping } from '../lib/shiprocket'
 import { changeBalance, confirmTopup, rejectTopup, type LedgerRow } from '../lib/ship-balance'
-import { asPlan, PLAN_IDS, PLANS, uniqueFee, upgradeUndone } from '../lib/plans'
+import { adminSetPlan, asPlan, PLAN_IDS, PLANS, uniqueFee, upgradeUndone } from '../lib/plans'
 
 /*
  * Admin portal for the platform owner – completely separate from seller accounts: its own
@@ -228,14 +228,14 @@ const shortDate = (ms: number) => {
 }
 
 type SellerRow = {
-  id: string; name: string; shop_name: string; phone: string; pay_mode: PayMode; allowed_modes: string; plan_fee_paise: number; trial_until: number
+  id: string; name: string; shop_name: string; phone: string; pay_mode: PayMode; allowed_modes: string; plan_fee_paise: number; trial_until: number; plan_next: string | null; plan_next_from: string | null
   account_status: string; created_at: number; rzp_key_id: string | null; gateway_request: number; gmv30: number; orders30: number; open_status: string | null; open_due: number | null
   last_seen_at: number; live_sales: number; msgs30: number; plan: string; used_month: number
 }
 
 // Start of the current IST month, in ms (orders counted against the plan limit; see lib/plans.ts).
 const MONTH_START_SQL = `(CAST(strftime('%s', date('now', '+330 minutes', 'start of month')) AS INTEGER) * 1000 - 19800000)`
-const SELLER_LIST_SQL = `SELECT s.id, s.name, s.shop_name, s.phone, s.pay_mode, s.allowed_modes, s.plan_fee_paise, s.trial_until, s.account_status, s.created_at,
+const SELLER_LIST_SQL = `SELECT s.id, s.name, s.shop_name, s.phone, s.pay_mode, s.allowed_modes, s.plan_fee_paise, s.trial_until, s.plan_next, s.plan_next_from, s.account_status, s.created_at,
   s.rzp_key_id, s.gateway_request, s.last_seen_at, s.plan,
   (SELECT COUNT(DISTINCT COALESCE(o.cart_id, o.id)) FROM orders o WHERE o.seller_id = s.id AND ((o.status = 'paid' AND o.paid_at >= ${MONTH_START_SQL}) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.created_at >= ${MONTH_START_SQL}))) AS used_month,
   (SELECT COUNT(*) FROM drops d WHERE d.seller_id = s.id AND d.status = 'live') AS live_sales,
@@ -747,16 +747,14 @@ admin.get('/sellers/:id', async (c) => {
         <small class="muted">Choosing a plan sets its fee below. Change the fee for a special deal – the order limit still follows the plan. Badi Dukaan sellers also get automatic payments: switch Razorpay on above.</small>
         <div class="duo">
           <div><label for="fee">Fee per month (₹)</label><div class="money"><span>₹</span><input id="fee" name="fee" inputmode="decimal" value={String(s.plan_fee_paise / 100)} /></div></div>
-          <div><label for="trial">Free trial until</label><input id="trial" name="trial" type="date" value={s.trial_until ? istDay(s.trial_until) : ''} /></div>
+          <div><label for="trial">Free trial until (optional)</label><input id="trial" name="trial" type="date" value={s.trial_until > Date.now() ? istDay(s.trial_until) : ''} /></div>
         </div>
-        <small>₹0 = free. Invoices are created automatically on the 1st of each month after the trial.</small>
-        <div class="row">
-          <button class="btn primary grow" type="submit">Save plan</button>
-          <button class="btn grow" type="submit" name="invoice_now" value="1">Save & create invoice now</button>
-        </div>
+        {s.plan_next && <div class="alert info" style="margin:0">They asked to move to {PLANS[asPlan(s.plan_next)].en} from {s.plan_next_from}. Saving a plan here replaces that.</div>}
+        <small>A paid plan with no trial is billed now – the new fee minus anything already paid this month – and their shop pauses until they pay. With a trial date, nothing is billed until it ends. Shuruaat (free) removes this month’s unpaid bills.</small>
+        <button class="btn primary block" type="submit" data-confirm="Save this plan? A paid plan without a trial pauses their shop until they pay.">Save plan</button>
       </form>
 
-      <h2>Invoices</h2>
+      <h2 id="invoices">Invoices</h2>
       {invoices.length === 0 && <p class="muted">No invoices yet.</p>}
       {invoices.map((inv) => <InvoiceCard inv={inv} seller={s} origin={origin} />)}
 
@@ -805,7 +803,7 @@ const InvoiceCard = ({ inv, seller, origin }: { inv: Invoice & { shop_name?: str
       {(inv.status === 'due' || inv.status === 'claimed') && (
         <div class="row wrap" style="margin-top:10px">
           <form method="post" action={`/admin/invoices/${inv.id}/paid`} class="grow"><button class="btn ok sm block" type="submit">✓ Mark paid</button></form>
-          <a class="btn wa sm grow" href={waLink(seller.phone, `Hi ${seller.name}, your NukkadSale fee of ${rupees(inv.amount_paise)} for ${month} is ${overdue ? 'overdue' : 'due'}. Pay in 1 tap here: ${origin}/app/billing`)}>💬 Remind</a>
+          <a class="btn wa sm grow" href={waLink(seller.phone, `Hi ${seller.name}, your NukkadSale fee of ${rupees(inv.amount_paise)} for ${month} is ${overdue ? 'overdue' : 'due'}. Pay in 1 tap here: ${origin}/app/billing`)}>Send on WhatsApp</a>
           {inv.status === 'claimed' && <form method="post" action={`/admin/invoices/${inv.id}/not-received`}><button class="btn sm" type="submit" data-confirm="Mark as not received? If it's past the due date, their shop pauses again.">✗ Not received</button></form>}
           <form method="post" action={`/admin/invoices/${inv.id}/waive`}><button class="btn sm" type="submit" data-confirm="Waive this invoice?">Waive</button></form>
         </div>
@@ -850,14 +848,15 @@ admin.post('/sellers/:id/billing', async (c) => {
   const feeText = String(f.fee ?? '').trim()
   const fee = feeText === '' ? PLANS[plan].fee : parsePaise(feeText)
   if (fee === null) return c.redirect(`/admin/sellers/${id}?err=${enc('Enter a valid fee.')}`, 303)
-  const trial = /^\d{4}-\d{2}-\d{2}$/.test(String(f.trial ?? '')) ? istDayStart(Date.parse(String(f.trial) + 'T12:00:00Z')) : 0
-  await c.env.DB.prepare(`UPDATE sellers SET plan = ?, plan_fee_paise = ?, trial_until = ? WHERE id = ?`).bind(plan, fee, trial, id).run()
-  // This month's unpaid monthly invoice follows the new fee: gone on a free plan, re-priced otherwise.
-  const open = await c.env.DB.prepare(`SELECT id, amount_paise FROM invoices WHERE seller_id = ? AND period = ? AND plan IS NULL AND status = 'due'`).bind(id, istDay(Date.now()).slice(0, 7)).first<{ id: string; amount_paise: number }>()
-  if (open && fee === 0) await c.env.DB.prepare(`DELETE FROM invoices WHERE id = ?`).bind(open.id).run()
-  else if (open && open.amount_paise - (open.amount_paise % 100) !== fee) await c.env.DB.prepare(`UPDATE invoices SET amount_paise = ?, pay_url = NULL, gateway_ref = NULL WHERE id = ?`).bind(await uniqueFee(c.env, fee), open.id).run()
-  if (f.invoice_now) await ensureInvoices(c.env, id)
-  return c.redirect(`/admin/sellers/${id}?ok=${enc(`${PLANS[plan].en} plan saved.`)}`, 303)
+  if (!(await c.env.DB.prepare(`SELECT 1 FROM sellers WHERE id = ?`).bind(id).first())) return c.notFound()
+  const trial = /^\d{4}-\d{2}-\d{2}$/.test(String(f.trial ?? '')) ? istDayStart(Date.parse(String(f.trial) + 'T12:00:00Z')) + 86_400_000 - 1000 : null
+  const r = await adminSetPlan(c.env, id, plan, fee, trial)
+  const name = PLANS[plan].en
+  const msg = r.kind === 'free' ? `${name} saved – free, nothing to pay. Any unpaid bill for this month was removed.`
+    : r.kind === 'trial' ? `${name} saved with a free trial until ${istDay(trial!).split('-').reverse().join('/')}. They're billed when it ends.`
+    : r.kind === 'covered' ? `${name} saved. This month is already paid, so nothing to pay now; ${rupees(fee)} from the 1st.`
+    : `${name} saved and billed ${rupees(r.amount!)}. Their shop is paused until they pay – send the bill on WhatsApp below.`
+  return c.redirect(`/admin/sellers/${id}?ok=${enc(msg)}#invoices`, 303)
 })
 
 admin.post('/sellers/:id/onboarding', async (c) => {
@@ -1205,10 +1204,7 @@ admin.get('/settings', async (c) => {
         </div>
         <h2>Defaults for new sellers</h2>
         <div class="card stack">
-          <div class="duo">
-            <div><label for="fee">Monthly fee (₹)</label><div class="money"><span>₹</span><input id="fee" name="default_fee" inputmode="decimal" value={String(Number(s.default_fee_paise) / 100)} /></div></div>
-            <div><label for="trial">Free trial (days)</label><input id="trial" name="trial_days" type="number" inputmode="numeric" min="0" value={s.trial_days} /></div>
-          </div>
+          <small>New shops start on Shuruaat (free, 30 orders a month). Change a shop's plan on its page.</small>
           <div><label for="grace">Days to pay before the shop pauses</label><input id="grace" name="grace_days" type="number" inputmode="numeric" min="0" value={s.grace_days} /></div>
           <div>
             <label>Payment methods switched on</label>
@@ -1232,8 +1228,8 @@ admin.post('/settings', async (c) => {
     upi_vpa: str('upi_vpa'),
     payee_name: str('payee_name') || 'NukkadSale',
     rzp_key_id: str('rzp_key_id'),
-    default_fee_paise: String(parsePaise(str('default_fee') || '0') ?? 0),
-    trial_days: String(Math.max(0, Math.floor(Number(str('trial_days')) || 0))),
+    default_fee_paise: '0',
+    trial_days: '0',
     grace_days: String(Math.max(0, Math.floor(Number(str('grace_days') || '2') || 0))),
     default_modes: (modes.length ? modes : ['direct']).join(','),
   }

@@ -112,8 +112,8 @@ s, h, home = sel('/app')
 check('of 30' not in home and 'of 300' not in home, 'no meter on the unlimited plan')
 s, h, bill = sel('/app/billing')
 check('Unlimited orders' in bill, 'plan page: unlimited orders')
-inv_m = sql(f"SELECT amount_paise FROM invoices WHERE seller_id = '{sid}' AND period = strftime('%Y-%m', 'now', '+330 minutes') AND plan IS NULL")
-check(not inv_m, 'no extra monthly invoice: the paid upgrade already covers this month')
+inv_m = sql(f"SELECT amount_paise FROM invoices WHERE seller_id = '{sid}' AND status = 'due' AND plan IS NULL")
+check(len(inv_m) == 1 and 100001 <= inv_m[0]['amount_paise'] <= 100099, 'admin moves them up: billed only the ₹1,000 difference to what they paid this month')
 
 # ---- Hindi ----
 sel('/lang?to=hi&back=/app/billing')

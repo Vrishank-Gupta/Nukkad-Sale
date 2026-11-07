@@ -16,7 +16,7 @@ import { notifyOwner } from '../lib/mail'
 import { billingState, confirmInvoice, ensureInvoices, getSettings, onlineFeePayments, parseModes, startInvoicePayment, type Invoice } from '../lib/billing'
 import { notifyBuyer } from '../lib/notify'
 import { changeBalance, takeFromBalance, type LedgerRow } from '../lib/ship-balance'
-import { asPlan, higherPlans, planUsage, PLANS, requestUpgrade, upgradePaid, type PlanId, type Usage } from '../lib/plans'
+import { asPlan, higherPlans, lowerPlans, nextMonthStart, nextPeriod, planUsage, PLANS, requestUpgrade, scheduleDowngrade, upgradePaid, type PlanId, type Usage } from '../lib/plans'
 import { upiAppLinks, upiLink } from '../lib/upi'
 import { cancelCod, confirmAdvance, shownStatus, markPaid, cartKeyOf, cartOrders, dropCounts, loadDrop, markCartPaid, rejectCart, reserveOrder, shortNo } from '../lib/orders'
 import { isValidVpa } from '../lib/upi'
@@ -2285,7 +2285,7 @@ app.get('/billing', async (c) => {
   const s = c.get('seller')
   await ensureInvoices(c.env, s.id) // a trial may have just ended
   const [plan, { results: invoices }, settings] = await Promise.all([
-    c.env.DB.prepare(`SELECT plan_fee_paise, trial_until FROM sellers WHERE id = ?`).bind(s.id).first<{ plan_fee_paise: number; trial_until: number }>(),
+    c.env.DB.prepare(`SELECT plan_fee_paise, trial_until, plan_next, plan_next_from FROM sellers WHERE id = ?`).bind(s.id).first<{ plan_fee_paise: number; trial_until: number; plan_next: string | null; plan_next_from: string | null }>(),
     c.env.DB.prepare(`SELECT * FROM invoices WHERE seller_id = ? ORDER BY period DESC LIMIT 24`).bind(s.id).all<Invoice>(),
     getSettings(c.env),
   ])
@@ -2309,7 +2309,19 @@ app.get('/billing', async (c) => {
       <a class="back" href="/app/settings">← {t.settingsTitle}</a>
       <h1>{t.billingTitle}</h1>
       <PlanMeter t={t} use={use} />
-      {plan && plan.plan_fee_paise > 0 && <small class="muted" style="display:block;margin:-4px 0 8px">{t.planPrice(rupees(plan.plan_fee_paise))}{plan.trial_until > Date.now() ? ` · ${t.trialTill(fmtDate(plan.trial_until))}` : ''}</small>}
+      {plan && plan.plan_fee_paise > 0 && (
+        <div class="card stack" style="gap:4px">
+          <div class="row between"><b>{t.planOn(t.planNames[use.plan])}</b><b>{t.planPrice(rupees(plan.plan_fee_paise))}</b></div>
+          {plan.trial_until > Date.now() && <small>{t.trialTill(fmtDate(plan.trial_until))} · {t.firstBill(fmtDate(nextMonthStart(plan.trial_until - 1)))}</small>}
+          {plan.trial_until <= Date.now() && !open && <small class="muted">{t.nextBill(fmtDate(nextMonthStart()))}</small>}
+        </div>
+      )}
+      {plan?.plan_next && (
+        <div class="alert info row between" style="gap:10px">
+          <span>{t.planNextOn(t.planNames[asPlan(plan.plan_next)], monthName(plan.plan_next_from ?? '', t))}</span>
+          <form method="post" action="/app/billing/downgrade"><button class="btn sm" type="submit">{t.planNextUndo}</button></form>
+        </div>
+      )}
       <div class="card" style="background:var(--ok-soft);border-color:transparent">
         <b style="color:var(--ok)">{t.planValue(value?.n ?? 0, rupees(value?.amt ?? 0))}</b>
         {(value?.n_last ?? 0) > 0 && <small style="display:block;margin-top:2px">{t.planValueLast(value!.n_last, rupees(value!.amt_last))}</small>}
@@ -2362,6 +2374,19 @@ app.get('/billing', async (c) => {
           <UpgradeOptions t={t} current={use.plan} primaryFirst={use.near || use.reached} />
           <small class="muted" style="display:block;margin-top:8px">{t.planEvery}</small>
         </>
+      )}
+      {!plan?.plan_next && lowerPlans(use.plan).length > 0 && (
+        <details class="card" style="margin-top:12px">
+          <summary><b>{t.smallerPlans}</b></summary>
+          <small class="muted" style="display:block;margin:6px 0 10px">{t.smallerNote(monthName(nextPeriod(), t))}</small>
+          {lowerPlans(use.plan).map((p) => (
+            <form method="post" action="/app/billing/downgrade" class="row between" style="padding:8px 0;border-top:1px solid var(--line);gap:10px">
+              <input type="hidden" name="plan" value={p} />
+              <span><b>{t.planNames[p]}</b><small style="display:block">{PLANS[p].fee ? t.planPrice(rupees(PLANS[p].fee)) : t.planFreeShort} · {t.planLimit(PLANS[p].limit)}</small></span>
+              <button class="btn sm" type="submit" data-confirm={t.smallerConfirm(t.planNames[p], monthName(nextPeriod(), t))}>{t.smallerBtn}</button>
+            </form>
+          ))}
+        </details>
       )}
       {invoices.length > 0 && (
         <>
@@ -2419,6 +2444,14 @@ app.post('/billing/upgrade', async (c) => {
   const res = await requestUpgrade(c.env, s.id, asPlan(s.plan), target)
   if (res === 'applied') return c.redirect('/app?ok=' + enc(tr(c).upgradeDone(tr(c).planNames[target])), 303)
   return c.redirect('/app/billing', 303)
+})
+
+// Move to a smaller plan from next month (no "plan" = undo the scheduled move).
+app.post('/billing/downgrade', async (c) => {
+  const s = c.get('seller')
+  const target = (await c.req.parseBody()).plan
+  await scheduleDowngrade(c.env, s.id, asPlan(s.plan), target ? asPlan(target) : null)
+  return c.redirect('/app/billing?ok=' + enc(target ? tr(c).smallerDone : tr(c).planNextUndone), 303)
 })
 
 app.post('/billing/cancel/:id', async (c) => {

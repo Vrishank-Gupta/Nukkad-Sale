@@ -1,5 +1,6 @@
 import type { Bindings } from '../env'
-import { istDay, randomId } from './util'
+import { istDay, randomId, rupees } from './util'
+import { pushToSeller } from './push'
 
 /*
  * Pricing plans – the same three as on the landing page (#pricing). Every feature is in every plan;
@@ -23,8 +24,11 @@ export const PLANS: Record<PlanId, { fee: number; limit: number | null; en: stri
 }
 export const asPlan = (x: unknown): PlanId => (typeof x === 'string' && x in PLANS ? (x as PlanId) : 'free')
 export const planName = (p: PlanId, lang: 'en' | 'hi' = 'en') => PLANS[p][lang]
-const rank = (p: PlanId) => PLAN_IDS.indexOf(p)
+export const rank = (p: PlanId) => PLAN_IDS.indexOf(p)
 export const higherPlans = (p: PlanId) => PLAN_IDS.filter((x) => rank(x) > rank(p))
+export const lowerPlans = (p: PlanId) => PLAN_IDS.filter((x) => rank(x) < rank(p))
+/** "YYYY-MM" of next month. */
+export const nextPeriod = (now = Date.now()) => monthPeriod(nextMonthStart(now) + 3_600_000)
 
 /** Start of the current IST month, and the "YYYY-MM" period. */
 export const monthPeriod = (now = Date.now()) => istDay(now).slice(0, 7)
@@ -73,7 +77,7 @@ export async function requestUpgrade(env: Bindings, sellerId: string, current: P
   if (rank(target) <= rank(current)) return 'same'
   const now = Date.now(), period = monthPeriod(now)
   // Credit what was already paid for this month (monthly fee or an earlier upgrade), unique paise left out.
-  const paid = (await env.DB.prepare(`SELECT COALESCE(SUM(amount_paise - amount_paise % 100), 0) AS p FROM invoices WHERE seller_id = ? AND (period = ?2 OR period LIKE ?2 || '-u%') AND status IN ('paid', 'claimed')`)
+  const paid = (await env.DB.prepare(`SELECT COALESCE(SUM(amount_paise - amount_paise % 100), 0) AS p FROM invoices WHERE seller_id = ? AND (period = ?2 OR period LIKE ?2 || '-%') AND status IN ('paid', 'claimed')`)
     .bind(sellerId, period).first<{ p: number }>())?.p ?? 0
   const charge = Math.max(0, PLANS[target].fee - paid)
   if (charge === 0) {
@@ -117,4 +121,61 @@ export async function upgradeUndone(env: Bindings, invoiceId: string) {
   // The monthly invoice the upgrade had replaced is owed again.
   await env.DB.prepare(`UPDATE invoices SET status = 'due', paid_at = NULL, paid_via = NULL WHERE seller_id = ? AND period = ? AND plan IS NULL AND status = 'waived' AND paid_via = 'upgraded'`)
     .bind(inv.seller_id, inv.period.slice(0, 7)).run()
+}
+
+/** What was paid (or claimed by UPI) for this month across all its bills, without the unique paise. */
+export async function paidThisMonth(env: Bindings, sellerId: string, period = monthPeriod()) {
+  return (await env.DB.prepare(`SELECT COALESCE(SUM(amount_paise - amount_paise % 100), 0) AS p FROM invoices WHERE seller_id = ?1 AND (period = ?2 OR period LIKE ?2 || '-%') AND status IN ('paid', 'claimed')`)
+    .bind(sellerId, period).first<{ p: number }>())?.p ?? 0
+}
+
+export type AdminPlanResult = { kind: 'free' | 'trial' | 'billed' | 'covered'; amount?: number }
+
+/**
+ * The admin sets a shop's plan. Months are billed in full (as on the website).
+ * - Free: unpaid bills for this month go away; the shop opens.
+ * - Paid with a trial date in the future: no bill until the trial ends (then the usual days to pay).
+ * - Paid, no trial: billed now for the new fee minus what's already paid this month, due at once – the shop
+ *   pauses until it's paid. A downgrade after paying this month owes nothing now (no refund; the lower fee
+ *   applies from the 1st).
+ */
+export async function adminSetPlan(env: Bindings, sellerId: string, plan: PlanId, fee: number, trialUntil: number | null): Promise<AdminPlanResult> {
+  const now = Date.now(), period = monthPeriod(now)
+  const dropUnpaid = env.DB.prepare(`DELETE FROM invoices WHERE seller_id = ?1 AND (period = ?2 OR period LIKE ?2 || '-%') AND status = 'due'`).bind(sellerId, period)
+  const trial = fee > 0 && trialUntil && trialUntil > now ? trialUntil : now - 1000
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE sellers SET plan = ?, plan_fee_paise = ?, trial_until = ?, plan_next = NULL, plan_next_from = NULL WHERE id = ?`).bind(plan, fee, trial, sellerId),
+    dropUnpaid,
+  ])
+  if (fee === 0) return { kind: 'free' }
+  if (trial > now) return { kind: 'trial' }
+  const owed = fee - (await paidThisMonth(env, sellerId, period))
+  if (owed <= 0) return { kind: 'covered' }
+  // The month's own bill if there's none yet, else an extra bill for the difference ("YYYY-MM-a1", …).
+  const has = await env.DB.prepare(`SELECT COUNT(*) AS n FROM invoices WHERE seller_id = ? AND (period = ?2 OR period LIKE ?2 || '-%')`).bind(sellerId, period).first<{ n: number }>()
+  const exact = await env.DB.prepare(`SELECT 1 FROM invoices WHERE seller_id = ? AND period = ?`).bind(sellerId, period).first()
+  const amount = await uniqueFee(env, owed)
+  await env.DB.prepare(`INSERT INTO invoices (id, seller_id, period, amount_paise, due_at, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+    .bind(randomId(12), sellerId, exact ? `${period}-a${(has?.n ?? 0) + 1}` : period, amount, now - 1000, now).run()
+  await pushToSeller(env, sellerId, (lang) => lang === 'hi'
+    ? { title: 'NukkadSale प्लान बदला', body: `अब आप ${PLANS[plan].hi} पर हैं। ${rupees(amount)} भरें – तब तक दुकान रुकी है।`, url: '/app/billing' }
+    : { title: 'Your NukkadSale plan changed', body: `You're now on ${PLANS[plan].en}. Pay ${rupees(amount)} to keep selling – your shop is paused until then.`, url: '/app/billing' }).catch(() => 0)
+  return { kind: 'billed', amount }
+}
+
+/** The seller moves to a smaller plan from the 1st of next month (undo any time before). */
+export async function scheduleDowngrade(env: Bindings, sellerId: string, current: PlanId, target: PlanId | null) {
+  if (target && rank(target) >= rank(current)) return false
+  await env.DB.prepare(`UPDATE sellers SET plan_next = ?, plan_next_from = ? WHERE id = ?`).bind(target, target ? nextPeriod() : null, sellerId).run()
+  return true
+}
+
+/** Start of a month: scheduled moves to a smaller plan take effect (before the month is billed). */
+export async function applyScheduledPlans(env: Bindings) {
+  const period = monthPeriod()
+  const { results } = await env.DB.prepare(`SELECT id, plan_next FROM sellers WHERE plan_next IS NOT NULL AND plan_next_from <= ?`).bind(period).all<{ id: string; plan_next: string }>()
+  for (const r of results) {
+    const p = asPlan(r.plan_next)
+    await env.DB.prepare(`UPDATE sellers SET plan = ?, plan_fee_paise = ?, plan_next = NULL, plan_next_from = NULL WHERE id = ?`).bind(p, PLANS[p].fee, r.id).run()
+  }
 }

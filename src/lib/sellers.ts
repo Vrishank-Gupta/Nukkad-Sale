@@ -21,7 +21,7 @@ export async function createSeller(
       `INSERT INTO sellers (id, phone, name, shop_name, pin_hash, pin_salt, upi_vpa, created_at, allowed_modes, pay_mode, plan_fee_paise, trial_until, gateway_request, temp_pin)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, s.phone, s.name, s.shop, await hashPin(s.pin, salt, env.SECRET_KEY), salt, vpa, Date.now(), (modes.length ? modes : ['direct']).join(','),
-      modes.includes('direct') || !modes.length ? 'direct' : modes[0], Number(d.default_fee_paise) || 0, Date.now() + (Number(d.trial_days) || 0) * 86_400_000,
+      modes.includes('direct') || !modes.length ? 'direct' : modes[0], 0, Date.now(), // new shops start on Shuruaat (free); the plan sets the fee
       s.wantsAuto ? 1 : 0, s.tempPin ? 1 : 0).run()
   } catch {
     return null
