@@ -6,7 +6,11 @@
 set -euo pipefail
 WABA=1847941553220655
 API=https://graph.facebook.com/v23.0
-read -rsp "Paste the WhatsApp token once (hidden) and press Enter: " TOKEN; echo; TOKEN=${TOKEN//[[:space:]]/}
+# Token from ~/.config/nukkadsale/secrets.env (WA_TOKEN=…) if it's there, otherwise asked for.
+SECRETS="$HOME/.config/nukkadsale/secrets.env"
+TOKEN=$( [ -f "$SECRETS" ] && grep -m1 '^WA_TOKEN=' "$SECRETS" | cut -d= -f2- || true )
+[ -n "$TOKEN" ] || { read -rsp "Paste the WhatsApp token once (hidden) and press Enter: " TOKEN; echo; }
+TOKEN=${TOKEN//[[:space:]]/}
 auth=(-H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
 
 if [ "${1:-}" != "status" ]; then
