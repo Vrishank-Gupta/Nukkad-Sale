@@ -120,7 +120,7 @@ const MAX_IMAGE_BYTES = 3 * 1024 * 1024
 const enc = encodeURIComponent
 
 const attentionCount = async (db: D1Database, sellerId: string) =>
-  (await db.prepare(`SELECT COUNT(DISTINCT COALESCE(cart_id, id)) AS n FROM orders WHERE seller_id = ? AND (status IN ('verifying', 'refund_due') OR (status = 'pending' AND pay_mode = 'cod' AND ((ship_status = 'new' AND adv_status IN ('', 'paid')) OR adv_status = 'claimed')))`).bind(sellerId).first<{ n: number }>())?.n ?? 0
+  (await db.prepare(`SELECT COUNT(DISTINCT COALESCE(cart_id, id)) AS n FROM orders WHERE seller_id = ? AND ((status = 'verifying' OR (status = 'refund_due' AND refunded_at IS NULL)) OR (status = 'pending' AND pay_mode = 'cod' AND ((ship_status = 'new' AND adv_status IN ('', 'paid')) OR adv_status = 'claimed')))`).bind(sellerId).first<{ n: number }>())?.n ?? 0
 
 /** Go back to the page the seller tapped from, carrying a success message for the toast. */
 function backWith(c: Context<AppEnv>, fallback: string, ok: string) {
@@ -224,7 +224,7 @@ app.get('/', async (c) => {
       .bind(s.id, istDayStart(Date.now())).first<{ amt: number; n: number }>(),
     db.prepare(
       `SELECT COUNT(DISTINCT CASE WHEN status = 'verifying' OR (pay_mode = 'cod' AND status = 'pending' AND adv_status = 'claimed') THEN COALESCE(cart_id, id) END) AS checkPay,
-              COUNT(DISTINCT CASE WHEN status = 'refund_due' THEN COALESCE(cart_id, id) END) AS refunds,
+              COUNT(DISTINCT CASE WHEN status = 'refund_due' AND refunded_at IS NULL THEN COALESCE(cart_id, id) END) AS refunds,
               COUNT(DISTINCT CASE WHEN ${TO_SEND} THEN COALESCE(o.cart_id, o.id) END) AS toSend,
               COUNT(DISTINCT CASE WHEN status = 'pending' AND hold_until > ?2 THEN COALESCE(cart_id, id) END) AS paying
        FROM orders o WHERE seller_id = ?1`,
@@ -1633,10 +1633,12 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
         </>
       )}
 
-      {status === 'refund_due' && (
+      {status === 'refund_due' && o.refunded_at ? <p><small class="muted">{t.refundedDone}</small></p> : null}
+      {status === 'refund_due' && !o.refunded_at && (
         <>
           <p><small>{t.refundNote}</small></p>
           <a class="btn wa sm block" href={waLink(o.buyer_phone, t.refundMsg(o.buyer_name, item, amt, shop))}>{t.tellRefund}</a>
+          <form method="post" action={`/app/orders/${o.id}/refunded`} style="margin-top:8px"><button class="btn sm block" type="submit" data-confirm={t.refundedBtn + '?'}>{t.refundedBtn}</button></form>
         </>
       )}
     </div>
@@ -1645,7 +1647,7 @@ const OrderCard: FC<{ t: Dict; o: OrderRow; group?: OrderRow[]; origin: string; 
 
 // "Check payment" = buyers who said they paid, refunds, and every open direct-UPI amount –
 // including holds that lapsed in the last day, since buyers often pay without telling anyone.
-const CHECK_WHERE = `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'direct' AND (o.status = 'pending' OR (o.status = 'expired' AND o.created_at > ?2 - 86400000))) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status IN ('due', 'claimed')))`
+const CHECK_WHERE = `((o.status = 'verifying' OR (o.status = 'refund_due' AND o.refunded_at IS NULL)) OR (o.pay_mode = 'direct' AND (o.status = 'pending' OR (o.status = 'expired' AND o.created_at > ?2 - 86400000))) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status IN ('due', 'claimed')))`
 
 // Waiting to be sent: paid and not yet out, or cash on delivery – unless the parcel came back and went back into stock.
 const TO_SEND = `((o.status = 'paid' AND o.ship_status IN ('new', 'packed')) OR (o.status = 'pending' AND o.pay_mode = 'cod' AND o.adv_status IN ('', 'paid')))
@@ -1720,7 +1722,7 @@ app.get('/orders', async (c) => {
   const counts = await c.env.DB
     // The "Check payment" number counts only what needs the seller (buyer says paid, refunds) – the same number
     // as "N payments to check" on home. Buyers still paying are listed in the tab, but not counted.
-    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.key === 'check' ? `(o.status IN ('verifying', 'refund_due') OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status = 'claimed'))` : x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')},
+    .prepare(`SELECT ${TABS.slice(0, 2).map((x) => `COUNT(DISTINCT CASE WHEN ${x.key === 'check' ? `((o.status = 'verifying' OR (o.status = 'refund_due' AND o.refunded_at IS NULL)) OR (o.pay_mode = 'cod' AND o.status = 'pending' AND o.adv_status = 'claimed'))` : x.where} THEN COALESCE(o.cart_id, o.id) END) AS "${x.key}"`).join(', ')},
               COUNT(DISTINCT CASE WHEN ${CHECK_WHERE} THEN COALESCE(o.cart_id, o.id) END) AS anycheck FROM orders o WHERE o.seller_id = ?1`)
     .bind(s.id, now)
     .first<Record<string, number>>()
@@ -1775,6 +1777,13 @@ app.get('/orders', async (c) => {
 
 const ownOrder = (c: Context<AppEnv>, id: string) =>
   c.env.DB.prepare(`SELECT * FROM orders WHERE id = ? AND seller_id = ?`).bind(id, c.get('seller').id).first<Order>()
+
+// The seller sent a late payment back: the refund is done and leaves "Check payment".
+app.post('/orders/:id/refunded', async (c) => {
+  const o = await ownOrder(c, c.req.param('id'))
+  if (o) await c.env.DB.prepare(`UPDATE orders SET refunded_at = ?3 WHERE (id = ?1 OR cart_id = ?1) AND seller_id = ?2 AND status = 'refund_due' AND refunded_at IS NULL`).bind(cartKeyOf(o), c.get('seller').id, Date.now()).run()
+  return backWith(c, '/app/orders', tr(c).refundedDone)
+})
 
 app.post('/orders/:id/received', async (c) => {
   const o = await ownOrder(c, c.req.param('id'))
@@ -1948,9 +1957,12 @@ app.post('/khata', async (c) => {
   return c.redirect('/app/khata?ok=' + enc(t.entrySaved), 303)
 })
 
+/** A quoted CSV cell; text starting with = + - @ (a formula in Excel/Sheets) is made plain with a leading '. */
+const csvCell = (v: string) => `"${(/^[=+\-@\t\r]/.test(v) ? `'${v}` : v).replace(/"/g, '""')}"`
+
 app.get('/khata.csv', async (c) => {
   const { results } = await c.env.DB.prepare(`SELECT * FROM ledger WHERE seller_id = ? ORDER BY created_at`).bind(c.get('seller').id).all<Entry>()
-  const q = (s: string) => `"${s.replace(/"/g, '""')}"`
+  const q = csvCell
   const rows = results.map((e) =>
     [new Date(e.created_at + 330 * 60000).toISOString().slice(0, 16).replace('T', ' '), e.kind === 'credit' ? 'IN' : 'OUT', (e.amount_paise / 100).toFixed(2), q(e.note), e.order_id ?? ''].join(','),
   )
@@ -2488,7 +2500,7 @@ app.get('/buyers', async (c) => {
 // Phone-contacts friendly CSV (Google Contacts / WhatsApp broadcast lists).
 app.get('/buyers.csv', async (c) => {
   const { results } = await buyersQuery(c.env.DB, c.get('seller').id)
-  const q = (v: string) => `"${v.replace(/"/g, '""')}"`
+  const q = csvCell
   const rows = results.map((b) => [q(b.name), '+' + b.phone, b.orders, (b.spent / 100).toFixed(2), istDay(b.last)].join(','))
   return c.body('\uFEFF' + ['Name,Phone,Orders,Total spent (INR),Last order', ...rows].join('\n'), 200, {
     'Content-Type': 'text/csv; charset=utf-8',

@@ -243,7 +243,10 @@ export async function reserveOrder(env: Bindings, seller: Seller, drop: Drop, in
     const open = await db
       .prepare(
         `SELECT o.* FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.seller_id = ? AND o.buyer_phone = ? AND o.status = 'pending'
-         AND o.hold_until > ? AND o.pay_mode = ? AND COALESCE(d.upi_vpa, ?) = ? ORDER BY o.created_at LIMIT 1`,
+         AND o.hold_until > ? AND o.pay_mode = ? AND COALESCE(d.upi_vpa, ?) = ?
+         -- A gateway payment whose link already exists is never changed: the buyer may be paying that link right now.
+         AND NOT EXISTS (SELECT 1 FROM orders x WHERE (x.id = COALESCE(o.cart_id, o.id) OR x.cart_id = COALESCE(o.cart_id, o.id)) AND x.pay_url IS NOT NULL)
+         ORDER BY o.created_at LIMIT 1`,
       )
       .bind(seller.id, input.phone, now, mode, seller.upi_vpa ?? '', payee ?? '')
       .first<Order>()

@@ -905,7 +905,8 @@ pub.get('/o/:id', async (c) => {
       {(status === 'expired' || status === 'rejected') && data.drop.status === 'live' && lines.length === 1 && (
         <a class="btn primary block" href={`/d/${order.drop_id}`}><Icon n="refresh" s={18} />{t.tryAgain}</a>
       )}
-      {status === 'refund_due' && <div class="alert bad">{t.refundNote2(seller.shop_name)}</div>}
+      {status === 'refund_due' && (order.refunded_at ? <div class="alert info">{t.refundedBuyer(seller.shop_name)}</div> : <div class="alert bad">{t.refundNote2(seller.shop_name)}</div>)}
+      
 
       {status === 'pending' && (
         <div class="card" style="text-align:center">

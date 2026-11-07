@@ -179,6 +179,8 @@ export type Order = {
   shipped_at?: number | null
   delivered_at?: number | null
   pack_photo_key?: string | null
+  /** Late payment sent back by the seller (order stays 'refund_due'). */
+  refunded_at?: number | null
   /** Advance on cash on delivery: amount (with its own paise) and '' | due | claimed | paid. */
   adv_paise?: number
   adv_status?: string

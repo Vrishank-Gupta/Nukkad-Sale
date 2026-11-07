@@ -198,4 +198,20 @@ W(f'/o/{late}')  # page view sweeps the lapsed hold
 W(f'/o/{late}/utr', multipart=mp([]))
 row = sql(f"SELECT status FROM orders WHERE id = '{late}'")[0]
 check(row['status'] == 'verifying', 'paid after the hold lapsed: piece taken back for them, seller asked to check')
+
+# ---------- money arrives after the piece sold out → refund, then "I've sent the refund" ----------
+dF = sale(A, [('title', 'Last piece scarf'), ('price', '300'), ('stock', '1'), ('max', '1')])
+vF = sql(f"SELECT id FROM variants WHERE drop_id = '{dF}'")[0]['id']
+st, h, _ = client('10.90.0.1')(f'/d/{dF}', {'variant': vF, 'qty': '1', 'name': 'Early', 'phone': f'89{r}', 'address': '2 Mall Road, Shimla', 'pincode': '171001'})
+first = loc(h)[3:].split('?')[0]
+sql(f"UPDATE orders SET hold_until = 1000 WHERE id = '{first}'")
+client('10.90.0.2')(f'/d/{dF}')  # anyone's page view sweeps the lapsed hold
+st, h, _ = client('10.90.0.3')(f'/d/{dF}', {'variant': vF, 'qty': '1', 'name': 'Second', 'phone': f'88{r}', 'address': '5 Mall Road, Shimla', 'pincode': '171001'})
+A(f'/app/orders/{first}/received', {})
+check(sql(f"SELECT status FROM orders WHERE id = '{first}'")[0]['status'] == 'refund_due', 'first buyer pays late after the piece went to someone else → refund due')
+s, h, chk = A('/app/orders?tab=check')
+check('I’ve sent the refund' in chk, 'seller sees "I’ve sent the refund"')
+A(f'/app/orders/{first}/refunded', {})
+check(sql(f"SELECT refunded_at FROM orders WHERE id = '{first}'")[0]['refunded_at'] and 'I’ve sent the refund' not in A('/app/orders?tab=check')[2], 'refund closed – gone from Check payment')
+check('has sent your money back' in client('10.90.0.1')(f'/o/{first}')[2], 'buyer’s order page says the money was sent back')
 print(f'\nall {ok} checks passed')
