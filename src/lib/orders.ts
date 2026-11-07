@@ -305,6 +305,7 @@ export async function rejectOrder(env: Bindings, orderId: string, sellerId: stri
     env.DB.prepare(`UPDATE orders SET status = 'rejected' WHERE id = ?1 AND seller_id = ?2 AND status IN ${ACTIVE}`).bind(orderId, sellerId),
   ])
   if (upd.meta.changes > 0 && waitUntil) waitUntil(notifyBuyer(env, orderId, 'rejected'))
+  return upd.meta.changes > 0
 }
 
 /** Buyer taps "Cancel" in WhatsApp while still paying. */
@@ -411,8 +412,10 @@ export async function markCartPaid(env: Bindings, anyOrderId: string, paymentRef
 export async function rejectCart(env: Bindings, anyOrderId: string, sellerId: string, waitUntil?: (p: Promise<unknown>) => void) {
   const first = await env.DB.prepare(`SELECT id, cart_id FROM orders WHERE id = ? AND seller_id = ?`).bind(anyOrderId, sellerId).first<Pick<Order, 'id' | 'cart_id'>>()
   if (!first) return
-  for (const l of await cartOrders(env.DB, first)) await rejectOrder(env, l.id, sellerId)
-  if (waitUntil) waitUntil(notifyBuyer(env, cartKeyOf(first), 'rejected'))
+  let any = false
+  for (const l of await cartOrders(env.DB, first)) any = (await rejectOrder(env, l.id, sellerId)) || any
+  // Only tell the buyer when something was actually turned down (not on a double tap or a paid order).
+  if (any && waitUntil) waitUntil(notifyBuyer(env, cartKeyOf(first), 'rejected'))
 }
 
 /** Buyer says "I have paid" for the whole payment. False if an item sold out meanwhile. */

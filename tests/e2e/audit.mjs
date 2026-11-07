@@ -363,6 +363,7 @@ await step('big seller: login, connect Razorpay (test keys via mock)', async () 
   await g.goto(B + '/login'); await g.fill('#phone', '9700000123'); await g.fill('#pin', tempPin2); await g.locator('form button[type=submit]').first().click(); await g.waitForURL(/\/app/)
   await g.goto(B + '/app/settings'); const rz = g.locator('input[name=mode][value=razorpay]'); if (await rz.count()) await rz.check().catch(() => rz.click())
   const key = g.locator('[name=rzp_key]'); if (await key.isVisible().catch(() => false) && !(await key.inputValue())) { await key.fill('rzp_test_2468ABCD'); await g.fill('[name=rzp_secret]', 'rzp_test_secret_2468') }
+  await g.locator('form[data-mode] [name=pin]').fill(tempPin2).catch(() => {})
   const save = g.locator('form[data-mode] button[type=submit]').first(); if (await save.count()) { await save.click(); await g.waitForLoadState('networkidle') }
   await check(g, 'big-seller', 'settings-razorpay')
 })
