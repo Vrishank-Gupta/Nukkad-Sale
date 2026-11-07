@@ -1,9 +1,10 @@
 # End-to-end test of the WhatsApp ordering bot against mock_meta.py.
 # Start mock_meta.py, then the app with the WA_* vars pointing at it (see tests/e2e/README.md).
-import hashlib, hmac, http.cookiejar, json, re, subprocess, sys, time, urllib.parse, urllib.request
+import hashlib, hmac, http.cookiejar, json, os, re, subprocess, sys, time, urllib.parse, urllib.request
 
 def sql(q):
-    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', '--json', '--command', q], capture_output=True, text=True, cwd='/home/vrishankgupta/CommSeller').stdout
+    extra = ['--persist-to', os.environ['KK_PERSIST']] if os.environ.get('KK_PERSIST') else []
+    out = subprocess.run(['npx', 'wrangler', 'd1', 'execute', 'khatakhat', '--local', *extra, '--json', '--command', q], capture_output=True, text=True, cwd='/home/vrishankgupta/CommSeller').stdout
     return json.loads(out)[0]['results']
 
 APP, META, SECRET = 'http://localhost:8787', 'http://localhost:8791', b'app-secret'

@@ -14,6 +14,7 @@ import { notifyBuyer } from './notify'
  */
 
 const ACTIVE = `('pending', 'verifying')`
+// Row-change checks use `> 0`, not `=== 1`: the order triggers (migration 0018) make D1 count their own updates too.
 /** Cash-on-delivery orders are open ('pending') orders whose reservation never lapses. */
 export const COD_HOLD = 32503680000000 // year 3000
 export const IS_COD = `(status = 'pending' AND pay_mode = 'cod')`
@@ -57,14 +58,14 @@ async function uniqueAdvance(db: D1Database, sellerId: string, base: number) {
 export async function claimAdvance(db: D1Database, orderId: string) {
   const r = await db.prepare(`UPDATE orders SET adv_status = 'claimed', hold_until = ? WHERE id = ? AND pay_mode = 'cod' AND status = 'pending' AND adv_status = 'due' AND hold_until > ?`)
     .bind(COD_HOLD, orderId, Date.now()).run()
-  return r.meta.changes === 1
+  return r.meta.changes > 0
 }
 
 /** Seller saw the advance in their UPI app: the order is confirmed and goes to "To send". */
 export async function confirmAdvance(db: D1Database, orderId: string, sellerId: string) {
   const r = await db.prepare(`UPDATE orders SET adv_status = 'paid', hold_until = ? WHERE id = ? AND seller_id = ? AND pay_mode = 'cod' AND status = 'pending' AND adv_status IN ('due', 'claimed')`)
     .bind(COD_HOLD, orderId, sellerId).run()
-  return r.meta.changes === 1
+  return r.meta.changes > 0
 }
 
 /** Atomically take `qty` pieces from a variant. Returns false when not enough is left. */
@@ -274,7 +275,7 @@ export async function rejectOrder(env: Bindings, orderId: string, sellerId: stri
     env.DB.prepare(`UPDATE variants SET available = available + (SELECT qty ${match}) WHERE id = (SELECT variant_id ${match})`).bind(orderId, sellerId),
     env.DB.prepare(`UPDATE orders SET status = 'rejected' WHERE id = ?1 AND seller_id = ?2 AND status IN ${ACTIVE}`).bind(orderId, sellerId),
   ])
-  if (upd.meta.changes === 1 && waitUntil) waitUntil(notifyBuyer(env, orderId, 'rejected'))
+  if (upd.meta.changes > 0 && waitUntil) waitUntil(notifyBuyer(env, orderId, 'rejected'))
 }
 
 /** Buyer taps "Cancel" in WhatsApp while still paying. */
@@ -284,7 +285,7 @@ export async function cancelByBuyer(env: Bindings, orderId: string, phone: strin
     env.DB.prepare(`UPDATE variants SET available = available + (SELECT qty ${match}) WHERE id = (SELECT variant_id ${match})`).bind(orderId, phone),
     env.DB.prepare(`UPDATE orders SET status = 'expired', hold_until = 0 WHERE id = ?1 AND buyer_phone = ?2 AND status = 'pending'`).bind(orderId, phone),
   ])
-  return upd.meta.changes === 1
+  return upd.meta.changes > 0
 }
 
 /** Direct-UPI buyer says "I've paid" (UTR optional). Keeps the hold until the seller decides. */
@@ -292,11 +293,11 @@ export async function submitUtr(env: Bindings, order: Order, utr: string | null)
   const db = env.DB
   if (order.status === 'pending' || order.status === 'verifying') {
     const r = await db.prepare(`UPDATE orders SET status = 'verifying', utr = COALESCE(?, utr) WHERE id = ? AND status IN ${ACTIVE}`).bind(utr, order.id).run()
-    return r.meta.changes === 1
+    return r.meta.changes > 0
   }
   if (order.status === 'expired' && (await takeStock(db, order.variant_id, order.drop_id, order.qty))) {
     const r = await db.prepare(`UPDATE orders SET status = 'verifying', utr = ? WHERE id = ? AND status = 'expired'`).bind(utr, order.id).run()
-    if (r.meta.changes === 1) return true
+    if (r.meta.changes > 0) return true
     await giveBackStock(db, order.variant_id, order.qty)
   }
   return false
@@ -311,8 +312,8 @@ export async function cancelCod(env: Bindings, orderId: string, sellerId: string
   const order = await env.DB.prepare(`SELECT * FROM orders WHERE id = ? AND seller_id = ? AND ${IS_COD}`).bind(orderId, sellerId).first<Order>()
   if (!order) return false
   const r = await env.DB.prepare(`UPDATE orders SET status = 'rejected' WHERE id = ? AND ${IS_COD}`).bind(orderId).run()
-  if (r.meta.changes === 1) await giveBackStock(env.DB, order.variant_id, order.qty)
-  return r.meta.changes === 1
+  if (r.meta.changes > 0) await giveBackStock(env.DB, order.variant_id, order.qty)
+  return r.meta.changes > 0
 }
 
 export async function markPaid(env: Bindings, orderId: string, paymentRef: string, waitUntil?: (p: Promise<unknown>) => void, notify = true): Promise<Order | null> {
@@ -343,7 +344,7 @@ export async function markPaid(env: Bindings, orderId: string, paymentRef: strin
          FROM orders o JOIN drops d ON d.id = o.drop_id WHERE o.id = ? AND o.status = 'paid'`,
       ).bind(now, orderId),
     ])
-    if (upd.meta.changes === 1) {
+    if (upd.meta.changes > 0) {
       const paid = { ...order, status: 'paid' as const, paid_at: now, payment_ref: paymentRef }
       if (notify) {
         const job = notifyBuyer(env, orderId, 'paid')
