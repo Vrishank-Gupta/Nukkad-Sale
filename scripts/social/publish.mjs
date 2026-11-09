@@ -54,6 +54,7 @@ const ITEMS = {
   'reel-21': { type: 'reel', file: 'reels/reel-21-pov.mp4', cover: 'reels/reel-21-pov-cover.jpg', caption: 'Reel 21' },
   'reel-22': { type: 'reel', file: 'reels/reel-22-reply.mp4', cover: 'reels/reel-22-reply-cover.jpg', caption: 'Reel 22' },
   'reel-23': { type: 'reel', file: 'reels/reel-23-myths.mp4', cover: 'reels/reel-23-myths-cover.jpg', caption: 'Reel 23' },
+  'reel-24': { type: 'reel', file: 'reels/reel-24-night-shift.mp4', cover: 'reels/reel-24-night-shift-cover.jpg', caption: 'Reel 24' },
   'post-1': { type: 'image', file: 'posts/post-1-launch.png', caption: 'Post 1' },
   'post-2': { type: 'carousel', files: 'abcdef'.split('').map((x) => `posts/post-2-carousel-${x}.png`), caption: 'Post 2' },
   'post-3': { type: 'image', file: 'posts/post-3-paise.png', caption: 'Post 3' },

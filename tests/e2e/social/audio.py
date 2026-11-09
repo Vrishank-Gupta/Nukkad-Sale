@@ -2,7 +2,7 @@
 # whooshes on each cut, and a cash "ding" on the payment moment. Then muxes it with the video.
 import json, subprocess, sys
 DING = {1: [12.2], 2: [10.2], 3: [6.65], 4: [10.0], 5: [9.0], 6: [14.8]}
-BPM = {1: 112, 2: 118, 3: 124, 4: 116, 5: 104, 6: 120, 7: 122, 8: 114, 9: 108, 10: 120, 11: 126, 12: 124, 13: 104, 14: 112, 15: 108, 16: 118}
+BPM = {24: 92, 1: 112, 2: 118, 3: 124, 4: 116, 5: 104, 6: 120, 7: 122, 8: 114, 9: 108, 10: 120, 11: 126, 12: 124, 13: 104, 14: 112, 15: 108, 16: 118}
 IMPACT = {6: [0, 8.2]}  # default: just the hook
 POPS = {6: [1.65 + i * .11 for i in range(16)]}  # one notification blip per incoming DM
 for n in map(int, sys.argv[1:]):

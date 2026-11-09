@@ -175,6 +175,28 @@ html,body{width:720px;height:1280px;overflow:hidden;font-family:system-ui,"Noto 
 .grp i{font-style:normal;flex:none;width:58px;height:58px;border-radius:50%;background:#00a884;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff}
 .grp b{font-size:26px}.grp span{margin-left:auto;background:#25d366;color:#0b141a;font-weight:900;font-size:24px;border-radius:99px;padding:4px 14px}
 .offer{font-size:27px;font-weight:800;line-height:1.35;opacity:.92}
+
+/* Reel 24 – The night shift */
+@keyframes twinkle{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes glow{0%,100%{box-shadow:0 0 60px rgba(120,150,255,.25),0 40px 90px rgba(0,0,0,.6)}50%{box-shadow:0 0 110px rgba(140,170,255,.55),0 40px 90px rgba(0,0,0,.6)}}
+@keyframes drift{from{transform:translateY(0)}to{transform:translateY(-26px)}}
+@keyframes sunup{from{opacity:1;transform:translateY(300px)}to{opacity:1;transform:translateY(0)}}
+.night{background:radial-gradient(ellipse at 50% -10%,#24366e 0%,#0d1638 50%,#04060f 100%);color:#fff}
+.dawnbg{background:linear-gradient(180deg,#ff9e5e 0%,#ffc58a 45%,#fff1dc 100%);color:#1d1a16}
+.star{position:absolute;width:5px;height:5px;border-radius:50%;background:#fff;animation:twinkle 2.4s ease-in-out infinite}
+.clk{font-family:"DejaVu Sans Mono","Noto Sans Mono",monospace;font-weight:800;color:#ffd27a;letter-spacing:-8px;line-height:1;text-shadow:0 0 50px rgba(255,190,90,.75),0 0 12px rgba(255,210,140,.9)}
+.clk small{font-size:.32em;letter-spacing:0;margin-left:18px;vertical-align:.9em}
+.moon{position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffaf0,#f3e3b5 60%,#d9c48f);box-shadow:0 0 90px 20px rgba(255,236,180,.35)}
+.moon:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;left:46px;top:-22px;background:#0f1a40}
+.zz{position:absolute;font-weight:900;color:#b9c6ff;opacity:.85;font-family:"DejaVu Sans Mono",monospace}
+.tchip{position:absolute;left:40px;top:44px;display:inline-flex;gap:12px;align-items:center;background:rgba(255,255,255,.1);border:2px solid rgba(255,210,122,.45);color:#ffd27a;font-family:"DejaVu Sans Mono",monospace;font-weight:800;font-size:34px;padding:10px 22px;border-radius:99px}
+.tchip i{width:14px;height:14px;border-radius:50%;background:#ff6b6b;box-shadow:0 0 14px #ff6b6b}
+.night .phone{box-shadow:0 0 90px rgba(130,160,255,.35),0 40px 90px rgba(0,0,0,.6)}
+.ntag{display:inline-block;background:rgba(10,14,35,.82);color:#fff;border:2px solid rgba(185,198,255,.35);font-weight:800;font-size:34px;padding:14px 26px;border-radius:20px;backdrop-filter:blur(6px)}
+.sun{position:absolute;left:50%;width:520px;height:520px;margin-left:-260px;border-radius:50%;background:radial-gradient(circle,#fff6d6 0%,#ffd27a 45%,rgba(255,170,90,0) 70%)}
+.sky{position:absolute;inset:0}
+.lock{display:inline-flex;align-items:center;gap:12px}
+.dawnend{background:linear-gradient(170deg,#ff8a3d,#f76707 45%,#c2410c)}
 </style>
 </head>
 <body>
@@ -795,6 +817,48 @@ const FORMAT_REELS = {
 ], ding: [4.0, 7.0, 10.0, 13.0], impact: [0, 2.4] },
 }
 Object.assign(REELS, FORMAT_REELS)
+
+// 24 ── The night shift: 2:47 AM, the seller sleeps, the WhatsApp bot takes the order end to end; sunrise, orders waiting.
+const STARS = Array.from({ length: 70 }, (_, i) => { const a = (i * 9301 + 49297) % 233280 / 233280, b = (i * 4271 + 1103) % 7919 / 7919
+  return `<div class="star" style="left:${(a * 100).toFixed(1)}%;top:${(b * 62).toFixed(1)}%;width:${3 + (i % 3) * 2}px;height:${3 + (i % 3) * 2}px;animation-delay:${(i % 7) * .35}s"></div>` }).join('')
+const chip = (time) => `<div class="tchip" data-a="pop" data-d=".4"><i></i>${time}</div>`
+const NIGHT_REELS = {
+24: { title: 'night-shift', scenes: [
+  { d: 3.0, cls: 'night', html: `${STARS}
+    <div class="c clk" style="top:300px;font-size:230px" data-a="slam" data-d=".55">2:47<small>AM</small></div>
+    <div class="c m" style="top:600px;font-size:46px" data-a="pop" data-t=".7">A buyer wants your kurta.</div>
+    <div class="c m" style="top:735px;font-size:46px;color:#b9c6ff" data-a="pop" data-t="1.6">You’re asleep.</div>
+    <div class="zz" style="left:520px;top:860px;font-size:44px" data-a="fade" data-t="1.9" data-d=".4">z</div>
+    <div class="zz" style="left:570px;top:800px;font-size:58px" data-a="fade" data-t="2.1" data-d=".4">z</div>
+    <div class="zz" style="left:630px;top:730px;font-size:74px" data-a="fade" data-t="2.3" data-d=".4">Z</div>` },
+  { d: 2.6, cls: 'night', html: `${STARS}
+    <div class="moon" style="left:500px;top:150px" data-a="fade" data-d=".6"></div>
+    <div class="c h" style="top:420px;font-size:110px" data-a="hit" data-d=".5">Your shop<br><span style="color:#ffd27a">isn’t.</span></div>
+    <div class="notif" style="top:820px;background:#0f1530;color:#fff;border:2px solid rgba(185,198,255,.4)" data-a="rise" data-t="1.0" data-d=".45"><i style="background:#d9480f;color:#fff">₹</i><div><b style="color:#fff">New order: Priya</b><small style="color:#b9c6ff">Chanderi silk kurta – mustard (M), ₹798.13</small></div></div>` },
+  { d: 3.6, cls: 'night', html: `${STARS}${chip('2:47 AM')}
+    <div class="cap" style="top:130px" data-a="pop" data-t=".2"><span class="ntag">She taps your group link.<br>The bot shows her the piece.</span></div>
+    ${phone('chat-product', 300, tapAt(50, 89, 2.6), { a: 'rise', t: .3, style: 'width:360px;height:780px;margin-left:-180px', zoom: [1.2, 1.4], img: '--ox:50%;--oy:96%;--zs:1.08' })}` },
+  { d: 3.2, cls: 'night', html: `${STARS}${chip('2:48 AM')}
+    <div class="cap" style="top:130px" data-a="pop"><span class="ntag">Size M. Her address, typed once.</span></div>
+    ${phone('chat-address', 300, '', { a: 'pop', style: 'width:360px;height:780px;margin-left:-180px', zoom: [.4, 2.2], img: '--ox:50%;--oy:30%;--zs:1.08' })}` },
+  { d: 3.6, cls: 'night', html: `${STARS}${chip('2:49 AM')}
+    <div class="cap" style="top:130px" data-a="pop"><span class="ntag">Her own exact amount – <span style="color:#ffd27a">₹798.13</span>.<br>The piece is kept for her.</span></div>
+    ${phone('chat-pay', 290, tapAt(28, 89, 2.7), { a: 'pop', style: 'width:360px;height:780px;margin-left:-180px', zoom: [.4, 1.6], img: '--ox:50%;--oy:85%;--zs:1.08' })}
+    <div class="cap" style="top:1100px" data-a="pop" data-t="2.9"><span class="ntag" style="border-color:#69db7c;color:#69db7c">✓ Paid. You didn’t type a word.</span></div>` },
+  { d: 3.0, cls: 'dawnbg', html: `
+    <div class="sky night" data-a="out" data-t=".4" data-d="2.2" data-f="both" style="opacity:1">${STARS}</div>
+    <div class="sun" style="top:760px" data-a="sunup" data-t=".6" data-d="2.2" data-e="ease-out"></div>
+    ${['3:12', '4:05', '5:31', '6:48'].map((x, i) => `<div class="c clk" style="top:330px;font-size:200px" data-a="vis" data-t="${(i * .45).toFixed(2)}" data-d=".45">${x}<small>AM</small></div>`).join('')}
+    <div class="c clk" style="top:330px;font-size:200px;color:#7a2e0b;text-shadow:0 0 40px rgba(255,255,255,.8)" data-a="slam" data-t="1.8" data-d=".4">7:00<small>AM</small></div>
+    <div class="c m" style="top:620px;color:#5a2a0c;text-shadow:none" data-a="pop" data-t="1.1">More buyers.<br>Same story.</div>` },
+  { d: 3.4, cls: 'dawnbg', html: `
+    <div class="cap" style="top:60px" data-a="pop"><span class="tag">You wake up to orders – not DMs</span></div>
+    ${phone('home', 170, '', { a: 'rise', style: 'width:360px;height:780px;margin-left:-180px', zoom: [.6, 2.2], img: '--ox:50%;--oy:20%;--zs:1.04' })}
+    <div class="cap" style="top:1100px" data-a="pop" data-t="1.6"><span class="tag o">Just check the amounts. Pack. Send.</span></div>` },
+  { ...end('Your shop takes orders<br>while you sleep.'), cls: 'dawnbg dawnend' },
+], ding: [15.1], impact: [0, 3.0, 17.8], pops: [4.0] },
+}
+Object.assign(REELS, NIGHT_REELS)
 const id = Number(location.hash.slice(1) || 1), R = REELS[id]
 let t = 0, html = ''
 for (const sc of R.scenes) {

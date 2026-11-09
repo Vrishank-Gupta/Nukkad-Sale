@@ -540,6 +540,15 @@ day in the life…) are scripted for the brand ambassador in `AMBASSADOR.md`.
 >
 > #WhatsAppSeller #MythVsFact #SmallBusinessIndia #SellerTips
 
+### Reel 24 – The night shift (26 s) · `reel-24-night-shift.mp4` · night sky → sunrise
+> 2:47 AM. A buyer wants your kurta. You're asleep. 😴
+>
+> Your shop isn't. She taps your link in the group, and the NukkadSale WhatsApp bot does the rest – shows her the piece, takes her size and address, gives her her own exact amount and keeps the piece for her while she pays you on UPI.
+> You wake up to orders, not 40 DMs. Just check the amounts, pack, send.
+> Link in bio → nukkadsale.in
+>
+> #WhatsAppSeller #WhatsAppBusiness #SmallBusinessIndia #BoutiqueOwner #ResellersOfIndia
+
 ### Post 24 – Carousel "4 myths that keep you small" · `post-24-myths-a…f.png`
 > 4 myths every WhatsApp seller has heard 👉 swipe for the truth.
 >
